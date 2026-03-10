@@ -342,7 +342,7 @@ public class AssetController : ControllerBase
     }
 
     // ── Excel builder ─────────────────────────────────────────────────────────
-    private static readonly string[] ExcelHeaders = ["Ime *", "Opis", "EPC hex *", "EPC ASCII"];
+    private static readonly string[] ExcelHeaders = new[] { "Ime *", "Opis", "EPC hex *", "EPC ASCII" };
 
     private static byte[] BuildWorkbook(IEnumerable<(string Name, string Details, string Epc, string EpcAscii)> rows)
     {
