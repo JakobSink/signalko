@@ -172,31 +172,44 @@ static async Task SeedTestDataAsync(WebApplication app)
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     try
     {
-        var presenceCount = await db.UserPresences.CountAsync();
-        if (presenceCount == 0)
+        var now = DateTime.UtcNow;
+        var schedule = new[]
         {
-            var allUsers = await db.users.ToListAsync();
-            var now = DateTime.UtcNow;
-            var schedule = new[]
+            (daysBack: 7, inH: 8,  inM: 00, outH: 17, outM: 00),
+            (daysBack: 6, inH: 8,  inM: 45, outH: 16, outM: 30),
+            (daysBack: 5, inH: 9,  inM: 10, outH: 17, outM: 55),
+            (daysBack: 4, inH: 8,  inM: 20, outH: 18, outM: 05),
+            (daysBack: 3, inH: 7,  inM: 50, outH: 17, outM: 40),
+            (daysBack: 2, inH: 8,  inM: 35, outH: 16, outM: 50),
+            (daysBack: 1, inH: 8,  inM: 15, outH: 17, outM: 20),
+        };
+
+        // Ensure every user has at least some presence entries
+        var allUsers = await db.users.ToListAsync();
+        int added = 0;
+        foreach (var user in allUsers)
+        {
+            var hasAny = await db.UserPresences.AnyAsync(p => p.UserId == user.id);
+            if (!hasAny)
             {
-                (daysBack: 5, inH: 8,  inM: 00, outH: 17, outM: 00),
-                (daysBack: 4, inH: 8,  inM: 30, outH: 16, outM: 45),
-                (daysBack: 3, inH: 9,  inM: 05, outH: 17, outM: 30),
-                (daysBack: 2, inH: 7,  inM: 50, outH: 18, outM: 10),
-                (daysBack: 1, inH: 8,  inM: 15, outH: 17, outM: 20),
-            };
-            foreach (var user in allUsers)
                 foreach (var s in schedule)
                 {
                     var day = now.Date.AddDays(-s.daysBack);
                     db.UserPresences.Add(new UserPresence { UserId = user.id, Type = "IN",  ScannedAt = day.AddHours(s.inH).AddMinutes(s.inM) });
                     db.UserPresences.Add(new UserPresence { UserId = user.id, Type = "OUT", ScannedAt = day.AddHours(s.outH).AddMinutes(s.outM) });
                 }
-            if (allUsers.Count > 0)
-            {
-                await db.SaveChangesAsync();
-                Console.WriteLine($"[Seed] Presence test data created for {allUsers.Count} users.");
+                added++;
             }
+        }
+
+        if (added > 0)
+        {
+            await db.SaveChangesAsync();
+            Console.WriteLine($"[Seed] Presence test data seeded for {added} user(s).");
+        }
+        else
+        {
+            Console.WriteLine("[Seed] Presence data already exists for all users, skipping.");
         }
     }
     catch (Exception ex)

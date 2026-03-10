@@ -8,6 +8,7 @@
 <link rel="stylesheet" href="/css/sk.css"/>
 <style>
 .tags-layout{display:grid;grid-template-columns:1fr 320px;gap:18px;align-items:start;}
+@media(max-width:900px){.tags-layout{grid-template-columns:1fr;}}
 .toolbar{display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap;}
 .filter-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
 .filter-input{
@@ -66,6 +67,10 @@ table.tag-table tbody tr.active-row td{background:var(--high);border-left:2px so
 /* State */
 .state-empty{padding:24px;text-align:center;color:var(--mut);font-size:11px;}
 .state-loading-sm{display:flex;align-items:center;gap:8px;padding:16px;color:var(--sub);font-size:11px;}
+@media(max-width:900px){
+  table.tag-table{min-width:480px;}
+  .detail-body{max-height:50vh;}
+}
 </style>
 </head>
 <body>

@@ -9,6 +9,7 @@
 <style>
 /* ── Stats ────────────────────────────────────────────────────── */
 .stat-row { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:26px; }
+@media(max-width:600px){.stat-row{grid-template-columns:1fr 1fr;}}
 .sc {
   background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
   padding:16px 20px; display:flex; flex-direction:column; gap:5px;
@@ -65,6 +66,16 @@
 .pbar { display:flex; align-items:center; gap:8px; padding:10px 14px; border-top:1px solid var(--border); background:var(--up); }
 .pi   { font-size:10px; color:var(--mut); margin-left:auto; }
 .stl  { text-align:center; padding:28px; color:var(--mut); font-size:11px; }
+@media(max-width:900px){
+  .stat-row { grid-template-columns:1fr 1fr; }
+  .lwrap { overflow-x:auto; }
+  .ltbl { min-width:540px; }
+  .ff-w input { min-width:140px; }
+  .sechdr { flex-wrap:wrap; }
+}
+@media(max-width:480px){
+  .stat-row { grid-template-columns:1fr; }
+}
 </style>
 </head>
 <body>

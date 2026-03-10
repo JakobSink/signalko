@@ -60,6 +60,18 @@ html,body{background:var(--bg);color:var(--txt);font-family:'JetBrains Mono',mon
 .mod-desc{font-size:11px;color:var(--mut);}
 .spin{width:14px;height:14px;border:2px solid var(--border);border-top-color:var(--acc);border-radius:50%;animation:spin .55s linear infinite;display:inline-block;}
 .state-loading{display:flex;align-items:center;justify-content:center;gap:10px;padding:32px;color:var(--sub);font-size:12px;}
+@media(max-width:900px){
+  .layout{grid-template-columns:1fr;}
+  .sb-col{display:none;}
+  .main{padding:18px 14px 80px;}
+  .stats{grid-template-columns:1fr 1fr;gap:10px;}
+  .event-row{grid-template-columns:34px 1fr auto;gap:8px;}
+  .modules{grid-template-columns:1fr 1fr;}
+}
+@media(max-width:480px){
+  .stats{grid-template-columns:1fr;}
+  .modules{grid-template-columns:1fr;}
+}
 </style>
 </head>
 <body>

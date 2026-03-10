@@ -53,9 +53,14 @@ table.user-table tbody tr:hover td{background:var(--up);}
 .modal-field input::placeholder{color:var(--mut);}
 .modal-hint{font-size:10px;color:var(--mut);margin-top:3px;}
 .modal-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+@media(max-width:560px){.modal-grid-2{grid-template-columns:1fr;}}
 .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:6px;}
 .state-empty{padding:40px;text-align:center;color:var(--mut);font-size:12px;}
 .state-loading{display:flex;align-items:center;justify-content:center;gap:10px;padding:40px;color:var(--sub);font-size:12px;}
+@media(max-width:900px){
+  table.user-table{min-width:560px;}
+  .search-box{min-width:140px;}
+}
 </style>
 </head>
 <body>

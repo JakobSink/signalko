@@ -63,6 +63,13 @@
 .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:6px;}
 .state-empty{padding:40px;text-align:center;color:var(--mut);font-size:12px;}
 .state-loading{display:flex;align-items:center;justify-content:center;gap:10px;padding:40px;color:var(--sub);font-size:12px;}
+@media(max-width:900px){
+  .ic-grid{grid-template-columns:repeat(auto-fill,minmax(220px,1fr));}
+  .ic-foot{flex-wrap:wrap;}
+}
+@media(max-width:500px){
+  .ic-grid{grid-template-columns:1fr;}
+}
 </style>
 </head>
 <body>

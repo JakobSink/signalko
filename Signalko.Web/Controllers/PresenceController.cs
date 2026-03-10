@@ -13,18 +13,27 @@ public class PresenceController : ControllerBase
     public PresenceController(AppDbContext db) => _db = db;
 
     // ── Pomočnik ─────────────────────────────────────────────────────────────
-    // Check admin via JWT "role" claim — no extra DB query needed
-    private bool IsAdmin()
+    // Check admin via JWT claims first, then DB fallback
+    private async Task<bool> IsAdminAsync()
     {
+        // Fast path: JWT claims
         var role = User.FindFirst("role")?.Value
                 ?? User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
         if (role == "Admin") return true;
-
-        // Fallback: check roleId claim in token
         var rid = User.FindFirst("roleId")?.Value;
         if (rid == "1") return true;
 
-        return false;
+        // DB fallback: handles tokens issued before role was set
+        var sub = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+               ?? User.FindFirst("sub")?.Value;
+        if (!int.TryParse(sub, out var userId)) return false;
+
+        var u = await _db.users
+            .AsNoTracking()
+            .Include(u => u.Role)
+            .FirstOrDefaultAsync(u => u.id == userId);
+
+        return u?.Role?.Name == "Admin";
     }
 
     private int? GetCurrentUserId()
@@ -38,7 +47,7 @@ public class PresenceController : ControllerBase
     [HttpGet("current"), Authorize]
     public async Task<IActionResult> Current()
     {
-        if (!IsAdmin()) return Forbid();
+        if (!await IsAdminAsync()) return Forbid();
 
         // Za vsakega userja vzamemo zadnji event; pokažemo samo tiste z IN
         var sql = @"
@@ -92,7 +101,7 @@ public class PresenceController : ControllerBase
         [FromQuery] int       page     = 1,
         [FromQuery] int       pageSize = 50)
     {
-        if (!IsAdmin()) return Forbid();
+        if (!await IsAdminAsync()) return Forbid();
 
         page     = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, 200);
@@ -185,7 +194,7 @@ public class PresenceController : ControllerBase
         [FromQuery] int       page     = 1,
         [FromQuery] int       pageSize = 50)
     {
-        if (!IsAdmin()) return Forbid();
+        if (!await IsAdminAsync()) return Forbid();
 
         page     = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, 200);

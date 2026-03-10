@@ -183,11 +183,48 @@
     }
   });
 
+  // ── Inject mobile bottom nav into body ──
+  if (!document.getElementById('sk-mobile-nav')) {
+    const mn = document.createElement('nav');
+    mn.id = 'sk-mobile-nav';
+    mn.innerHTML = `
+      <a class="mn-item" href="/index.html">
+        <span class="mn-icon">◈</span>
+        <span class="mn-label">Pregled</span>
+      </a>
+      <a class="mn-item" href="/loans.html">
+        <span class="mn-icon">⇌</span>
+        <span class="mn-label">Izposoja</span>
+      </a>
+      <a class="mn-item" href="/assets.html">
+        <span class="mn-icon">▣</span>
+        <span class="mn-label">Sredstva</span>
+      </a>
+      <a class="mn-item mn-pres" href="/presence.html" id="mnPresLink" style="display:none">
+        <span class="mn-icon">◎</span>
+        <span class="mn-label">Prisotnost</span>
+      </a>
+      <a class="mn-item mn-profile" href="/login.html" id="mnProfileLink">
+        <span class="mn-icon">◌</span>
+        <span class="mn-label">Profil</span>
+      </a>`;
+    document.body.appendChild(mn);
+
+    // Mark active item in mobile nav
+    mn.querySelectorAll('.mn-item').forEach(a => {
+      const href = (a.getAttribute('href') || '').toLowerCase();
+      if (href && (path.endsWith(href) ||
+          (href !== '/index.html' && path.includes(href.replace(/\.html/, ''))))) {
+        a.classList.add('active');
+      }
+    });
+  }
+
   const token = localStorage.getItem('token') || localStorage.getItem('sk_token');
   let cached  = null;
   try { cached = JSON.parse(localStorage.getItem('sk_user') || 'null'); } catch {}
 
-  // ── Render sidebar s podatki ──
+  // ── Render sidebar + mobile nav ──
   function render(user) {
     const loggedIn = !!(token && user);
     // Use == for roleId so both number 1 and string "1" match
@@ -208,6 +245,30 @@
       const el = document.getElementById(id);
       if (el) el.style.display = isAdmin ? '' : 'none';
     });
+
+    // Mobile nav: show/hide presence link
+    const mnPres = document.getElementById('mnPresLink');
+    if (mnPres) mnPres.style.display = loggedIn ? '' : 'none';
+
+    // Mobile nav: update profile link
+    const mnProfile = document.getElementById('mnProfileLink');
+    if (mnProfile) {
+      if (loggedIn) {
+        mnProfile.href = '/profile.html';
+        const name     = user.name    || user.Name    || '';
+        const surname  = user.surname || user.Surname || '';
+        const initials = [name[0], surname[0]].filter(Boolean).join('').toUpperCase() || '◌';
+        mnProfile.querySelector('.mn-icon').textContent = initials.length ? initials[0] : '◌';
+        mnProfile.querySelector('.mn-label').textContent = 'Profil';
+        mnProfile.style.color = '';
+        if (path.includes('profile')) mnProfile.classList.add('active');
+      } else {
+        mnProfile.href = '/login.html';
+        mnProfile.querySelector('.mn-icon').textContent = '⟶';
+        mnProfile.querySelector('.mn-label').textContent = 'Prijava';
+        if (path.includes('login')) mnProfile.classList.add('active');
+      }
+    }
 
     // Profil label
     const labelEl = document.getElementById('sbProfileLabel');

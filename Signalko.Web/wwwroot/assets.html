@@ -10,6 +10,10 @@
 /* ── Layout ─────────────────────────────────────────────────────────────── */
 .assets-layout{display:grid;grid-template-columns:1fr 380px;gap:20px;align-items:start;}
 .assets-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;}
+@media(max-width:900px){
+  .assets-layout{grid-template-columns:1fr;}
+  .assets-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr));}
+}
 
 /* ── Asset card ──────────────────────────────────────────────────────────── */
 .asset-card{
@@ -137,6 +141,14 @@
 /* ── Empty / loading ─────────────────────────────────────────────────────── */
 .state-empty{padding:40px;text-align:center;color:var(--mut);font-size:12px;}
 .state-loading{display:flex;align-items:center;justify-content:center;gap:10px;padding:40px;color:var(--sub);font-size:12px;}
+@media(max-width:900px){
+  .detail-actions{flex-wrap:wrap;}
+  .detail-tab-body{max-height:60vh;}
+  .assets-grid{grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:10px;}
+}
+@media(max-width:400px){
+  .assets-grid{grid-template-columns:1fr;}
+}
 </style>
 </head>
 <body>

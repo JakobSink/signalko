@@ -75,6 +75,12 @@ table.pr-table tbody tr:hover td { background: var(--up); }
 /* ── States ──────────────────────────────────────────────────── */
 .state-empty      { padding: 24px; text-align: center; color: var(--mut); font-size: 11px; }
 .state-loading-sm { display: flex; align-items: center; gap: 8px; padding: 16px; color: var(--sub); font-size: 11px; }
+@media(max-width:600px){
+  .my-hdr { flex-wrap:wrap; }
+  .filter-row { gap:6px; }
+  table.pr-table { min-width:380px; }
+  .pager-bar { gap:6px; }
+}
 </style>
 </head>
 <body>
