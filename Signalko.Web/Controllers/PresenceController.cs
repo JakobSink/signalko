@@ -13,27 +13,40 @@ public class PresenceController : ControllerBase
     public PresenceController(AppDbContext db) => _db = db;
 
     // ── Pomočnik ─────────────────────────────────────────────────────────────
-    // Check admin via JWT claims first, then DB fallback
     private async Task<bool> IsAdminAsync()
     {
-        // Fast path: JWT claims
+        // 1) JWT role claim (fast path)
         var role = User.FindFirst("role")?.Value
                 ?? User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
         if (role == "Admin") return true;
+
+        // 2) JWT roleId claim (fast path)
         var rid = User.FindFirst("roleId")?.Value;
         if (rid == "1") return true;
 
-        // DB fallback: handles tokens issued before role was set
+        // 3) DB lookup by userId from sub claim
         var sub = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
                ?? User.FindFirst("sub")?.Value;
-        if (!int.TryParse(sub, out var userId)) return false;
+        if (int.TryParse(sub, out var userId))
+        {
+            var byId = await _db.users.AsNoTracking()
+                .Include(u => u.Role)
+                .FirstOrDefaultAsync(u => u.id == userId);
+            if (byId?.Role?.Name == "Admin") return true;
+        }
 
-        var u = await _db.users
-            .AsNoTracking()
-            .Include(u => u.Role)
-            .FirstOrDefaultAsync(u => u.id == userId);
+        // 4) DB lookup by email — handles DB resets where userId changed
+        var email = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value
+                 ?? User.FindFirst("email")?.Value;
+        if (!string.IsNullOrEmpty(email))
+        {
+            var byEmail = await _db.users.AsNoTracking()
+                .Include(u => u.Role)
+                .FirstOrDefaultAsync(u => u.Email == email);
+            if (byEmail?.Role?.Name == "Admin") return true;
+        }
 
-        return u?.Role?.Name == "Admin";
+        return false;
     }
 
     private int? GetCurrentUserId()

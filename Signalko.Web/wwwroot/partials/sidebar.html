@@ -38,7 +38,6 @@
     gap: 2px; overflow-y: auto; min-height: 0;
   }
 
-  /* Pushes profile to the very bottom of the nav */
   .sb-push { flex: 1; }
 
   .sb-item {
@@ -67,10 +66,8 @@
     text-transform: uppercase; padding: 12px 20px 6px;
   }
 
-  /* Divider before profile */
   .sb-divider { height: 1px; background: var(--sb-border); margin: 6px 8px; flex-shrink: 0; }
 
-  /* Profile item (logged in) */
   .sb-profile-item {
     display: flex; align-items: center; gap: 10px; padding: 10px 12px;
     border-radius: 8px; border: 1px solid var(--sb-border);
@@ -130,14 +127,12 @@
       <span class="sb-label">RFID Tagi</span>
     </a>
 
-    <!-- Uporabnik section — visible to all logged-in users -->
     <div class="sb-section" id="sbUserSection" style="display:none;">Uporabnik</div>
     <a class="sb-item pres-link" id="sbPresLink" href="/presence.html" style="display:none;">
       <span class="sb-item-icon">◎</span>
       <span class="sb-label">Prisotnost</span>
     </a>
 
-    <!-- Admin section — shown only when admin -->
     <div class="sb-section" id="sbAdminSection" style="display:none;">Admin</div>
     <a class="sb-item admin-link" id="sbAdminLink" href="/admin.html" style="display:none;">
       <span class="sb-item-icon">⚙</span>
@@ -148,71 +143,86 @@
       <span class="sb-label">Prisotnost — nadzor</span>
     </a>
 
-    <!-- Config section — shown only when admin -->
     <div class="sb-section" id="sbConfigSection" style="display:none;">Konfiguracija</div>
-    <a class="sb-item" id="sbReadersLink"   href="/readers.html"  style="display:none;">
+    <a class="sb-item" id="sbReadersLink"  href="/readers.html"  style="display:none;">
       <span class="sb-item-icon">⊡</span>
       <span class="sb-label">Čitalci</span>
     </a>
-    <a class="sb-item" id="sbAntennasLink"  href="/antennas.html" style="display:none;">
+    <a class="sb-item" id="sbAntennasLink" href="/antennas.html" style="display:none;">
       <span class="sb-item-icon">⊛</span>
       <span class="sb-label">Antene</span>
     </a>
-    <a class="sb-item" id="sbZonesLink"     href="/zones.html"    style="display:none;">
+    <a class="sb-item" id="sbZonesLink"    href="/zones.html"    style="display:none;">
       <span class="sb-item-icon">⊞</span>
       <span class="sb-label">Cone</span>
     </a>
 
-    <!-- Spacer + Profile pinned to bottom -->
     <div class="sb-push"></div>
     <div class="sb-divider"></div>
     <div id="sbProfileLabel"></div>
-    <div id="sbProfile"><!-- populated by JS --></div>
+    <div id="sbProfile"></div>
   </nav>
 </div>
 
 <script>
 (function() {
-  // ── Mark active page ──
-  const path = location.pathname.toLowerCase();
-  document.querySelectorAll('#sbNav .sb-item').forEach(a => {
-    const href = (a.getAttribute('href') || '').toLowerCase();
+  var path = location.pathname.toLowerCase();
+
+  // ── Mark active — desktop sidebar ──
+  document.querySelectorAll('#sbNav .sb-item').forEach(function(a) {
+    var href = (a.getAttribute('href') || '').toLowerCase();
     if (href && (path.endsWith(href) ||
         (href !== '/index.html' && path.includes(href.replace(/\.html/, ''))))) {
       a.classList.add('active');
     }
   });
 
-  // ── Inject mobile bottom nav into body ──
-  if (!document.getElementById('sk-mobile-nav')) {
-    const mn = document.createElement('nav');
-    mn.id = 'sk-mobile-nav';
-    mn.innerHTML = `
-      <a class="mn-item" href="/index.html">
-        <span class="mn-icon">◈</span>
-        <span class="mn-label">Pregled</span>
-      </a>
-      <a class="mn-item" href="/loans.html">
-        <span class="mn-icon">⇌</span>
-        <span class="mn-label">Izposoja</span>
-      </a>
-      <a class="mn-item" href="/assets.html">
-        <span class="mn-icon">▣</span>
-        <span class="mn-label">Sredstva</span>
-      </a>
-      <a class="mn-item mn-pres" href="/presence.html" id="mnPresLink" style="display:none">
-        <span class="mn-icon">◎</span>
-        <span class="mn-label">Prisotnost</span>
-      </a>
-      <a class="mn-item mn-profile" href="/login.html" id="mnProfileLink">
-        <span class="mn-icon">◌</span>
-        <span class="mn-label">Profil</span>
-      </a>`;
-    document.body.appendChild(mn);
+  // ── Inject hamburger + backdrop + slide-down menu ──
+  if (!document.getElementById('sk-ham-btn')) {
+    // Hamburger button
+    var hamBtn = document.createElement('button');
+    hamBtn.id = 'sk-ham-btn';
+    hamBtn.setAttribute('aria-label', 'Odpri meni');
+    hamBtn.innerHTML = '☰';
+    hamBtn.onclick = function() { skMenuToggle(); };
+    document.body.appendChild(hamBtn);
 
-    // Mark active item in mobile nav
-    mn.querySelectorAll('.mn-item').forEach(a => {
-      const href = (a.getAttribute('href') || '').toLowerCase();
+    // Backdrop
+    var backdrop = document.createElement('div');
+    backdrop.id = 'sk-mob-backdrop';
+    backdrop.onclick = function() { skMenuClose(); };
+    document.body.appendChild(backdrop);
+
+    // Slide-down menu
+    var menu = document.createElement('nav');
+    menu.id = 'sk-mobile-menu';
+    menu.innerHTML =
+      '<div class="smm-head">' +
+        '<a class="smm-brand" href="/index.html">signal<span>ko</span></a>' +
+        '<button class="smm-close" onclick="skMenuClose()">✕</button>' +
+      '</div>' +
+      '<div class="smm-nav-wrap">' +
+        '<a class="smm-item" href="/index.html"><span class="smm-item-icon">◈</span> Pregled</a>' +
+        '<a class="smm-item" href="/loans.html"><span class="smm-item-icon">⇌</span> Izposoja</a>' +
+        '<a class="smm-item" href="/assets.html"><span class="smm-item-icon">▣</span> Sredstva</a>' +
+        '<a class="smm-item" href="/tags.html"><span class="smm-item-icon">◉</span> RFID Tagi</a>' +
+        '<div class="smm-section" id="smmUserSection" style="display:none">Uporabnik</div>' +
+        '<a class="smm-item smm-pres" href="/presence.html" id="smmPresLink" style="display:none"><span class="smm-item-icon">◎</span> Prisotnost</a>' +
+        '<div class="smm-section" id="smmAdminSection" style="display:none">Admin</div>' +
+        '<a class="smm-item smm-admin" href="/admin.html" id="smmAdminLink" style="display:none"><span class="smm-item-icon">⚙</span> Uporabniki</a>' +
+        '<a class="smm-item smm-admin" href="/presenceadmin.html" id="smmPresAdminLink" style="display:none"><span class="smm-item-icon">◎</span> Prisotnost — nadzor</a>' +
+        '<div class="smm-section" id="smmConfigSection" style="display:none">Konfiguracija</div>' +
+        '<a class="smm-item" href="/readers.html" id="smmReadersLink" style="display:none"><span class="smm-item-icon">⊡</span> Čitalci</a>' +
+        '<a class="smm-item" href="/antennas.html" id="smmAntennasLink" style="display:none"><span class="smm-item-icon">⊛</span> Antene</a>' +
+        '<a class="smm-item" href="/zones.html" id="smmZonesLink" style="display:none"><span class="smm-item-icon">⊞</span> Cone</a>' +
+      '</div>' +
+      '<div class="smm-divider"></div>' +
+      '<div class="smm-profile-wrap" id="smmProfile"></div>';
+    document.body.appendChild(menu);
+
+    // Mark active items in mobile menu
+    menu.querySelectorAll('.smm-item').forEach(function(a) {
+      var href = (a.getAttribute('href') || '').toLowerCase();
       if (href && (path.endsWith(href) ||
           (href !== '/index.html' && path.includes(href.replace(/\.html/, ''))))) {
         a.classList.add('active');
@@ -220,101 +230,132 @@
     });
   }
 
-  const token = localStorage.getItem('token') || localStorage.getItem('sk_token');
-  let cached  = null;
+  // ── Menu open/close ──
+  window.skMenuOpen = function() {
+    document.getElementById('sk-mobile-menu').classList.add('sk-menu-open');
+    document.getElementById('sk-mob-backdrop').style.display = 'block';
+    document.body.style.overflow = 'hidden';
+  };
+  window.skMenuClose = function() {
+    document.getElementById('sk-mobile-menu').classList.remove('sk-menu-open');
+    document.getElementById('sk-mob-backdrop').style.display = 'none';
+    document.body.style.overflow = '';
+  };
+  window.skMenuToggle = function() {
+    if (document.getElementById('sk-mobile-menu').classList.contains('sk-menu-open'))
+      skMenuClose();
+    else skMenuOpen();
+  };
+
+  // ── Auth state ──
+  var token = localStorage.getItem('token') || localStorage.getItem('sk_token');
+  var cached = null;
   try { cached = JSON.parse(localStorage.getItem('sk_user') || 'null'); } catch {}
 
-  // ── Render sidebar + mobile nav ──
+  // ── Render both desktop sidebar + mobile menu ──
   function render(user) {
-    const loggedIn = !!(token && user);
-    // Use == for roleId so both number 1 and string "1" match
-    const isAdmin  = loggedIn && (
+    var loggedIn = !!(token && user);
+    var isAdmin  = loggedIn && (
       user.roleId == 1 || user.RoleId == 1 ||
       user.role === 'Admin' || user.roleName === 'Admin' || user.RoleName === 'Admin'
     );
 
-    // User section (visible to all logged-in users)
-    ['sbUserSection','sbPresLink'].forEach(id => {
-      const el = document.getElementById(id);
+    // Desktop: user section
+    ['sbUserSection','sbPresLink'].forEach(function(id) {
+      var el = document.getElementById(id);
       if (el) el.style.display = loggedIn ? '' : 'none';
     });
-
-    // Admin nav
+    // Desktop: admin section
     ['sbAdminSection','sbAdminLink','sbPresAdminLink','sbConfigSection',
-     'sbReadersLink','sbAntennasLink','sbZonesLink'].forEach(id => {
-      const el = document.getElementById(id);
+     'sbReadersLink','sbAntennasLink','sbZonesLink'].forEach(function(id) {
+      var el = document.getElementById(id);
       if (el) el.style.display = isAdmin ? '' : 'none';
     });
 
-    // Mobile nav: show/hide presence link
-    const mnPres = document.getElementById('mnPresLink');
-    if (mnPres) mnPres.style.display = loggedIn ? '' : 'none';
+    // Mobile menu: user section
+    ['smmUserSection','smmPresLink'].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) el.style.display = loggedIn ? '' : 'none';
+    });
+    // Mobile menu: admin section
+    ['smmAdminSection','smmAdminLink','smmPresAdminLink','smmConfigSection',
+     'smmReadersLink','smmAntennasLink','smmZonesLink'].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) el.style.display = isAdmin ? '' : 'none';
+    });
 
-    // Mobile nav: update profile link
-    const mnProfile = document.getElementById('mnProfileLink');
-    if (mnProfile) {
-      if (loggedIn) {
-        mnProfile.href = '/profile.html';
-        const name     = user.name    || user.Name    || '';
-        const surname  = user.surname || user.Surname || '';
-        const initials = [name[0], surname[0]].filter(Boolean).join('').toUpperCase() || '◌';
-        mnProfile.querySelector('.mn-icon').textContent = initials.length ? initials[0] : '◌';
-        mnProfile.querySelector('.mn-label').textContent = 'Profil';
-        mnProfile.style.color = '';
-        if (path.includes('profile')) mnProfile.classList.add('active');
-      } else {
-        mnProfile.href = '/login.html';
-        mnProfile.querySelector('.mn-icon').textContent = '⟶';
-        mnProfile.querySelector('.mn-label').textContent = 'Prijava';
-        if (path.includes('login')) mnProfile.classList.add('active');
-      }
-    }
-
-    // Profil label
-    const labelEl = document.getElementById('sbProfileLabel');
+    // Desktop: profile label
+    var labelEl = document.getElementById('sbProfileLabel');
     if (labelEl) {
       labelEl.innerHTML = loggedIn
         ? '<div class="sb-section" style="padding:8px 12px 4px;">Profil</div>'
         : '<a href="/login.html" class="sb-section" style="padding:8px 12px 4px;display:block;text-decoration:none;color:var(--sb-accent);">Profil</a>';
     }
 
-    // Profil vsebina
-    const profileEl = document.getElementById('sbProfile');
-    if (!profileEl) return;
+    // Desktop: profile block
+    var profileEl = document.getElementById('sbProfile');
+    if (profileEl) {
+      if (loggedIn) {
+        var name     = user.name    || user.Name    || '';
+        var surname  = user.surname || user.Surname || '';
+        var card     = user.cardID  || user.CardID  || '';
+        var role     = user.roleName|| user.RoleName|| user.role || user.Role || '';
+        var initials = [name[0], surname[0]].filter(Boolean).join('').toUpperCase() || '?';
+        var fullName = [name, surname].filter(Boolean).join(' ') || '—';
+        var roleClass = isAdmin ? 'admin-role' : 'user-role';
+        profileEl.innerHTML =
+          '<a class="sb-item" href="/profile.html" style="border-color:var(--sb-border);background:var(--sb-surface);text-decoration:none;">' +
+            '<div class="sb-avatar">' + initials + '</div>' +
+            '<div class="sb-profile-info">' +
+              '<div class="sb-profile-name">' + fullName + '</div>' +
+              '<div class="sb-profile-meta">' +
+                (card ? '<span class="sb-profile-card">🪪 ' + card + '</span>' : '') +
+                (role ? '<span class="sb-role-badge ' + roleClass + '">' + role + '</span>' : '') +
+              '</div>' +
+            '</div>' +
+          '</a>';
+      } else {
+        profileEl.innerHTML =
+          '<a class="sb-item" href="/login.html" style="color:var(--sb-accent);border-color:rgba(79,142,247,.2);background:var(--sb-accent-d);">' +
+            '<span class="sb-item-icon">⟶</span>' +
+            '<span class="sb-label">Prijava / Registracija</span>' +
+          '</a>';
+      }
+    }
 
-    if (loggedIn) {
-      const name     = user.name    || user.Name    || '';
-      const surname  = user.surname || user.Surname || '';
-      const card     = user.cardID  || user.CardID  || '';
-      const role     = user.roleName|| user.RoleName|| user.role || user.Role || '';
-      const initials = [name[0], surname[0]].filter(Boolean).join('').toUpperCase() || '?';
-      const fullName = [name, surname].filter(Boolean).join(' ') || '—';
-      const roleClass = isAdmin ? 'admin-role' : 'user-role';
-
-      profileEl.innerHTML = `
-        <a class="sb-item" href="/profile.html" style="border-color:var(--sb-border);background:var(--sb-surface);text-decoration:none;">
-          <div class="sb-avatar">${initials}</div>
-          <div class="sb-profile-info">
-            <div class="sb-profile-name">${fullName}</div>
-            <div class="sb-profile-meta">
-              ${card ? `<span class="sb-profile-card">🪪 ${card}</span>` : ''}
-              ${role ? `<span class="sb-role-badge ${roleClass}">${role}</span>` : ''}
-            </div>
-          </div>
-        </a>`;
-    } else {
-      profileEl.innerHTML = `
-        <a class="sb-item" href="/login.html" style="color:var(--sb-accent);border-color:rgba(79,142,247,.2);background:var(--sb-accent-d);">
-          <span class="sb-item-icon">⟶</span>
-          <span class="sb-label">Prijava / Registracija</span>
-        </a>`;
+    // Mobile menu: profile block
+    var smmProfile = document.getElementById('smmProfile');
+    if (smmProfile) {
+      if (loggedIn) {
+        var mName     = user.name    || user.Name    || '';
+        var mSurname  = user.surname || user.Surname || '';
+        var mCard     = user.cardID  || user.CardID  || '';
+        var mRole     = user.roleName|| user.RoleName|| user.role || user.Role || '';
+        var mInitials = [mName[0], mSurname[0]].filter(Boolean).join('').toUpperCase() || '?';
+        var mFullName = [mName, mSurname].filter(Boolean).join(' ') || '—';
+        smmProfile.innerHTML =
+          '<a class="smm-item" href="/profile.html" style="gap:12px;">' +
+            '<div style="width:34px;height:34px;border-radius:8px;background:var(--accD);border:1px solid rgba(79,142,247,.25);display:flex;align-items:center;justify-content:center;font-family:\'Syne\',sans-serif;font-size:13px;font-weight:800;color:var(--acc);flex-shrink:0;">' + mInitials + '</div>' +
+            '<div style="flex:1;min-width:0;">' +
+              '<div style="font-size:13px;font-weight:600;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + mFullName + '</div>' +
+              '<div style="font-size:10px;color:var(--sub);">' + (mCard ? '🪪 ' + mCard : '') + (mRole ? ' · ' + mRole : '') + '</div>' +
+            '</div>' +
+          '</a>' +
+          '<a class="smm-item" href="/login.html" onclick="localStorage.removeItem(\'token\');localStorage.removeItem(\'sk_token\');localStorage.removeItem(\'sk_user\');" style="color:var(--sb-red);margin-top:4px;">' +
+            '<span class="smm-item-icon">⟵</span> Odjava' +
+          '</a>';
+      } else {
+        smmProfile.innerHTML =
+          '<a class="smm-item" href="/login.html" style="color:var(--acc);">' +
+            '<span class="smm-item-icon">⟶</span> Prijava / Registracija' +
+          '</a>';
+      }
     }
   }
 
-  // Takoj prikaži s cached podatki
   render(cached);
 
-  // Vedno preveri vlogo iz baze (ne zaupaj samo localStorage)
+  // Refresh from server
   if (token && cached && cached.id) {
     fetch('/api/User/' + cached.id, {
       headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' }
@@ -323,14 +364,14 @@
     .then(function(fresh) {
       if (!fresh) return;
       var updated = {
-        id:      fresh.id      || fresh.Id      || cached.id,
-        name:    fresh.name    || fresh.Name    || cached.name,
-        surname: fresh.surname || fresh.Surname || cached.surname,
-        email:   fresh.email   || fresh.Email   || cached.email,
-        cardID:  fresh.cardID  || fresh.CardID  || cached.cardID,
-        roleId:  fresh.roleId  || fresh.RoleId  || null,
-        roleName:fresh.roleName|| fresh.RoleName|| null,
-        role:    fresh.role    || fresh.Role    || null,
+        id:       fresh.id       || fresh.Id       || cached.id,
+        name:     fresh.name     || fresh.Name     || cached.name,
+        surname:  fresh.surname  || fresh.Surname  || cached.surname,
+        email:    fresh.email    || fresh.Email    || cached.email,
+        cardID:   fresh.cardID   || fresh.CardID   || cached.cardID,
+        roleId:   fresh.roleId   || fresh.RoleId   || null,
+        roleName: fresh.roleName || fresh.RoleName || null,
+        role:     fresh.role     || fresh.Role     || null,
       };
       localStorage.setItem('sk_user', JSON.stringify(updated));
       render(updated);
