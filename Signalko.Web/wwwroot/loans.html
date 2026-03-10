@@ -144,11 +144,11 @@
     <div class="sk-modal-body" style="display:flex;flex-direction:column;gap:14px;">
       <div id="assetModalUserChip"></div>
       <div class="sk-alert sk-alert-acc" style="font-size:11px;">
-        Skeniraj RFID tag ali ročno vnesi EPC kodo sredstva.
+        Skeniraj RFID tag ali ročno vnesi EPC hex ali ASCII kodo sredstva.
       </div>
       <div class="sk-field">
-        <label>EPC koda</label>
-        <input class="sk-input" id="assetEpcInput" placeholder="npr. E2801160600002..." autofocus
+        <label>EPC (hex ali ASCII)</label>
+        <input class="sk-input" id="assetEpcInput" placeholder="npr. E2801160600002... ali ABC123" autofocus
           onkeydown="if(event.key==='Enter')confirmAssetModal()"/>
       </div>
       <div id="assetModalErr" class="sk-alert sk-alert-red" style="display:none;"></div>

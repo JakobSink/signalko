@@ -76,7 +76,8 @@ public class AssetController : ControllerBase
     [HttpGet("by-epc/{epc}")]
     public async Task<IActionResult> GetByEpc(string epc)
     {
-        var tag = await _db.TAG.AsNoTracking().FirstOrDefaultAsync(t => t.Epc == epc);
+        var tag = await _db.TAG.AsNoTracking()
+            .FirstOrDefaultAsync(t => t.Epc == epc || t.EpcAscii == epc);
         if (tag == null) return NotFound();
 
         var asset = await _db.ASSET
