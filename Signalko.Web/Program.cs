@@ -12,7 +12,7 @@ var cs = builder.Configuration.GetConnectionString("Default")
     ?? throw new InvalidOperationException("ConnectionStrings:Default is not set.");
 builder.Services.AddDbContext<AppDbContext>(opt =>
 {
-    opt.UseMySql(cs, new MySqlServerVersion(new Version(8, 0, 36)),
+    opt.UseMySql(cs, new MySqlServerVersion(new Version(9, 4, 0)),
         my => my.MigrationsAssembly("Signalko.Infrastructure"));
 });
 
