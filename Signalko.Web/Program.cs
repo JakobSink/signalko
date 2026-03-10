@@ -68,8 +68,10 @@ app.MapFallback(async ctx =>
 // ── Database seeding in background (so app starts listening immediately) ──────
 _ = Task.Run(async () =>
 {
-    await Task.Delay(2000); // give the app a moment to fully start
+    await Task.Delay(3000);
+    Console.WriteLine("[Seed] Starting database migration and seeding...");
     await SeedAsync(app);
+    Console.WriteLine("[Seed] Done.");
 });
 
 app.Run();
@@ -217,6 +219,9 @@ static async Task SeedAsync(WebApplication app)
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"[Seed] Warning: {ex.Message}");
+        Console.WriteLine($"[Seed] ERROR: {ex.GetType().Name}: {ex.Message}");
+        Console.WriteLine($"[Seed] StackTrace: {ex.StackTrace}");
+        if (ex.InnerException != null)
+            Console.WriteLine($"[Seed] Inner: {ex.InnerException.Message}");
     }
 }
