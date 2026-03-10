@@ -3,6 +3,6 @@ builder = "nixpacks"
 
 [deploy]
 startCommand = "dotnet /app/publish/Signalko.Web.dll"
-healthcheckPath = "/api/Health"
-healthcheckTimeout = 30
+healthcheckPath = "/health"
+healthcheckTimeout = 60
 restartPolicyType = "on_failure"
