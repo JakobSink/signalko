@@ -48,9 +48,6 @@ builder.Services.AddCors(o => o.AddPolicy("AllowAll", p => p.AllowAnyOrigin().Al
 
 var app = builder.Build();
 
-// ── Database seeding ──────────────────────────────────────────────────────────
-await SeedAsync(app);
-
 app.UseSwagger();
 app.UseSwaggerUI();
 
@@ -66,6 +63,13 @@ app.MapFallback(async ctx =>
 {
     ctx.Response.ContentType = "text/html; charset=utf-8";
     await ctx.Response.SendFileAsync(Path.Combine(app.Environment.WebRootPath, "index.html"));
+});
+
+// ── Database seeding in background (so app starts listening immediately) ──────
+_ = Task.Run(async () =>
+{
+    await Task.Delay(2000); // give the app a moment to fully start
+    await SeedAsync(app);
 });
 
 app.Run();
