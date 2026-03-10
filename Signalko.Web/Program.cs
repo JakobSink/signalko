@@ -65,11 +65,16 @@ app.MapFallback(async ctx =>
     await ctx.Response.SendFileAsync(Path.Combine(app.Environment.WebRootPath, "index.html"));
 });
 
-// ── Database seeding in background (so app starts listening immediately) ──────
+// ── Run migrations synchronously before starting ──────────────────────────────
+Console.WriteLine("[DB] Running migrations...");
+await MigrateAsync(app);
+Console.WriteLine("[DB] Migrations done.");
+
+// ── Seed data in background (non-critical, doesn't block startup) ─────────────
 _ = Task.Run(async () =>
 {
-    await Task.Delay(3000);
-    Console.WriteLine("[Seed] Starting database migration and seeding...");
+    await Task.Delay(1000);
+    Console.WriteLine("[Seed] Starting seeding...");
     await SeedAsync(app);
     Console.WriteLine("[Seed] Done.");
 });
@@ -77,6 +82,24 @@ _ = Task.Run(async () =>
 app.Run();
 
 // ── Seed helper ───────────────────────────────────────────────────────────────
+static async Task MigrateAsync(WebApplication app)
+{
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    try
+    {
+        await db.Database.MigrateAsync();
+        Console.WriteLine("[DB] MigrateAsync complete.");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[DB] Migration FAILED: {ex.GetType().Name}: {ex.Message}");
+        if (ex.InnerException != null)
+            Console.WriteLine($"[DB] Inner: {ex.InnerException.Message}");
+        throw;
+    }
+}
+
 static async Task SeedAsync(WebApplication app)
 {
     using var scope = app.Services.CreateScope();
@@ -84,8 +107,6 @@ static async Task SeedAsync(WebApplication app)
 
     try
     {
-        // Run EF Core migrations (creates all base tables: users, zones, antennas, etc.)
-        await db.Database.MigrateAsync();
 
         // Create exchange_requests table — column names match EF Core entity (snake_case via [Column] attributes)
         await db.Database.ExecuteSqlRawAsync(@"
