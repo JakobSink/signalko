@@ -13,8 +13,12 @@ namespace Signalko.Infrastructure.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             // Only add the Icon column — other schema changes already exist in the live DB
-            migrationBuilder.Sql(
-                "ALTER TABLE `ASSET` ADD COLUMN IF NOT EXISTS `Icon` varchar(512) CHARACTER SET utf8mb4 NULL;");
+            migrationBuilder.AddColumn<string>(
+                name: "Icon",
+                table: "ASSET",
+                type: "varchar(512)",
+                maxLength: 512,
+                nullable: true);
         }
 
         /// <inheritdoc />

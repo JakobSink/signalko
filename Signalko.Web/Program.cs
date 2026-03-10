@@ -65,24 +65,22 @@ app.MapFallback(async ctx =>
     await ctx.Response.SendFileAsync(Path.Combine(app.Environment.WebRootPath, "index.html"));
 });
 
-// ── Run migrations synchronously before starting ──────────────────────────────
-Console.WriteLine("[DB] Running migrations...");
-await MigrateAsync(app);
-Console.WriteLine("[DB] Migrations done.");
+// ── Migrate + seed roles + admin synchronously ────────────────────────────────
+Console.WriteLine("[DB] Running migrations + core seed...");
+await MigrateAndSeedCoreAsync(app);
+Console.WriteLine("[DB] Core seed done.");
 
-// ── Seed data in background (non-critical, doesn't block startup) ─────────────
+// ── Test presence data in background (non-critical) ───────────────────────────
 _ = Task.Run(async () =>
 {
     await Task.Delay(1000);
-    Console.WriteLine("[Seed] Starting seeding...");
-    await SeedAsync(app);
-    Console.WriteLine("[Seed] Done.");
+    await SeedTestDataAsync(app);
 });
 
 app.Run();
 
-// ── Seed helper ───────────────────────────────────────────────────────────────
-static async Task MigrateAsync(WebApplication app)
+// ── Migrate + create extra tables + seed roles + admin ────────────────────────
+static async Task MigrateAndSeedCoreAsync(WebApplication app)
 {
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -90,25 +88,8 @@ static async Task MigrateAsync(WebApplication app)
     {
         await db.Database.MigrateAsync();
         Console.WriteLine("[DB] MigrateAsync complete.");
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"[DB] Migration FAILED: {ex.GetType().Name}: {ex.Message}");
-        if (ex.InnerException != null)
-            Console.WriteLine($"[DB] Inner: {ex.InnerException.Message}");
-        throw;
-    }
-}
 
-static async Task SeedAsync(WebApplication app)
-{
-    using var scope = app.Services.CreateScope();
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-
-    try
-    {
-
-        // Create exchange_requests table — column names match EF Core entity (snake_case via [Column] attributes)
+        // Extra tables not in EF migrations
         await db.Database.ExecuteSqlRawAsync(@"
             CREATE TABLE IF NOT EXISTS exchange_requests (
                 id            INT AUTO_INCREMENT PRIMARY KEY,
@@ -127,28 +108,6 @@ static async Task SeedAsync(WebApplication app)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
         ");
 
-        // Add missing columns if table existed without them (safe ALTER)
-        try
-        {
-            await db.Database.ExecuteSqlRawAsync(@"
-                ALTER TABLE exchange_requests
-                    MODIFY COLUMN Status      VARCHAR(20)  NOT NULL DEFAULT 'pending',
-                    MODIFY COLUMN Message     VARCHAR(500) NULL,
-                    MODIFY COLUMN created_at  DATETIME     NOT NULL,
-                    MODIFY COLUMN responded_at DATETIME    NULL;
-            ");
-        }
-        catch { /* already correct */ }
-
-        // ── CardEpc on users ──────────────────────────────────────────────────
-        try
-        {
-            await db.Database.ExecuteSqlRawAsync(
-                "ALTER TABLE `users` ADD COLUMN IF NOT EXISTS `CardEpc` varchar(128) NULL;");
-        }
-        catch { /* already there */ }
-
-        // ── user_presence table ───────────────────────────────────────────────
         await db.Database.ExecuteSqlRawAsync(@"
             CREATE TABLE IF NOT EXISTS `user_presence` (
                 `id`         INT AUTO_INCREMENT PRIMARY KEY,
@@ -164,7 +123,7 @@ static async Task SeedAsync(WebApplication app)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
         ");
 
-        // Seed user roles (Roles table)
+        // Seed roles
         if (!await db.Roles.AnyAsync())
         {
             db.Roles.AddRange(
@@ -172,54 +131,13 @@ static async Task SeedAsync(WebApplication app)
                 new UserRole { Name = "User"  }
             );
             await db.SaveChangesAsync();
+            Console.WriteLine("[Seed] Roles created.");
         }
 
-        // ── Seed test presence data (only if table is empty) ─────────────────
-        var presenceCount = await db.UserPresences.CountAsync();
-        if (presenceCount == 0)
-        {
-            var allUsers = await db.users.ToListAsync();
-            var now = DateTime.UtcNow;
-            // 5 workdays back: IN at ~8h, OUT at ~17h with small variations
-            var schedule = new[]
-            {
-                (daysBack: 5, inH: 8,  inM: 00, outH: 17, outM: 00),
-                (daysBack: 4, inH: 8,  inM: 30, outH: 16, outM: 45),
-                (daysBack: 3, inH: 9,  inM: 05, outH: 17, outM: 30),
-                (daysBack: 2, inH: 7,  inM: 50, outH: 18, outM: 10),
-                (daysBack: 1, inH: 8,  inM: 15, outH: 17, outM: 20),
-            };
-            foreach (var user in allUsers)
-            {
-                foreach (var s in schedule)
-                {
-                    var day = now.Date.AddDays(-s.daysBack);
-                    db.UserPresences.Add(new UserPresence
-                    {
-                        UserId    = user.id,
-                        Type      = "IN",
-                        ScannedAt = day.AddHours(s.inH).AddMinutes(s.inM),
-                    });
-                    db.UserPresences.Add(new UserPresence
-                    {
-                        UserId    = user.id,
-                        Type      = "OUT",
-                        ScannedAt = day.AddHours(s.outH).AddMinutes(s.outM),
-                    });
-                }
-            }
-            if (allUsers.Count > 0)
-            {
-                await db.SaveChangesAsync();
-                Console.WriteLine($"[Seed] Presence test data created for {allUsers.Count} users.");
-            }
-        }
-
-        // Seed default admin user if no admin exists
+        // Seed admin user
         var adminRole = await db.Roles.FirstOrDefaultAsync(r => r.Name == "Admin");
         if (adminRole != null && !await db.users.AnyAsync(u => u.RoleId == adminRole.id))
         {
-            // Generate unique CardID for admin
             var rng    = new Random();
             var cardId = "000001";
             for (int i = 0; i < 30 && await db.users.AnyAsync(u => u.CardID == cardId); i++)
@@ -235,14 +153,54 @@ static async Task SeedAsync(WebApplication app)
                 RoleId   = adminRole.id,
             });
             await db.SaveChangesAsync();
-            Console.WriteLine($"[Seed] Admin user created — email: admin@signalko.si, password: admin123, card: {cardId}");
+            Console.WriteLine("[Seed] Admin created — email: admin@signalko.si, password: admin123");
         }
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"[Seed] ERROR: {ex.GetType().Name}: {ex.Message}");
-        Console.WriteLine($"[Seed] StackTrace: {ex.StackTrace}");
+        Console.WriteLine($"[DB] FAILED: {ex.GetType().Name}: {ex.Message}");
         if (ex.InnerException != null)
-            Console.WriteLine($"[Seed] Inner: {ex.InnerException.Message}");
+            Console.WriteLine($"[DB] Inner: {ex.InnerException.Message}");
+        throw;
+    }
+}
+
+// ── Seed test presence data (background, non-critical) ────────────────────────
+static async Task SeedTestDataAsync(WebApplication app)
+{
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    try
+    {
+        var presenceCount = await db.UserPresences.CountAsync();
+        if (presenceCount == 0)
+        {
+            var allUsers = await db.users.ToListAsync();
+            var now = DateTime.UtcNow;
+            var schedule = new[]
+            {
+                (daysBack: 5, inH: 8,  inM: 00, outH: 17, outM: 00),
+                (daysBack: 4, inH: 8,  inM: 30, outH: 16, outM: 45),
+                (daysBack: 3, inH: 9,  inM: 05, outH: 17, outM: 30),
+                (daysBack: 2, inH: 7,  inM: 50, outH: 18, outM: 10),
+                (daysBack: 1, inH: 8,  inM: 15, outH: 17, outM: 20),
+            };
+            foreach (var user in allUsers)
+                foreach (var s in schedule)
+                {
+                    var day = now.Date.AddDays(-s.daysBack);
+                    db.UserPresences.Add(new UserPresence { UserId = user.id, Type = "IN",  ScannedAt = day.AddHours(s.inH).AddMinutes(s.inM) });
+                    db.UserPresences.Add(new UserPresence { UserId = user.id, Type = "OUT", ScannedAt = day.AddHours(s.outH).AddMinutes(s.outM) });
+                }
+            if (allUsers.Count > 0)
+            {
+                await db.SaveChangesAsync();
+                Console.WriteLine($"[Seed] Presence test data created for {allUsers.Count} users.");
+            }
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[Seed] Test data warning: {ex.Message}");
     }
 }
