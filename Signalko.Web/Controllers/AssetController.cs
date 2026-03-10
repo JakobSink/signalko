@@ -387,19 +387,41 @@ public class AssetController : ControllerBase
         hdr.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
     }
 
-    // ── Admin check: parse userId from JWT sub claim, look up role in DB ─────
+    // ── Admin check: JWT claims → DB by userId → DB by email ────────────────
     private async Task<bool> IsAdminAsync()
     {
+        // 1) JWT role claim
+        var role = User.FindFirst("role")?.Value
+                ?? User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+        if (role == "Admin") return true;
+
+        // 2) JWT roleId claim
+        var rid = User.FindFirst("roleId")?.Value;
+        if (rid == "1") return true;
+
+        // 3) DB lookup by userId
         var sub = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
                ?? User.FindFirst("sub")?.Value;
-        if (!int.TryParse(sub, out var userId)) return false;
+        if (int.TryParse(sub, out var userId))
+        {
+            var byId = await _db.users.AsNoTracking()
+                .Include(u => u.Role)
+                .FirstOrDefaultAsync(u => u.id == userId);
+            if (byId?.Role?.Name == "Admin") return true;
+        }
 
-        var user = await _db.users
-            .AsNoTracking()
-            .Include(u => u.Role)
-            .FirstOrDefaultAsync(u => u.id == userId);
+        // 4) DB lookup by email — handles DB resets where userId changed
+        var email = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value
+                 ?? User.FindFirst("email")?.Value;
+        if (!string.IsNullOrEmpty(email))
+        {
+            var byEmail = await _db.users.AsNoTracking()
+                .Include(u => u.Role)
+                .FirstOrDefaultAsync(u => u.Email == email);
+            if (byEmail?.Role?.Name == "Admin") return true;
+        }
 
-        return user?.Role?.Name == "Admin";
+        return false;
     }
 
 }
