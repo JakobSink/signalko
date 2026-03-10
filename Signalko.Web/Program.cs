@@ -8,16 +8,18 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var cs = builder.Configuration.GetConnectionString("Default")!;
+var cs = builder.Configuration.GetConnectionString("Default")
+    ?? throw new InvalidOperationException("ConnectionStrings:Default is not set.");
 builder.Services.AddDbContext<AppDbContext>(opt =>
 {
-    opt.UseMySql(cs, ServerVersion.AutoDetect(cs),
+    opt.UseMySql(cs, new MySqlServerVersion(new Version(8, 0, 36)),
         my => my.MigrationsAssembly("Signalko.Infrastructure"));
 });
 
 builder.Services.AddScoped<JwtTokenService>();
 
-var jwtKey = builder.Configuration["Jwt:Key"]!;
+var jwtKey = builder.Configuration["Jwt:Key"]
+    ?? "REPLACE_WITH_STRONG_SECRET_MIN_32_CHARS_DEFAULT";
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(opt =>
