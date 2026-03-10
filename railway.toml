@@ -2,7 +2,7 @@
 builder = "nixpacks"
 
 [deploy]
-startCommand = "dotnet Signalko.Web.dll"
-healthcheckPath = "/health"
+startCommand = "dotnet /app/publish/Signalko.Web.dll"
+healthcheckPath = "/api/Health"
 healthcheckTimeout = 30
 restartPolicyType = "on_failure"
