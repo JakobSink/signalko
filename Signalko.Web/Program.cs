@@ -82,6 +82,9 @@ static async Task SeedAsync(WebApplication app)
 
     try
     {
+        // Run EF Core migrations (creates all base tables: users, zones, antennas, etc.)
+        await db.Database.MigrateAsync();
+
         // Create exchange_requests table — column names match EF Core entity (snake_case via [Column] attributes)
         await db.Database.ExecuteSqlRawAsync(@"
             CREATE TABLE IF NOT EXISTS exchange_requests (
