@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="sl">
+<head>
+<meta charset="utf-8"/>
+<title>Signalko · RFID Tagi</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/css/sk.css"/>
+<style>
+.tags-layout{display:grid;grid-template-columns:1fr 320px;gap:18px;align-items:start;}
+.toolbar{display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap;}
+.filter-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
+.filter-input{
+  background:var(--surface);border:1px solid var(--border);border-radius:7px;
+  padding:7px 10px;font-size:11px;color:var(--txt);outline:none;
+  font-family:'JetBrains Mono',monospace;transition:border .13s;
+}
+.filter-input:focus{border-color:var(--acc);}
+.filter-input::placeholder{color:var(--mut);}
+
+/* Table */
+.table-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--border);}
+table.tag-table{width:100%;border-collapse:collapse;font-size:11px;}
+table.tag-table th{
+  background:var(--up);color:var(--sub);font-weight:600;text-align:left;
+  padding:9px 12px;border-bottom:1px solid var(--border);white-space:nowrap;
+}
+table.tag-table td{
+  padding:9px 12px;border-bottom:1px solid var(--border);color:var(--txt);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px;
+}
+table.tag-table tbody tr:last-child td{border-bottom:none;}
+table.tag-table tbody tr{cursor:pointer;transition:background .1s;}
+table.tag-table tbody tr:hover td{background:var(--up);}
+table.tag-table tbody tr.active-row td{background:var(--high);border-left:2px solid var(--acc);}
+.tag-epc{font-family:'JetBrains Mono',monospace;color:var(--txt);}
+
+/* Pager */
+.pager-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;flex-wrap:wrap;}
+.pager{display:flex;gap:4px;}
+.pg-btn{
+  background:var(--surface);border:1px solid var(--border);border-radius:6px;
+  padding:5px 10px;font-size:11px;color:var(--txt);cursor:pointer;transition:background .1s;
+  font-family:'JetBrains Mono',monospace;
+}
+.pg-btn:hover{background:var(--up);}
+.pg-btn.active{background:var(--acc);border-color:var(--acc);color:#fff;}
+.pg-btn:disabled{opacity:.4;cursor:not-allowed;}
+.page-size-sel{
+  background:var(--surface);border:1px solid var(--border);border-radius:6px;
+  padding:5px 8px;font-size:11px;color:var(--txt);
+  font-family:'JetBrains Mono',monospace;
+}
+
+/* Right panel */
+.detail-panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;position:sticky;top:20px;}
+.detail-head{padding:14px 16px;border-bottom:1px solid var(--border);}
+.detail-head-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:3px;}
+.detail-head-sub{font-size:10px;color:var(--mut);}
+.detail-body{padding:14px 16px;max-height:70vh;overflow-y:auto;}
+.hist-row{padding:8px 0;border-bottom:1px solid var(--border);font-size:11px;}
+.hist-row:last-child{border-bottom:none;}
+.hist-time{color:var(--mut);margin-bottom:3px;}
+.hist-info{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+
+/* State */
+.state-empty{padding:24px;text-align:center;color:var(--mut);font-size:11px;}
+.state-loading-sm{display:flex;align-items:center;gap:8px;padding:16px;color:var(--sub);font-size:11px;}
+</style>
+</head>
+<body>
+<div class="sk-layout">
+  <aside class="sk-sidebar-col" id="sidebarHost"></aside>
+
+  <main class="sk-main">
+    <div class="sk-page-title">RFID Tagi</div>
+    <div class="sk-page-sub">Vsa branja in zgodovina</div>
+
+    <div class="toolbar">
+      <button class="sk-btn sk-btn-acc" id="btnExport" onclick="exportCsv()">↓ Izvozi CSV</button>
+      <button class="sk-btn" id="btnRefresh" onclick="loadPage(true)">↺ Osveži</button>
+      <button class="sk-btn" onclick="clearFilters()">✕ Počisti filtre</button>
+      <span style="margin-left:auto;font-size:11px;color:var(--mut);">Skupaj: <span id="totalCount">—</span></span>
+    </div>
+
+    <div class="tags-layout">
+      <!-- Left: table -->
+      <div>
+        <div class="filter-row">
+          <input class="filter-input" id="f-epc"     placeholder="EPC…"        oninput="onFilter()"/>
+          <input class="filter-input" id="f-reader"  placeholder="Reader…"     oninput="onFilter()"/>
+          <input class="filter-input" id="f-zone"    placeholder="Cona…"       oninput="onFilter()"/>
+          <input class="filter-input" id="f-antenna" placeholder="Antena…"     oninput="onFilter()"/>
+          <input class="filter-input" id="f-count"   placeholder="Min branj…"  type="number" oninput="onFilter()"/>
+        </div>
+
+        <div class="table-wrap">
+          <table class="tag-table">
+            <thead>
+              <tr>
+                <th>EPC</th>
+                <th>ASCII</th>
+                <th>Reader</th>
+                <th>Cona</th>
+                <th>Antena</th>
+                <th>Branj</th>
+              </tr>
+            </thead>
+            <tbody id="tagTableBody">
+              <tr><td colspan="6"><div class="state-loading-sm"><div class="sk-spin"></div>Nalaganje…</div></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="pager-bar">
+          <div style="font-size:11px;color:var(--mut);">Stran <span id="pageInfo">1</span></div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <div class="pager" id="pager"></div>
+            <select class="page-size-sel" id="pageSize" onchange="onPageSizeChange()">
+              <option>10</option><option>20</option><option selected>50</option><option>100</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: detail panel -->
+      <div class="detail-panel">
+        <div class="detail-head">
+          <div class="detail-head-title" id="panelEpc">Izberi tag…</div>
+          <div class="detail-head-sub" id="panelAscii">Klikni vrstico v tabeli</div>
+        </div>
+        <div class="detail-body" id="panelBody">
+          <div class="state-empty">Ni izbranega taga.</div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="/css/sk.js"></script>
+<script>
+const state = {
+  page: 1, pageSize: 50,
+  filters: { epc:'', reader:'', zone:'', antenna:'' },
+  clientAscii: '', clientMinCount: '',
+};
+let allItems = [];
+let selectedEpc = null;
+let debTimer;
+
+function hexToAscii(hex) {
+  if (!hex) return '';
+  let out = '';
+  for (let i = 0; i < hex.length; i += 2) {
+    const n = parseInt(hex.substr(i, 2), 16);
+    if (!isFinite(n) || n === 0) continue;
+    if (n >= 32 && n <= 126) out += String.fromCharCode(n);
+  }
+  return out;
+}
+
+function buildQuery() {
+  const p = new URLSearchParams();
+  p.set('page', state.page);
+  p.set('pageSize', state.pageSize);
+  const f = state.filters;
+  for (const k of Object.keys(f)) {
+    if (f[k]) p.set(k, f[k]);
+  }
+  return p.toString();
+}
+
+async function loadPage(keepSel = true) {
+  document.getElementById('tagTableBody').innerHTML =
+    '<tr><td colspan="6"><div class="state-loading-sm"><div class="sk-spin"></div>Nalaganje…</div></td></tr>';
+
+  const r = await skGet(`/api/Tag/grouped-table?${buildQuery()}`);
+  if (!r.ok || !r.data) {
+    document.getElementById('tagTableBody').innerHTML =
+      '<tr><td colspan="6"><div class="state-empty">Napaka pri nalaganju.</div></td></tr>';
+    return;
+  }
+
+  allItems = (r.data.items || []).map(x => ({ ...x, _ascii: x.epcAscii || hexToAscii(x.epc) }));
+  let visible = allItems;
+
+  const qa = (state.clientAscii || '').toLowerCase();
+  if (qa) visible = visible.filter(row => (row._ascii||'').toLowerCase().includes(qa));
+  const mc = parseInt(state.clientMinCount, 10);
+  if (!isNaN(mc)) visible = visible.filter(row => (row.totalReads||0) >= mc);
+
+  document.getElementById('totalCount').textContent = r.data.total ?? 0;
+  renderTable(visible, keepSel);
+  renderPager(r.data.total, r.data.page, r.data.pageSize);
+}
+
+function renderTable(rows, keepSel) {
+  const tbody = document.getElementById('tagTableBody');
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="6"><div class="state-empty">Ni tagonov.</div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = '';
+  rows.forEach(row => {
+    const tr = document.createElement('tr');
+    tr.dataset.epc = row.epc || '';
+    if (keepSel && selectedEpc && row.epc === selectedEpc) tr.classList.add('active-row');
+
+    tr.innerHTML = `
+      <td class="tag-epc" title="${row.epc||''}">${row.epc||'—'}</td>
+      <td title="${row._ascii||''}">${row._ascii||'—'}</td>
+      <td>${row.reader||'—'}</td>
+      <td>${row.zone||'—'}</td>
+      <td>${row.antenna||'—'}</td>
+      <td style="color:var(--acc);">${row.totalReads??'—'}</td>`;
+
+    tr.addEventListener('click', () => selectTag(row.epc, row._ascii));
+    tbody.appendChild(tr);
+  });
+}
+
+function renderPager(total, page, pageSize) {
+  const pages = Math.max(1, Math.ceil(total / pageSize));
+  document.getElementById('pageInfo').textContent = `${page} / ${pages}`;
+  const pager = document.getElementById('pager');
+  pager.innerHTML = '';
+
+  const add = (label, p, active, disabled) => {
+    const btn = document.createElement('button');
+    btn.className = 'pg-btn' + (active?' active':'');
+    btn.disabled = disabled;
+    btn.textContent = label;
+    btn.onclick = () => { state.page = p; loadPage(true); };
+    pager.appendChild(btn);
+  };
+
+  add('«', Math.max(1, page-1), false, page===1);
+  const w = 2, s = Math.max(1, page-w), e = Math.min(pages, page+w);
+  for (let i = s; i <= e; i++) add(String(i), i, i===page, false);
+  add('»', Math.min(pages, page+1), false, page===pages);
+}
+
+async function selectTag(epc, ascii) {
+  selectedEpc = epc;
+  document.querySelectorAll('#tagTableBody tr').forEach(tr => {
+    tr.classList.toggle('active-row', tr.dataset.epc === epc);
+  });
+  document.getElementById('panelEpc').textContent = epc || '—';
+  document.getElementById('panelAscii').textContent = ascii || '—';
+  document.getElementById('panelBody').innerHTML =
+    '<div class="state-loading-sm"><div class="sk-spin"></div>Nalaganje…</div>';
+
+  const r = await skGet(`/api/Tag/by-epc/details/${encodeURIComponent(epc)}?take=200`);
+  const body = document.getElementById('panelBody');
+  if (!r.ok || !r.data || !r.data.length) {
+    body.innerHTML = '<div class="state-empty">Ni zgodovine.</div>';
+    return;
+  }
+
+  body.innerHTML = r.data.map(t => {
+    const rssi = t.rssi ?? t.RSSI;
+    const rssiColor = rssi == null ? 'var(--mut)'
+      : rssi > -70 ? 'var(--grn)' : rssi > -85 ? '#fbbf24' : 'var(--red)';
+    return `<div class="hist-row">
+      <div class="hist-time">${t.time ? new Date(t.time).toLocaleString('sl-SI') : '—'}</div>
+      <div class="hist-info">
+        <span style="color:var(--sub);">${t.zone||t.hostname||'—'}</span>
+        ${rssi != null ? `<span class="sk-badge" style="color:${rssiColor};border-color:${rssiColor}40;background:${rssiColor}15;">${rssi} dBm</span>` : ''}
+        ${t.antenna ? `<span style="color:var(--mut);font-size:10px;">ant ${t.antenna}</span>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function onFilter() {
+  clearTimeout(debTimer);
+  debTimer = setTimeout(() => {
+    state.page = 1;
+    state.filters.epc     = document.getElementById('f-epc').value;
+    state.filters.reader  = document.getElementById('f-reader').value;
+    state.filters.zone    = document.getElementById('f-zone').value;
+    state.filters.antenna = document.getElementById('f-antenna').value;
+    state.clientMinCount  = document.getElementById('f-count').value;
+    loadPage(false);
+  }, 300);
+}
+
+function onPageSizeChange() {
+  state.pageSize = parseInt(document.getElementById('pageSize').value, 10) || 50;
+  state.page = 1;
+  loadPage();
+}
+
+function clearFilters() {
+  ['f-epc','f-reader','f-zone','f-antenna','f-count'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  state.page = 1;
+  state.clientAscii = '';
+  state.clientMinCount = '';
+  state.filters = { epc:'', reader:'', zone:'', antenna:'' };
+  selectedEpc = null;
+  loadPage(false);
+}
+
+function exportCsv() {
+  if (!allItems.length) { skToast('Ni podatkov za izvoz.', 'warning'); return; }
+  const header = ['EPC','ASCII','Reader','Cona','Antena','StBranj'];
+  const lines = [header.join(';')];
+  allItems.forEach(r => {
+    lines.push([
+      (r.epc||'').replaceAll(';',','),
+      (r._ascii||'').replaceAll(';',','),
+      (r.reader||'').replaceAll(';',','),
+      (r.zone||'').replaceAll(';',','),
+      r.antenna||'',
+      r.totalReads??''
+    ].join(';'));
+  });
+  const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = Object.assign(document.createElement('a'), { href: url, download: 'signalko_tags.csv' });
+  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+}
+
+loadPage();
+setInterval(() => loadPage(true), 8000);
+</script>
+</body>
+</html>

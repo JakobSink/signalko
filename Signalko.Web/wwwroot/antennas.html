@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="sl">
+<head>
+<meta charset="utf-8"/>
+<title>Signalko · Antene</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/css/sk.css"/>
+<style>
+/* ── Shared admin-page styles ─────────────────────────────── */
+.hint-bar{
+  background:var(--up);border:1px solid var(--border);border-radius:8px;
+  padding:10px 16px;font-size:11px;color:var(--sub);line-height:1.7;margin-bottom:18px;
+}
+.toolbar{display:flex;gap:10px;align-items:center;margin-bottom:18px;flex-wrap:wrap;}
+.search-box{
+  background:var(--surface);border:1px solid var(--border);border-radius:8px;
+  padding:8px 12px;font-size:12px;color:var(--txt);outline:none;
+  font-family:'JetBrains Mono',monospace;transition:border .13s;flex:1;min-width:180px;
+}
+.search-box:focus{border-color:var(--acc);}
+.search-box::placeholder{color:var(--mut);}
+.filter-sel{
+  background:var(--surface);border:1px solid var(--border);border-radius:8px;
+  padding:8px 10px;font-size:12px;color:var(--txt);font-family:'JetBrains Mono',monospace;
+}
+.ic-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px;}
+.ic-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  overflow:hidden;transition:border-color .13s,transform .13s;cursor:pointer;
+}
+.ic-card:hover{border-color:var(--acc);transform:translateY(-2px);}
+.ic-head{
+  display:flex;align-items:flex-start;justify-content:space-between;
+  padding:14px 16px 12px;border-bottom:1px solid var(--border);gap:10px;
+}
+.ic-icon{
+  width:36px;height:36px;border-radius:9px;background:var(--accD);
+  display:flex;align-items:center;justify-content:center;
+  font-size:15px;color:var(--acc);flex-shrink:0;
+}
+.ic-title-wrap{flex:1;min-width:0;}
+.ic-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ic-sub{font-size:10px;color:var(--mut);margin-top:2px;font-family:'JetBrains Mono',monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ic-kv{padding:10px 16px;display:grid;gap:0;}
+.ic-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border);font-size:11px;}
+.ic-row:last-child{border-bottom:none;}
+.ic-key{color:var(--sub);}
+.ic-val{color:var(--txt);font-family:'JetBrains Mono',monospace;font-size:10px;text-align:right;max-width:60%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ic-foot{display:flex;gap:8px;padding:10px 16px;border-top:1px solid var(--border);background:var(--up);}
+
+.modal-field{display:flex;flex-direction:column;gap:5px;margin-bottom:14px;}
+.modal-field label{font-size:9px;color:var(--mut);letter-spacing:1.5px;text-transform:uppercase;}
+.modal-field input,.modal-field select{
+  background:var(--up);border:1px solid var(--border);border-radius:8px;
+  padding:10px 12px;font-size:12px;color:var(--txt);outline:none;
+  font-family:'JetBrains Mono',monospace;transition:border .13s;
+}
+.modal-field input:focus,.modal-field select:focus{border-color:var(--acc);}
+.modal-field input::placeholder{color:var(--mut);}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:6px;}
+.role-item{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);}
+.role-item:last-child{border-bottom:none;}
+.state-empty{padding:40px;text-align:center;color:var(--mut);font-size:12px;}
+.state-loading{display:flex;align-items:center;justify-content:center;gap:10px;padding:40px;color:var(--sub);font-size:12px;}
+</style>
+</head>
+<body>
+<div class="sk-layout">
+  <aside class="sk-sidebar-col" id="sidebarHost"></aside>
+  <main class="sk-main">
+
+    <div class="sk-page-title">Antene</div>
+    <div class="sk-page-sub">Porti, cone in vloge</div>
+
+    <div class="hint-bar">
+      Antena je fizični port na čitalcu. Vsaka antena je dodeljena <strong>coni</strong> (lokaciji) in ima <strong>vlogo</strong>
+      (npr. <code>LOAN</code> = izposojevalna točka, <code>EXIT</code> = izhodna). Za delovanje izposoje mora vsaj ena antena imeti vlogo <strong>LOAN</strong>.
+      Klikni <strong>✎ Uredi</strong> za spremembo ali <strong>+ Dodaj anteno</strong> za novo.
+    </div>
+
+    <div class="toolbar">
+      <input class="search-box" id="searchInput" placeholder="Išči (reader, cona, vloga, port)…" oninput="applyFilters()"/>
+      <select class="filter-sel" id="filterReader" onchange="applyFilters()">
+        <option value="">Vsi čitalci</option>
+      </select>
+      <button class="sk-btn sk-btn-acc" onclick="openEditor(null)">+ Dodaj anteno</button>
+      <button class="sk-btn" id="rolesBtn">⚙ Vloge</button>
+      <button class="sk-btn" id="refreshBtn" onclick="init()">↺ Osveži</button>
+    </div>
+
+    <div id="gridHost">
+      <div class="state-loading"><div class="sk-spin"></div>Nalaganje…</div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Editor modal -->
+<div class="sk-modal-bg" id="editorModal" onclick="if(event.target===this)skModalClose('editorModal')">
+  <div class="sk-modal" style="max-width:420px;">
+    <div class="sk-modal-head">
+      <div class="sk-modal-title" id="editorTitle">Antena</div>
+      <button class="sk-modal-close" onclick="skModalClose('editorModal')">✕</button>
+    </div>
+    <div class="sk-modal-content">
+    <input type="hidden" id="e-id"/>
+    <div class="modal-field"><label>Čitalec *</label><select id="e-readerId"></select></div>
+    <div class="modal-field"><label>Port *</label><input id="e-port" type="number" min="1" max="32" placeholder="npr. 1"/></div>
+    <div class="modal-field"><label>Cona *</label><select id="e-zoneId"></select></div>
+    <div class="modal-field"><label>Vloga *</label><select id="e-roleId"></select></div>
+    <div class="modal-actions">
+      <button class="sk-btn" onclick="skModalClose('editorModal')">Prekliči</button>
+      <button class="sk-btn sk-btn-acc" id="editorSaveBtn" onclick="saveEditor()">Shrani</button>
+    </div>
+    </div>
+  </div>
+</div>
+
+<!-- Roles modal -->
+<div class="sk-modal-bg" id="rolesModal" onclick="if(event.target===this)skModalClose('rolesModal')">
+  <div class="sk-modal" style="max-width:480px;">
+    <div class="sk-modal-head">
+      <div class="sk-modal-title">Vloge za antene</div>
+      <button class="sk-modal-close" onclick="skModalClose('rolesModal')">✕</button>
+    </div>
+    <div class="sk-modal-content">
+    <div id="rolesListHost" style="margin-bottom:18px;min-height:40px;"></div>
+    <div style="border-top:1px solid var(--border);padding-top:16px;">
+      <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:10px;">Dodaj novo vlogo</div>
+      <div class="modal-field"><label>Ime vloge</label><input id="newRoleName" placeholder="npr. LOAN, EXIT, ENTRY"/></div>
+      <div class="modal-actions">
+        <button class="sk-btn sk-btn-acc" id="addRoleBtn" onclick="addRole()">Dodaj</button>
+      </div>
+    </div>
+    </div>
+  </div>
+</div>
+
+<!-- Delete confirm -->
+<div class="sk-modal-bg" id="deleteModal" onclick="if(event.target===this)skModalClose('deleteModal')">
+  <div class="sk-modal" style="max-width:380px;">
+    <div class="sk-modal-head">
+      <div class="sk-modal-title">Izbriši anteno</div>
+      <button class="sk-modal-close" onclick="skModalClose('deleteModal')">✕</button>
+    </div>
+    <div class="sk-modal-content">
+    <p style="color:var(--sub);font-size:12px;margin-bottom:20px;line-height:1.6;">
+      Ali res želiš izbrisati anteno <strong id="deleteAntLabel" style="color:var(--txt);"></strong>?
+    </p>
+    <div class="modal-actions">
+      <button class="sk-btn" onclick="skModalClose('deleteModal')">Prekliči</button>
+      <button class="sk-btn sk-btn-red" id="deleteConfirmBtn" onclick="executeDelete()">Izbriši</button>
+    </div>
+    </div>
+  </div>
+</div>
+
+<script src="/css/sk.js"></script>
+<script>
+skRequireAdmin();
+let antennas = [], readers = [], zones = [], roles = [], filtered = [];
+let pendingDelete = null;
+
+async function init() {
+  document.getElementById('gridHost').innerHTML = '<div class="state-loading"><div class="sk-spin"></div>Nalaganje…</div>';
+  const [ra, rr, rz, rl] = await Promise.all([
+    skGet('/api/Antenna'), skGet('/api/Reader'), skGet('/api/Zone'), skGet('/api/Role')
+  ]);
+  antennas = ra.ok && ra.data ? ra.data : [];
+  readers  = rr.ok && rr.data ? rr.data : [];
+  zones    = rz.ok && rz.data ? rz.data : [];
+  roles    = rl.ok && rl.data ? rl.data : [];
+  populateDropdowns();
+  applyFilters();
+}
+
+function populateDropdowns() {
+  const fsel = document.getElementById('filterReader');
+  fsel.innerHTML = '<option value="">Vsi čitalci</option>';
+  readers.forEach(r => { const o=document.createElement('option'); o.value=r.id; o.textContent=r.name||r.ip||`#${r.id}`; fsel.appendChild(o); });
+
+  const rsel = document.getElementById('e-readerId');
+  rsel.innerHTML = '<option value="">Izberi čitalec…</option>';
+  readers.forEach(r => { const o=document.createElement('option'); o.value=r.id; o.textContent=r.name||r.ip||`#${r.id}`; rsel.appendChild(o); });
+
+  const zsel = document.getElementById('e-zoneId');
+  zsel.innerHTML = '<option value="">Izberi cono…</option>';
+  zones.forEach(z => { const o=document.createElement('option'); o.value=z.id; o.textContent=z.name||`#${z.id}`; zsel.appendChild(o); });
+
+  renderRolesDropdown();
+}
+
+function renderRolesDropdown() {
+  const rsel = document.getElementById('e-roleId');
+  const cur = rsel.value;
+  rsel.innerHTML = '<option value="">Izberi vlogo…</option>';
+  roles.forEach(r => { const o=document.createElement('option'); o.value=r.id; o.textContent=`${r.name} (ID ${r.id})`; rsel.appendChild(o); });
+  if (cur) rsel.value = cur;
+}
+
+function renderRolesList() {
+  const host = document.getElementById('rolesListHost');
+  if (!roles.length) { host.innerHTML = '<div style="color:var(--mut);font-size:12px;">Ni definiranih vlog.</div>'; return; }
+  host.innerHTML = roles.map(r => `
+    <div class="role-item">
+      <div>
+        <div style="font-size:12px;color:var(--txt);">${escHtml(r.name)}</div>
+        <div style="font-size:10px;color:var(--mut);">ID: ${r.id}</div>
+      </div>
+      <button class="sk-btn sk-btn-red" style="font-size:10px;padding:4px 10px;" onclick="deleteRole(${r.id},'${escAttr(r.name)}')">✕</button>
+    </div>`).join('');
+}
+
+function applyFilters() {
+  const q  = (document.getElementById('searchInput').value || '').toLowerCase();
+  const rf = document.getElementById('filterReader').value;
+  filtered = antennas.filter(a => {
+    if (rf && String(a.readerId) !== String(rf)) return false;
+    if (q) {
+      const rdr = readers.find(r => String(r.id) === String(a.readerId));
+      const zn  = zones.find(z => String(z.id) === String(a.zoneId));
+      const rl  = roles.find(r => String(r.id) === String(a.roleID));
+      const hay = `${rdr?.name||''} ${rdr?.ip||''} ${zn?.name||''} ${rl?.name||''} ${a.port||''} ${a.roleName||''}`.toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+  renderGrid();
+}
+
+function renderGrid() {
+  const host = document.getElementById('gridHost');
+  if (!filtered.length) { host.innerHTML = '<div class="state-empty">Ni anten.</div>'; return; }
+  host.innerHTML = '<div class="ic-grid"></div>';
+  const grid = host.querySelector('.ic-grid');
+  filtered.forEach(a => {
+    const rdr  = readers.find(r => String(r.id) === String(a.readerId));
+    const zn   = zones.find(z => String(z.id) === String(a.zoneId));
+    const rl   = roles.find(r => String(r.id) === String(a.roleID));
+    const roleName = a.roleName || rl?.name || `Role ${a.roleID||'?'}`;
+    const card = document.createElement('div');
+    card.className = 'ic-card';
+    card.innerHTML = `
+      <div class="ic-head">
+        <div class="ic-icon">⊕</div>
+        <div class="ic-title-wrap">
+          <div class="ic-title">${escHtml(rdr?.name||`Reader #${a.readerId}`)} · Port ${a.port}</div>
+          <div class="ic-sub">${escHtml(rdr?.ip||'—')}</div>
+        </div>
+        <span class="sk-badge sk-badge-acc">${escHtml(roleName)}</span>
+      </div>
+      <div class="ic-kv">
+        <div class="ic-row"><span class="ic-key">Cona</span><span class="ic-val">${escHtml(zn?.name||a.zoneName||`#${a.zoneId||'?'}`)}</span></div>
+        <div class="ic-row"><span class="ic-key">Čitalec ID</span><span class="ic-val">${a.readerId}</span></div>
+        <div class="ic-row"><span class="ic-key">Antena ID</span><span class="ic-val">${a.id}</span></div>
+      </div>
+      <div class="ic-foot">
+        <button class="sk-btn sk-btn-sm" data-act="edit">✎ Uredi</button>
+        <button class="sk-btn sk-btn-sm sk-btn-red" data-act="delete">✕ Izbriši</button>
+      </div>`;
+    card.querySelector('[data-act="edit"]').addEventListener('click', e => { e.stopPropagation(); openEditor(a); });
+    card.querySelector('[data-act="delete"]').addEventListener('click', e => { e.stopPropagation(); confirmDelete(a); });
+    card.addEventListener('click', () => openEditor(a));
+    grid.appendChild(card);
+  });
+}
+
+function openEditor(a) {
+  document.getElementById('e-id').value       = a?.id ?? '';
+  document.getElementById('e-readerId').value = a?.readerId ?? '';
+  document.getElementById('e-port').value     = a?.port ?? '';
+  document.getElementById('e-zoneId').value   = a?.zoneId ?? '';
+  document.getElementById('e-roleId').value   = a?.roleID ?? '';
+  document.getElementById('editorTitle').textContent = a ? 'Uredi anteno' : 'Dodaj anteno';
+  skModal('editorModal');
+}
+
+async function saveEditor() {
+  const btn = document.getElementById('editorSaveBtn');
+  const id  = document.getElementById('e-id').value ? +document.getElementById('e-id').value : null;
+  const ReaderId = +document.getElementById('e-readerId').value;
+  const Port     = +document.getElementById('e-port').value;
+  const ZoneId   = +document.getElementById('e-zoneId').value;
+  const RoleID   = +document.getElementById('e-roleId').value;
+  if (!ReaderId) { skToast('Čitalec je obvezen.', 'error'); return; }
+  if (!Port)     { skToast('Port je obvezen.', 'error'); return; }
+  if (!ZoneId)   { skToast('Cona je obvezna.', 'error'); return; }
+  if (!RoleID)   { skToast('Vloga je obvezna.', 'error'); return; }
+  skBtnLoading(btn, true, 'Shrani');
+  const r = id
+    ? await skPut(`/api/Antenna/${id}`, { ReaderId, Port, ZoneId, RoleID })
+    : await skPost('/api/Antenna', { ReaderId, Port, ZoneId, RoleID });
+  skBtnLoading(btn, false, 'Shrani');
+  if (!r.ok) { skToast(r.data?.message || `Napaka ${r.status}`, 'error'); return; }
+  skToast(id ? 'Antena posodobljena.' : 'Antena dodana.', 'success');
+  skModalClose('editorModal');
+  await init();
+}
+
+function confirmDelete(a) {
+  pendingDelete = a;
+  const rdr = readers.find(r => String(r.id) === String(a.readerId));
+  document.getElementById('deleteAntLabel').textContent = `${rdr?.name||`Reader #${a.readerId}`} · Port ${a.port}`;
+  skModal('deleteModal');
+}
+
+async function executeDelete() {
+  if (!pendingDelete) return;
+  const btn = document.getElementById('deleteConfirmBtn');
+  skBtnLoading(btn, true, 'Izbriši');
+  const r = await skDel(`/api/Antenna/${pendingDelete.id}`);
+  skBtnLoading(btn, false, 'Izbriši');
+  if (!r.ok) { skToast(r.data?.message || 'Napaka.', 'error'); return; }
+  skToast('Antena izbrisana.', 'success');
+  skModalClose('deleteModal');
+  pendingDelete = null;
+  await init();
+}
+
+async function addRole() {
+  const btn  = document.getElementById('addRoleBtn');
+  const name = document.getElementById('newRoleName').value.trim();
+  if (!name) { skToast('Ime vloge je obvezno.', 'error'); return; }
+  skBtnLoading(btn, true, 'Dodaj');
+  const r = await skPost('/api/Role', { name });
+  skBtnLoading(btn, false, 'Dodaj');
+  if (!r.ok) { skToast(r.data?.message || 'Napaka.', 'error'); return; }
+  skToast('Vloga dodana.', 'success');
+  document.getElementById('newRoleName').value = '';
+  const rl = await skGet('/api/Role');
+  roles = rl.ok && rl.data ? rl.data : roles;
+  renderRolesDropdown(); renderRolesList();
+}
+
+async function deleteRole(id, name) {
+  if (!confirm(`Izbriši vlogo "${name}"?`)) return;
+  const r = await skDel(`/api/Role/${id}`);
+  if (!r.ok) { skToast('Brisanje ni uspelo.', 'error'); return; }
+  skToast('Vloga izbrisana.', 'success');
+  const rl = await skGet('/api/Role');
+  roles = rl.ok && rl.data ? rl.data : roles;
+  renderRolesDropdown(); renderRolesList(); await init();
+}
+
+document.getElementById('rolesBtn').addEventListener('click', () => { renderRolesList(); skModal('rolesModal'); });
+
+function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function escAttr(s) { return String(s||'').replace(/'/g,"\\'").replace(/"/g,'&quot;'); }
+
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,44 @@
+## ── .NET build output ────────────────────────────────────────────
+bin/
+obj/
+*.user
+*.suo
+.vs/
+_ReSharper*/
+
+## ── Published output ──────────────────────────────────────────────
+publish/
+out/
+
+## ── Rider / JetBrains ─────────────────────────────────────────────
+.idea/
+*.DotSettings.user
+
+## ── VS Code ───────────────────────────────────────────────────────
+.vscode/
+
+## ── Secrets — NEVER commit real appsettings overrides ────────────
+appsettings.Production.json
+appsettings.Local.json
+secrets.json
+
+## ── User secrets ──────────────────────────────────────────────────
+**/secrets.json
+**/.secrets
+
+## ── Node (if any frontend tooling) ───────────────────────────────
+node_modules/
+npm-debug.log*
+
+## ── OS ────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+## ── Logs ──────────────────────────────────────────────────────────
+*.log
+logs/
+
+## ── EF Core migrations snapshot duplicates ───────────────────────
+# Keep Migrations/ folder but ignore temp files
+*.Designer.cs.bak

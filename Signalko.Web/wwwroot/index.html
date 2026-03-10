@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="sl">
+<head>
+<meta charset="utf-8"/>
+<title>Signalko · Pregled</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#090b0f;--surface:#10131a;--up:#161b25;--high:#1c2230;
+  --border:#1e2535;--acc:#4f8ef7;--accD:rgba(79,142,247,.09);
+  --grn:#34d399;--org:#fb923c;--red:#f87171;
+  --txt:#e8edf5;--sub:#8897b0;--mut:#4a5568;
+}
+html,body{background:var(--bg);color:var(--txt);font-family:'JetBrains Mono',monospace;font-size:13px;min-height:100vh;}
+::-webkit-scrollbar{width:4px;height:4px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes spin{to{transform:rotate(360deg)}}
+.pulse{animation:pulse 2s ease-in-out infinite;}
+.layout{display:grid;grid-template-columns:210px 1fr;min-height:100vh;}
+.sb-col{position:sticky;top:0;height:100vh;}
+.main{padding:28px 30px;}
+.page-title{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;letter-spacing:-.5px;margin-bottom:2px;}
+.page-sub{font-size:11px;color:var(--mut);margin-bottom:24px;}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:26px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;}
+.stat-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.stat-dot{width:7px;height:7px;border-radius:50%;}
+.stat-val{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;line-height:1;}
+.stat-lbl{font-size:10px;color:var(--mut);margin-top:5px;}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:22px;}
+.panel-head{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+.panel-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;}
+.panel-dot{width:7px;height:7px;border-radius:50%;background:var(--grn);}
+.event-row{
+  display:grid;grid-template-columns:40px 1fr auto auto;gap:12px;align-items:center;
+  padding:11px 20px;border-bottom:1px solid var(--border);cursor:default;transition:background .1s;
+}
+.event-row:last-child{border-bottom:none;}
+.event-row:hover{background:var(--up);}
+.event-icon{
+  width:34px;height:34px;border-radius:8px;background:var(--high);
+  display:flex;align-items:center;justify-content:center;color:var(--sub);font-size:14px;
+}
+.badge{display:inline-flex;align-items:center;font-size:10px;font-weight:600;padding:2px 8px;border-radius:5px;border:1px solid;white-space:nowrap;}
+.modules{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;}
+.mod-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  padding:18px;text-decoration:none;color:var(--txt);transition:border-color .13s,transform .13s;
+}
+.mod-card:hover{border-color:var(--acc);transform:translateY(-2px);}
+.mod-icon{
+  width:40px;height:40px;border-radius:10px;background:var(--accD);
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;color:var(--acc);margin-bottom:12px;
+}
+.mod-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:4px;}
+.mod-desc{font-size:11px;color:var(--mut);}
+.spin{width:14px;height:14px;border:2px solid var(--border);border-top-color:var(--acc);border-radius:50%;animation:spin .55s linear infinite;display:inline-block;}
+.state-loading{display:flex;align-items:center;justify-content:center;gap:10px;padding:32px;color:var(--sub);font-size:12px;}
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sb-col" id="sidebarHost"></aside>
+
+  <main class="main">
+    <div class="page-title">Pregled</div>
+    <div class="page-sub" id="dateSub"></div>
+
+    <!-- Stats -->
+    <div class="stats">
+      <div class="stat-card">
+        <div class="stat-head">
+          <span style="color:var(--acc);font-size:18px;">▣</span>
+          <div class="stat-dot pulse" style="background:var(--acc);"></div>
+        </div>
+        <div class="stat-val" id="statAssets" style="color:var(--acc);">—</div>
+        <div class="stat-lbl">Skupaj sredstev</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-head">
+          <span style="color:var(--org);font-size:18px;">⇌</span>
+          <div class="stat-dot pulse" style="background:var(--org);"></div>
+        </div>
+        <div class="stat-val" id="statLoans" style="color:var(--org);">—</div>
+        <div class="stat-lbl">Aktivne izposoje</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-head">
+          <span style="color:var(--grn);font-size:18px;">◉</span>
+          <div class="stat-dot pulse" style="background:var(--grn);"></div>
+        </div>
+        <div class="stat-val" id="statReaders" style="color:var(--grn);">—</div>
+        <div class="stat-lbl">RFID čitalci</div>
+      </div>
+    </div>
+
+    <!-- Recent tags -->
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-dot pulse"></div>
+        <div class="panel-title">Zadnji RFID dogodki</div>
+        <div id="tagsLoading" class="spin" style="margin-left:6px;display:none;"></div>
+      </div>
+      <div id="tagsBody">
+        <div class="state-loading"><div class="spin"></div>Nalaganje…</div>
+      </div>
+    </div>
+
+    <!-- Quick nav -->
+    <div class="modules">
+      <a class="mod-card" href="/loans.html">
+        <div class="mod-icon">⇌</div>
+        <div class="mod-title">Izposoja</div>
+        <div class="mod-desc">Izposoja in vrnitev sredstev</div>
+      </a>
+      <a class="mod-card" href="/assets.html">
+        <div class="mod-icon">▣</div>
+        <div class="mod-title">Sredstva</div>
+        <div class="mod-desc">Katalog in RFID tagi</div>
+      </a>
+      <a class="mod-card" href="/tags.html">
+        <div class="mod-icon">◉</div>
+        <div class="mod-title">RFID Tagi</div>
+        <div class="mod-desc">Vsa branja in zgodovina</div>
+      </a>
+      <a class="mod-card" href="/readers.html">
+        <div class="mod-icon">⊡</div>
+        <div class="mod-title">Čitalci</div>
+        <div class="mod-desc">RFID bralniki in stanje</div>
+      </a>
+      <a class="mod-card" href="/antennas.html">
+        <div class="mod-icon">⊛</div>
+        <div class="mod-title">Antene</div>
+        <div class="mod-desc">Porti, cone in vloge</div>
+      </a>
+      <a class="mod-card" href="/zones.html">
+        <div class="mod-icon">⊞</div>
+        <div class="mod-title">Cone</div>
+        <div class="mod-desc">Fizične lokacije</div>
+      </a>
+    </div>
+  </main>
+</div>
+
+<script src="/css/sk.js"></script>
+<script>
+// Date
+document.getElementById('dateSub').textContent =
+  new Date().toLocaleDateString('sl-SI', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+
+// EPC → asset name cache
+let _assetMap = {}; // epc → name
+
+async function loadStats() {
+  const [assets, loans, readers] = await Promise.all([
+    skGet('/api/Asset'),
+    skGet('/api/Loan?active=true'),
+    skGet('/api/Reader'),
+  ]);
+  if (assets.ok)  {
+    document.getElementById('statAssets').textContent = (assets.data||[]).length;
+    // Build EPC map for RFID event enrichment
+    (assets.data||[]).forEach(a => {
+      const epc = a.Tag?.Epc || a.Tag?.epc || a.tag?.Epc || a.tag?.epc || a.epc || a.Epc;
+      if (epc) _assetMap[epc.toLowerCase()] = a.Name || a.name || `Sredstvo #${a.id||a.Id}`;
+    });
+  }
+  if (loans.ok)   document.getElementById('statLoans').textContent   = (loans.data||[]).length;
+  if (readers.ok) document.getElementById('statReaders').textContent = (readers.data||[]).length;
+}
+
+async function loadTags() {
+  const r = await skGet('/api/Tag/latest?take=15');
+  const body = document.getElementById('tagsBody');
+  if (!r.ok || !r.data?.length) {
+    body.innerHTML = `<div class="state-loading" style="color:var(--mut);">Čakam RFID branja…</div>`;
+    return;
+  }
+  body.innerHTML = r.data.map(t => {
+    const epc  = t.epc || t.Epc || '—';
+    const rssi = t.rssi ?? t.RSSI;
+    const rssiColor = rssi == null ? 'var(--mut)' : rssi > -70 ? 'var(--grn)' : rssi > -85 ? '#fbbf24' : 'var(--red)';
+    const assetName = _assetMap[epc.toLowerCase()];
+    const location  = t.zone || t.zoneName || t.hostname || t.Hostname || '—';
+    return `
+      <div class="event-row">
+        <div class="event-icon">◉</div>
+        <div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:12px;">
+            ${assetName ? `<span style="color:var(--txt);font-weight:600;">${assetName}</span>
+            <span style="color:var(--mut);font-size:10px;margin-left:6px;">${epc}</span>` : epc}
+          </div>
+          <div style="font-size:10px;color:var(--mut);">${location}</div>
+        </div>
+        <div style="font-size:10px;color:var(--mut);">
+          ${(t.time || t.lastTime) ? new Date(t.time || t.lastTime).toLocaleTimeString('sl-SI') : '—'}
+        </div>
+        ${rssi != null ? `<span class="badge" style="color:${rssiColor};border-color:${rssiColor}40;background:${rssiColor}15;">${rssi} dBm</span>` : '<span></span>'}
+      </div>`;
+  }).join('');
+}
+
+loadStats().then(loadTags);
+setInterval(loadTags, 10000);
+</script>
+</body>
+</html>

@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="sl">
+<head>
+<meta charset="utf-8"/>
+<title>Signalko · Prisotnost — Admin</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/css/sk.css"/>
+<style>
+/* ── Stats ────────────────────────────────────────────────────── */
+.stat-row { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:26px; }
+.sc {
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+  padding:16px 20px; display:flex; flex-direction:column; gap:5px;
+}
+.sc.si { border-left:3px solid var(--grn); }
+.sc.so { border-left:3px solid var(--red); }
+.sc.st { border-left:3px solid var(--acc); }
+.sl { font-size:9px; letter-spacing:1.8px; text-transform:uppercase; color:var(--mut); font-weight:600; }
+.sv { font-family:'Syne',sans-serif; font-size:26px; font-weight:800; color:var(--txt); line-height:1; }
+.ss { font-size:10px; color:var(--sub); }
+
+/* ── Section header ──────────────────────────────────────────── */
+.sechdr { display:flex; align-items:center; gap:10px; margin-bottom:14px; margin-top:4px; }
+.sectitle { font-family:'Syne',sans-serif; font-size:14px; font-weight:700; color:var(--txt); flex:1; }
+.secbadge { font-size:9px; font-weight:700; letter-spacing:1.2px; padding:3px 10px; border-radius:20px; background:rgba(52,211,153,.1); color:var(--grn); border:1px solid rgba(52,211,153,.2); }
+
+/* ── "Zdaj znotraj" grid ─────────────────────────────────────── */
+.pgrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(185px,1fr)); gap:10px; margin-bottom:26px; }
+.pcard {
+  background:var(--up); border:1px solid var(--border); border-left:3px solid var(--grn);
+  border-radius:var(--radius-sm); padding:13px 15px; display:flex; flex-direction:column; gap:5px;
+}
+.pcard:hover { background:var(--high); }
+.pcn { font-family:'Syne',sans-serif; font-size:12px; font-weight:700; color:var(--txt); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.pcc { font-size:10px; font-family:'JetBrains Mono',monospace; color:var(--acc); }
+.pcb { display:inline-flex; align-items:center; align-self:flex-start; font-size:9px; font-weight:700; letter-spacing:1px; text-transform:uppercase; padding:2px 8px; border-radius:20px; background:rgba(52,211,153,.1); color:var(--grn); border:1px solid rgba(52,211,153,.2); }
+.pcm { font-size:10px; color:var(--mut); }
+.pcz { font-size:10px; color:var(--sub); }
+
+/* ── Log table ───────────────────────────────────────────────── */
+.lwrap { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; }
+.fbar { display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; padding:14px 16px; border-bottom:1px solid var(--border); background:var(--up); }
+.ff { display:flex; flex-direction:column; gap:4px; }
+.ff label { font-size:9px; color:var(--mut); letter-spacing:1.4px; text-transform:uppercase; font-weight:600; }
+.ff select, .ff input {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius-sm); padding:7px 10px; font-size:11px; color:var(--txt);
+  outline:none; font-family:'JetBrains Mono',monospace; transition:border-color .13s;
+}
+.ff select:focus, .ff input:focus { border-color:var(--acc); }
+.ff input[type="date"] { min-width:125px; color-scheme:dark; }
+.ff-w input { min-width:175px; }
+
+.ltbl { width:100%; border-collapse:collapse; font-size:11.5px; }
+.ltbl th { font-size:9px; letter-spacing:1.4px; text-transform:uppercase; color:var(--mut); padding:10px 14px; text-align:left; border-bottom:1px solid var(--border); background:var(--up); font-weight:600; white-space:nowrap; }
+.ltbl td { padding:9px 14px; border-bottom:1px solid var(--border); color:var(--txt); vertical-align:middle; }
+.ltbl tr:last-child td { border-bottom:none; }
+.ltbl tbody tr:hover td { background:var(--up); }
+
+.bin  { display:inline-flex; padding:3px 12px; border-radius:20px; font-size:9px; font-weight:700; letter-spacing:.8px; text-transform:uppercase; background:rgba(52,211,153,.1); color:var(--grn); border:1px solid rgba(52,211,153,.2); white-space:nowrap; }
+.bout { display:inline-flex; padding:3px 12px; border-radius:20px; font-size:9px; font-weight:700; letter-spacing:.8px; text-transform:uppercase; background:rgba(248,113,113,.08); color:var(--red); border:1px solid rgba(248,113,113,.2); white-space:nowrap; }
+.cchip { display:inline-block; font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--acc); background:var(--accD); padding:1px 7px; border-radius:5px; border:1px solid rgba(79,142,247,.2); }
+
+.pbar { display:flex; align-items:center; gap:8px; padding:10px 14px; border-top:1px solid var(--border); background:var(--up); }
+.pi   { font-size:10px; color:var(--mut); margin-left:auto; }
+.stl  { text-align:center; padding:28px; color:var(--mut); font-size:11px; }
+</style>
+</head>
+<body>
+<div class="sk-layout">
+  <aside class="sk-sidebar-col" id="sidebarHost"></aside>
+  <main class="sk-main">
+
+    <div class="sk-page-title">Prisotnost — Nadzorna plošča</div>
+    <div class="sk-page-sub">Pregled prisotnosti vseh uporabnikov</div>
+
+    <!-- Stats -->
+    <div class="stat-row">
+      <div class="sc si"><div class="sl">Trenutno znotraj</div><div class="sv" id="sIn">—</div><div class="ss">aktivnih oseb</div></div>
+      <div class="sc so"><div class="sl">Skupaj zapisov</div><div class="sv" id="sTot">—</div><div class="ss">vsi IN + OUT</div></div>
+      <div class="sc st"><div class="sl">Aktivnih uporabnikov</div><div class="sv" id="sUsers">—</div><div class="ss">s prisotnostjo</div></div>
+    </div>
+
+    <!-- Zdaj znotraj -->
+    <div class="sechdr">
+      <div class="sectitle">Zdaj znotraj</div>
+      <span class="secbadge" id="inBadge">0 oseb</span>
+      <button class="sk-btn" onclick="loadCurrent()" style="padding:5px 10px;">↺</button>
+    </div>
+    <div class="pgrid" id="grid">
+      <div class="stl" style="grid-column:1/-1;">Nalaganje…</div>
+    </div>
+
+    <!-- Log -->
+    <div class="sechdr">
+      <div class="sectitle">Evidenca prisotnosti</div>
+      <button class="sk-btn" onclick="loadLog(1)">↺ Osveži</button>
+    </div>
+    <div class="lwrap">
+      <div class="fbar">
+        <div class="ff ff-w">
+          <label>Iskanje — ime / priimek</label>
+          <input id="fSearch" placeholder="npr. Janez Novak…" oninput="dbt()"/>
+        </div>
+        <div class="ff">
+          <label>Kartica ID</label>
+          <input id="fCard" placeholder="npr. 001234" style="min-width:110px;" oninput="dbt()"/>
+        </div>
+        <div class="ff">
+          <label>Tip</label>
+          <select id="fType" onchange="loadLog(1)" style="min-width:110px;">
+            <option value="">— vsi —</option>
+            <option value="IN">▲ Prihod (IN)</option>
+            <option value="OUT">▼ Odhod (OUT)</option>
+          </select>
+        </div>
+        <div class="ff">
+          <label>Od</label>
+          <input type="date" id="fFrom" onchange="loadLog(1)"/>
+        </div>
+        <div class="ff">
+          <label>Do</label>
+          <input type="date" id="fTo" onchange="loadLog(1)"/>
+        </div>
+        <button class="sk-btn" onclick="clearF()" style="align-self:flex-end;color:var(--mut);">✕ Počisti</button>
+      </div>
+
+      <table class="ltbl">
+        <thead>
+          <tr>
+            <th style="width:105px;">Tip</th>
+            <th>Ime in priimek</th>
+            <th>Kartica</th>
+            <th>Čas</th>
+            <th>Cona</th>
+          </tr>
+        </thead>
+        <tbody id="tbody">
+          <tr><td colspan="5" class="stl">Nalaganje…</td></tr>
+        </tbody>
+      </table>
+
+      <div class="pbar">
+        <button class="sk-btn" id="bPrev" onclick="loadLog(pg-1)" disabled>‹ Nazaj</button>
+        <button class="sk-btn" id="bNext" onclick="loadLog(pg+1)" disabled>Naprej ›</button>
+        <div class="pi" id="pi">—</div>
+      </div>
+    </div>
+
+  </main>
+</div>
+<script src="/css/sk.js"></script>
+<script>
+skRequireLogin();
+if (!skIsAdmin()) { location.replace('/presence.html'); }
+
+let pg = 1, dbTimer = null;
+
+function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function fmtDt(s){
+  if(!s) return '—';
+  const d=new Date(s);
+  return d.toLocaleDateString('sl-SI',{day:'2-digit',month:'2-digit',year:'numeric'})
+    +' '+d.toLocaleTimeString('sl-SI',{hour:'2-digit',minute:'2-digit'});
+}
+function dbt(){ clearTimeout(dbTimer); dbTimer=setTimeout(()=>loadLog(1),380); }
+
+/* ── "Zdaj znotraj" ───────────────────────────────────────────── */
+async function loadCurrent() {
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '<div class="stl" style="grid-column:1/-1;">Nalaganje…</div>';
+
+  const r = await skGet('/api/Presence/current');
+  if (!r.ok) {
+    grid.innerHTML = `<div class="stl" style="grid-column:1/-1;color:var(--red);">Napaka (${r.status}) — preverite prijavo.</div>`;
+    return;
+  }
+
+  const data = Array.isArray(r.data) ? r.data : [];
+  document.getElementById('sIn').textContent      = data.length;
+  document.getElementById('inBadge').textContent  = data.length + ' oseb';
+
+  if (data.length === 0) {
+    grid.innerHTML = '<div class="stl" style="grid-column:1/-1;">Nihče ni trenutno znotraj.</div>';
+    return;
+  }
+  grid.innerHTML = data.map(u => `
+    <div class="pcard">
+      <div class="pcn">${esc(((u.name||'')+' '+(u.surname||'')).trim()||'—')}</div>
+      ${u.cardId ? `<div class="pcc">🪪 ${esc(u.cardId)}</div>` : ''}
+      <div><span class="pcb">● Znotraj</span></div>
+      <div class="pcm">${fmtDt(u.scannedAt)}</div>
+      ${u.zone ? `<div class="pcz">${esc(u.zone)}</div>` : ''}
+    </div>`).join('');
+}
+
+/* ── Log ──────────────────────────────────────────────────────── */
+async function loadLog(page) {
+  page = Math.max(1, page||1);
+  pg   = page;
+
+  const tbody = document.getElementById('tbody');
+  tbody.innerHTML = '<tr><td colspan="5" class="stl">Nalaganje…</td></tr>';
+
+  const p = new URLSearchParams({ page, pageSize: 50 });
+  const s    = (document.getElementById('fSearch').value||'').trim();
+  const card = (document.getElementById('fCard').value||'').trim();
+  const type = document.getElementById('fType').value;
+  const from = document.getElementById('fFrom').value;
+  const to   = document.getElementById('fTo').value;
+  if (s)    p.set('search', s);
+  if (card) p.set('cardId', card);
+  if (type) p.set('type', type);
+  if (from) p.set('from', from);
+  if (to)   p.set('to', to+'T23:59:59');
+
+  const r = await skGet('/api/Presence/log?'+p);
+  if (!r.ok) {
+    tbody.innerHTML = `<tr><td colspan="5" class="stl" style="color:var(--red);">Napaka (${r.status}).</td></tr>`;
+    return;
+  }
+
+  const { items=[], total=0, pageSize=50 } = r.data;
+  document.getElementById('sTot').textContent = total;
+
+  if (!items.length) {
+    tbody.innerHTML = '<tr><td colspan="5" class="stl">Ni zapisov za izbrane filtre.</td></tr>';
+  } else {
+    tbody.innerHTML = items.map(e => `
+      <tr>
+        <td>${e.type==='IN' ? '<span class="bin">▲ IN</span>' : '<span class="bout">▼ OUT</span>'}</td>
+        <td style="font-weight:600;">${esc(e.name||'—')}</td>
+        <td>${e.cardId ? `<span class="cchip">🪪 ${esc(e.cardId)}</span>` : '<span style="color:var(--mut);">—</span>'}</td>
+        <td style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--sub);">${fmtDt(e.scannedAt)}</td>
+        <td style="color:var(--sub);font-size:11px;">${esc(e.zone||'—')}</td>
+      </tr>`).join('');
+  }
+
+  const tp = Math.ceil(total/pageSize)||1;
+  document.getElementById('pi').textContent    = `Stran ${page} / ${tp} · skupaj ${total}`;
+  document.getElementById('bPrev').disabled    = page <= 1;
+  document.getElementById('bNext').disabled    = page >= tp;
+}
+
+async function loadStats() {
+  const ru = await skGet('/api/User');
+  if (ru.ok && Array.isArray(ru.data)) document.getElementById('sUsers').textContent = ru.data.length;
+}
+
+function clearF() {
+  ['fSearch','fCard','fType','fFrom','fTo'].forEach(id => { document.getElementById(id).value=''; });
+  loadLog(1);
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  // loadCurrent already redirects to /presence.html on 403/401
+  await Promise.all([ loadCurrent(), loadLog(1), loadStats() ]);
+});
+</script>
+</body>
+</html>

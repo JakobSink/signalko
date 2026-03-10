@@ -1,0 +1,848 @@
+<!doctype html>
+<html lang="sl">
+<head>
+<meta charset="utf-8"/>
+<title>Signalko · Sredstva</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/css/sk.css"/>
+<style>
+/* ── Layout ─────────────────────────────────────────────────────────────── */
+.assets-layout{display:grid;grid-template-columns:1fr 380px;gap:20px;align-items:start;}
+.assets-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;}
+
+/* ── Asset card ──────────────────────────────────────────────────────────── */
+.asset-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  cursor:pointer;transition:border-color .13s,transform .13s,box-shadow .13s;
+  overflow:hidden;
+}
+.asset-card:hover{border-color:var(--acc);transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,0,0,.18);}
+.asset-card.selected{border-color:var(--acc);background:var(--up);}
+
+.ac-head{display:flex;align-items:center;gap:12px;padding:14px 16px 12px;}
+.ac-icon{
+  width:48px;height:48px;border-radius:12px;background:var(--accD);
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;color:var(--acc);flex-shrink:0;overflow:hidden;
+}
+.ac-icon img{width:48px;height:48px;object-fit:cover;}
+.ac-meta{flex:1;min-width:0;}
+.ac-name{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px;}
+.ac-ascii{font-size:11px;color:var(--txt);font-family:'JetBrains Mono',monospace;font-weight:500;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px;}
+.ac-epc{font-size:11px;color:var(--sub);font-family:'JetBrains Mono',monospace;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+.ac-body{padding:10px 16px;border-top:1px solid var(--border);}
+.ac-details-text{font-size:10px;color:var(--sub);line-height:1.5;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+
+.ac-foot{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:8px 16px;border-top:1px solid var(--border);background:var(--up);
+}
+
+/* ── Detail panel ────────────────────────────────────────────────────────── */
+.detail-panel{
+  background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  overflow:hidden;position:sticky;top:20px;display:none;
+}
+.detail-panel.visible{display:block;}
+.detail-header{padding:16px 18px;border-bottom:1px solid var(--border);}
+.dp-icon-row{display:flex;align-items:center;gap:14px;margin-bottom:12px;}
+.dp-icon{
+  width:56px;height:56px;border-radius:14px;background:var(--accD);
+  display:flex;align-items:center;justify-content:center;
+  font-size:26px;color:var(--acc);flex-shrink:0;overflow:hidden;
+}
+.dp-icon img{width:56px;height:56px;object-fit:cover;}
+.dp-title-wrap{flex:1;min-width:0;}
+.detail-title{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;margin-bottom:4px;}
+.detail-ascii{font-size:12px;color:var(--txt);font-family:'JetBrains Mono',monospace;font-weight:500;
+  margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.detail-epc{font-size:9px;color:var(--mut);font-family:'JetBrains Mono',monospace;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.detail-actions{display:flex;gap:8px;margin-top:12px;}
+.detail-tabs{display:flex;border-bottom:1px solid var(--border);}
+.detail-tab{
+  flex:1;padding:10px;background:none;border:none;border-bottom:2px solid transparent;
+  color:var(--mut);font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;
+  letter-spacing:1px;text-transform:uppercase;cursor:pointer;margin-bottom:-1px;
+  transition:color .13s,border-color .13s;
+}
+.detail-tab:hover{color:var(--txt);}
+.detail-tab.active{color:var(--txt);border-bottom-color:var(--acc);}
+.detail-tab-body{padding:14px 16px;max-height:500px;overflow-y:auto;}
+
+/* ── Table inside detail ─────────────────────────────────────────────────── */
+.dtable{width:100%;border-collapse:collapse;font-size:11px;}
+.dtable th{color:var(--mut);font-weight:600;text-align:left;padding:5px 6px;border-bottom:1px solid var(--border);}
+.dtable td{padding:7px 6px;border-bottom:1px solid var(--border);color:var(--txt);}
+.dtable tr:last-child td{border-bottom:none;}
+.dtable tr:hover td{background:var(--up);}
+
+/* ── Toolbar ─────────────────────────────────────────────────────────────── */
+.toolbar{display:flex;gap:10px;align-items:center;margin-bottom:18px;flex-wrap:wrap;}
+.search-box{
+  background:var(--surface);border:1px solid var(--border);border-radius:8px;
+  padding:8px 12px;font-size:12px;color:var(--txt);outline:none;
+  font-family:'JetBrains Mono',monospace;transition:border .13s;flex:1;min-width:180px;
+}
+.search-box:focus{border-color:var(--acc);}
+.search-box::placeholder{color:var(--mut);}
+
+/* ── Modal fields ────────────────────────────────────────────────────────── */
+.modal-field{display:flex;flex-direction:column;gap:5px;margin-bottom:14px;}
+.modal-field label{font-size:9px;color:var(--mut);letter-spacing:1.5px;text-transform:uppercase;}
+.modal-field input,.modal-field textarea,.modal-field select{
+  background:var(--up);border:1px solid var(--border);border-radius:8px;
+  padding:10px 12px;font-size:12px;color:var(--txt);outline:none;
+  font-family:'JetBrains Mono',monospace;transition:border .13s;resize:vertical;
+}
+.modal-field input:focus,.modal-field textarea:focus,.modal-field select:focus{border-color:var(--acc);}
+.modal-field input::placeholder,.modal-field textarea::placeholder{color:var(--mut);}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:6px;}
+
+/* input + inline button row */
+.input-with-btn{display:flex;gap:6px;align-items:stretch;}
+.input-with-btn input{flex:1;}
+.input-with-btn .sk-btn{white-space:nowrap;font-size:10px;padding:0 10px;}
+
+/* missing-ascii warning */
+.ascii-warn{font-size:9px;color:#fbbf24;margin-top:3px;}
+
+/* ── Icon picker ─────────────────────────────────────────────────────────── */
+.icon-picker{display:flex;gap:12px;align-items:flex-start;}
+.icon-preview-box{
+  width:56px;height:56px;border-radius:12px;background:var(--accD);
+  display:flex;align-items:center;justify-content:center;
+  font-size:26px;color:var(--acc);flex-shrink:0;overflow:hidden;
+  border:1px solid var(--border);
+}
+.icon-preview-box img{width:56px;height:56px;object-fit:cover;}
+.icon-picker-right{flex:1;}
+.icon-emoji-grid{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;}
+.emoji-btn{
+  width:30px;height:30px;border:1px solid var(--border);border-radius:6px;
+  background:var(--up);cursor:pointer;font-size:16px;display:flex;align-items:center;
+  justify-content:center;transition:border-color .1s,background .1s;
+}
+.emoji-btn:hover{border-color:var(--acc);background:var(--accD);}
+.emoji-btn.active{border-color:var(--acc);background:var(--accD);}
+.icon-upload-row{display:flex;align-items:center;gap:8px;}
+.icon-or{font-size:10px;color:var(--mut);margin:4px 0;}
+
+/* ── Empty / loading ─────────────────────────────────────────────────────── */
+.state-empty{padding:40px;text-align:center;color:var(--mut);font-size:12px;}
+.state-loading{display:flex;align-items:center;justify-content:center;gap:10px;padding:40px;color:var(--sub);font-size:12px;}
+</style>
+</head>
+<body>
+<div class="sk-layout">
+  <aside class="sk-sidebar-col" id="sidebarHost"></aside>
+
+  <main class="sk-main">
+    <div class="sk-page-title">Sredstva</div>
+    <div class="sk-page-sub">Katalog sredstev in RFID tagi</div>
+
+    <div class="toolbar">
+      <input class="search-box" id="searchInput" type="text" placeholder="Išči po imenu, EPC ASCII ali hex…" oninput="filterAssets()"/>
+      <button class="sk-btn sk-btn-acc" id="btnAdd" onclick="skModal('addModal')" style="display:none">+ Novo sredstvo</button>
+      <button class="sk-btn" onclick="exportAssets()">⬇ Izvoz</button>
+      <button class="sk-btn" id="btnImport" onclick="skModal('importModal')" style="display:none">⬆ Uvoz</button>
+      <button class="sk-btn" onclick="loadAssets()" id="refreshBtn">↺ Osveži</button>
+    </div>
+
+    <div class="assets-layout" id="assetsLayout">
+      <div>
+        <div class="assets-grid" id="assetsGrid">
+          <div class="state-loading"><div class="sk-spin"></div>Nalaganje…</div>
+        </div>
+      </div>
+
+      <!-- Detail panel -->
+      <div class="detail-panel" id="detailPanel">
+        <div class="detail-header">
+          <div class="dp-icon-row">
+            <div class="dp-icon" id="detailIcon">▣</div>
+            <div class="dp-title-wrap">
+              <div class="detail-title" id="detailName">—</div>
+              <div class="detail-ascii" id="detailAscii"></div>
+              <div class="detail-epc" id="detailEpc"></div>
+            </div>
+          </div>
+          <div class="detail-actions">
+            <button class="sk-btn sk-btn-acc" style="font-size:11px;padding:6px 12px;" onclick="openEdit()">✎ Uredi</button>
+            <button class="sk-btn sk-btn-red" style="font-size:11px;padding:6px 12px;" onclick="confirmDelete()">✕ Izbriši</button>
+          </div>
+        </div>
+        <div class="detail-tabs">
+          <button class="detail-tab active" data-tab="movements" onclick="switchTab('movements')">Premiki</button>
+          <button class="detail-tab" data-tab="loans" onclick="switchTab('loans')">Izposoje</button>
+        </div>
+        <div class="detail-tab-body" id="detailBody">
+          <div class="state-loading"><div class="sk-spin"></div>Nalaganje…</div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ── Edit modal ── -->
+<div class="sk-modal-bg" id="editModal" onclick="if(event.target===this)skModalClose('editModal')">
+  <div class="sk-modal" style="max-width:480px;">
+    <div class="sk-modal-head">
+      <div class="sk-modal-title">Uredi sredstvo</div>
+      <button class="sk-modal-close" onclick="skModalClose('editModal')">✕</button>
+    </div>
+    <div class="sk-modal-content">
+      <div class="modal-field">
+        <label>Ikona</label>
+        <div class="icon-picker">
+          <div class="icon-preview-box" id="editIconPreview">▣</div>
+          <div class="icon-picker-right">
+            <div class="icon-emoji-grid" id="editEmojiGrid"></div>
+            <div class="icon-or">ali naloži sliko</div>
+            <div class="icon-upload-row">
+              <input type="file" id="editIconFile" accept="image/*" style="display:none" onchange="handleIconFile('edit',this)"/>
+              <button class="sk-btn sk-btn-sm" type="button" onclick="document.getElementById('editIconFile').click()">⬆ Slika</button>
+              <button class="sk-btn sk-btn-sm" type="button" onclick="clearIcon('edit')">✕ Počisti</button>
+            </div>
+          </div>
+        </div>
+        <input type="hidden" id="editIcon"/>
+      </div>
+      <div class="modal-field">
+        <label>Ime sredstva</label>
+        <input id="editName" placeholder="npr. Laptop Dell XPS 15"/>
+      </div>
+      <div class="modal-field">
+        <label>Opis</label>
+        <textarea id="editDesc" rows="2" placeholder="Opis sredstva (neobvezno)"></textarea>
+      </div>
+      <div class="modal-field">
+        <label>EPC oznaka (hex) *</label>
+        <input id="editEpc" placeholder="npr. E280110600002007…" oninput="onEpcInput('edit')"/>
+      </div>
+      <div class="modal-field">
+        <label>EPC ASCII *</label>
+        <div class="input-with-btn">
+          <input id="editEpcAscii" placeholder="npr. SN-12345"/>
+          <button class="sk-btn" type="button" onclick="autoFillAscii('edit')" title="Pretvori hex EPC v ASCII">⇄ Auto</button>
+        </div>
+        <span class="ascii-warn" id="editAsciiWarn" style="display:none">⚠ EPC ASCII je prazen — vnesi ročno ali klikni ⇄ Auto</span>
+      </div>
+      <div class="modal-actions">
+        <button class="sk-btn" onclick="skModalClose('editModal')">Prekliči</button>
+        <button class="sk-btn sk-btn-acc" id="editSaveBtn" onclick="saveEdit()">Shrani</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Delete confirm modal ── -->
+<div class="sk-modal-bg" id="deleteModal" onclick="if(event.target===this)skModalClose('deleteModal')">
+  <div class="sk-modal" style="max-width:400px;">
+    <div class="sk-modal-head">
+      <div class="sk-modal-title">Izbriši sredstvo</div>
+      <button class="sk-modal-close" onclick="skModalClose('deleteModal')">✕</button>
+    </div>
+    <div class="sk-modal-content">
+      <p style="color:var(--sub);font-size:13px;margin-bottom:20px;line-height:1.7;">
+        Ali res želiš izbrisati sredstvo <strong id="deleteName" style="color:var(--txt);"></strong>?
+        Tega dejanja ni mogoče razveljaviti.
+      </p>
+      <div class="modal-actions">
+        <button class="sk-btn" onclick="skModalClose('deleteModal')">Prekliči</button>
+        <button class="sk-btn sk-btn-red" id="deleteConfirmBtn" onclick="executeDelete()">Izbriši</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Add asset modal ── -->
+<div class="sk-modal-bg" id="addModal" onclick="if(event.target===this)skModalClose('addModal')">
+  <div class="sk-modal" style="max-width:480px;">
+    <div class="sk-modal-head">
+      <div class="sk-modal-title">Novo sredstvo</div>
+      <button class="sk-modal-close" onclick="skModalClose('addModal')">✕</button>
+    </div>
+    <div class="sk-modal-content">
+      <div class="modal-field">
+        <label>Ikona</label>
+        <div class="icon-picker">
+          <div class="icon-preview-box" id="addIconPreview">▣</div>
+          <div class="icon-picker-right">
+            <div class="icon-emoji-grid" id="addEmojiGrid"></div>
+            <div class="icon-or">ali naloži sliko</div>
+            <div class="icon-upload-row">
+              <input type="file" id="addIconFile" accept="image/*" style="display:none" onchange="handleIconFile('add',this)"/>
+              <button class="sk-btn sk-btn-sm" type="button" onclick="document.getElementById('addIconFile').click()">⬆ Slika</button>
+              <button class="sk-btn sk-btn-sm" type="button" onclick="clearIcon('add')">✕ Počisti</button>
+            </div>
+          </div>
+        </div>
+        <input type="hidden" id="addIcon"/>
+      </div>
+      <div class="modal-field">
+        <label>Ime sredstva *</label>
+        <input id="addName" placeholder="npr. Laptop Dell XPS 15"/>
+      </div>
+      <div class="modal-field">
+        <label>Opis</label>
+        <textarea id="addDesc" rows="2" placeholder="Opis sredstva (neobvezno)"></textarea>
+      </div>
+      <div class="modal-field">
+        <label>EPC oznaka (hex) *</label>
+        <input id="addEpc" placeholder="npr. E280110600002007…" oninput="onEpcInput('add')"/>
+      </div>
+      <div class="modal-field">
+        <label>EPC ASCII *</label>
+        <div class="input-with-btn">
+          <input id="addEpcAscii" placeholder="npr. SN-12345"/>
+          <button class="sk-btn" type="button" onclick="autoFillAscii('add')" title="Pretvori hex EPC v ASCII">⇄ Auto</button>
+        </div>
+        <span class="ascii-warn" id="addAsciiWarn" style="display:none">⚠ EPC ASCII je prazen — vnesi ročno ali klikni ⇄ Auto</span>
+      </div>
+      <div class="modal-actions">
+        <button class="sk-btn" onclick="skModalClose('addModal')">Prekliči</button>
+        <button class="sk-btn sk-btn-acc" id="addSaveBtn" onclick="saveAdd()">Dodaj</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Import modal ── -->
+<div class="sk-modal-bg" id="importModal" onclick="if(event.target===this)skModalClose('importModal')">
+  <div class="sk-modal" style="max-width:500px;">
+    <div class="sk-modal-head">
+      <div class="sk-modal-title">Uvoz sredstev iz Excela</div>
+      <button class="sk-modal-close" onclick="skModalClose('importModal')">✕</button>
+    </div>
+    <div class="sk-modal-content">
+
+    <!-- Template info -->
+    <div style="background:var(--up);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:16px;">
+      <div style="font-size:13px;font-weight:700;color:var(--txt);margin-bottom:10px;font-family:'Syne',sans-serif;">Pričakovani stolpci</div>
+      <div style="font-size:11px;color:var(--sub);margin-bottom:10px;">1. vrstica = glava in se <strong style="color:var(--txt);">ne upošteva</strong> pri uvozu.</div>
+      <table style="width:100%;border-collapse:collapse;">
+        <thead>
+          <tr style="border-bottom:1px solid var(--border);">
+            <th style="text-align:left;padding:5px 8px;font-size:10px;color:var(--mut);font-weight:600;letter-spacing:1px;text-transform:uppercase;">Stolpec</th>
+            <th style="text-align:left;padding:5px 8px;font-size:10px;color:var(--mut);font-weight:600;letter-spacing:1px;text-transform:uppercase;">Polje</th>
+            <th style="text-align:left;padding:5px 8px;font-size:10px;color:var(--mut);font-weight:600;letter-spacing:1px;text-transform:uppercase;">Opis</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:7px 8px;font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;color:var(--acc);">A</td>
+            <td style="padding:7px 8px;font-size:12px;color:var(--txt);font-weight:600;">Ime <span style="color:var(--red);">*</span></td>
+            <td style="padding:7px 8px;font-size:12px;color:var(--sub);">Ime sredstva — obvezno</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:7px 8px;font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;color:var(--acc);">B</td>
+            <td style="padding:7px 8px;font-size:12px;color:var(--txt);">Opis</td>
+            <td style="padding:7px 8px;font-size:12px;color:var(--sub);">Opis sredstva — neobvezno</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:7px 8px;font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;color:var(--acc);">C</td>
+            <td style="padding:7px 8px;font-size:12px;color:var(--txt);font-weight:600;">EPC hex <span style="color:var(--red);">*</span></td>
+            <td style="padding:7px 8px;font-size:12px;color:var(--sub);">HEX koda RFID taga — obvezno</td>
+          </tr>
+          <tr>
+            <td style="padding:7px 8px;font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;color:var(--acc);">D</td>
+            <td style="padding:7px 8px;font-size:12px;color:var(--txt);">EPC ASCII</td>
+            <td style="padding:7px 8px;font-size:12px;color:var(--sub);">Če prazno, se samodejno izračuna iz hex</td>
+          </tr>
+        </tbody>
+      </table>
+      <div style="margin-top:12px;">
+        <button class="sk-btn sk-btn-sm" onclick="downloadTemplate()">⬇ Prenesi predlogo</button>
+      </div>
+    </div>
+
+    <!-- File upload -->
+    <div class="modal-field">
+      <label>Excel datoteka (.xlsx)</label>
+      <input type="file" id="importFile" accept=".xlsx,.xls"
+        style="background:var(--up);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:12px;color:var(--txt);cursor:pointer;"
+        onchange="onImportFileChange(this)"/>
+    </div>
+    <div id="importStatus" style="font-size:11px;color:var(--sub);margin-bottom:8px;display:none;"></div>
+
+    <div class="modal-actions">
+      <button class="sk-btn" onclick="skModalClose('importModal')">Prekliči</button>
+      <button class="sk-btn sk-btn-acc" id="importBtn" onclick="runImport()" disabled>⬆ Uvozi</button>
+    </div>
+    </div><!-- /sk-modal-content -->
+  </div>
+</div>
+
+<script src="/css/sk.js"></script>
+<script>
+skRequireLogin();
+if (skIsAdmin()) {
+  document.getElementById('btnAdd').style.display    = '';
+  document.getElementById('btnImport').style.display = '';
+}
+
+const EMOJIS = ['💻','🖥️','📱','🖨️','📷','🎮','🔧','🔑','📦','🗂️','📚','⌨️','🖱️','📡','🔬','🔭','💡','🔋','📟','🎧','🗝️','🏷️','📌','🔐','⚙️','🛠️','📲','🖊️','📋','🗃️'];
+
+let allAssets = [];
+let filteredAssets = [];
+let selectedAsset = null;
+let currentTab = 'movements';
+let editIconFileObj = null;
+let addIconFileObj  = null;
+
+/* ── Emoji grids ── */
+function buildEmojiGrid(prefix) {
+  document.getElementById(prefix + 'EmojiGrid').innerHTML = EMOJIS.map(e =>
+    `<button class="emoji-btn" type="button" onclick="setEmoji('${prefix}','${e}')">${e}</button>`
+  ).join('');
+}
+buildEmojiGrid('edit');
+buildEmojiGrid('add');
+
+/* ── Hex → ASCII helper ── */
+function hexToAscii(hex) {
+  hex = (hex || '').replace(/[\s\-:]/g, '');
+  if (hex.length % 2 !== 0) hex = '0' + hex;
+  let out = '';
+  for (let i = 0; i + 1 < hex.length; i += 2) {
+    const code = parseInt(hex.substring(i, i + 2), 16);
+    if (code >= 32 && code < 127) out += String.fromCharCode(code);
+  }
+  return out.trim();
+}
+
+/* Auto-fill ASCII from current hex EPC; show warning if result is empty */
+function autoFillAscii(prefix) {
+  const hex = document.getElementById(prefix + 'Epc').value.trim();
+  const ascii = hexToAscii(hex);
+  document.getElementById(prefix + 'EpcAscii').value = ascii;
+  updateAsciiWarn(prefix);
+}
+
+/* When hex EPC changes, auto-fill ASCII only if ASCII field is empty */
+function onEpcInput(prefix) {
+  const asciiField = document.getElementById(prefix + 'EpcAscii');
+  if (!asciiField.value.trim()) {
+    const hex = document.getElementById(prefix + 'Epc').value.trim();
+    asciiField.value = hexToAscii(hex);
+  }
+  updateAsciiWarn(prefix);
+}
+
+function updateAsciiWarn(prefix) {
+  const warn = document.getElementById(prefix + 'AsciiWarn');
+  if (!warn) return;
+  const ascii = document.getElementById(prefix + 'EpcAscii').value.trim();
+  warn.style.display = ascii ? 'none' : '';
+}
+
+/* ── Icon helpers ── */
+function setEmoji(prefix, emoji) {
+  document.getElementById(prefix + 'Icon').value = emoji;
+  renderIconPreview(prefix, emoji);
+  if (prefix === 'edit') editIconFileObj = null;
+  else                   addIconFileObj  = null;
+  document.getElementById(prefix + 'IconFile').value = '';
+  document.querySelectorAll(`#${prefix}EmojiGrid .emoji-btn`).forEach(b =>
+    b.classList.toggle('active', b.textContent === emoji));
+}
+
+function renderIconPreview(prefix, val) {
+  const box = document.getElementById(prefix + 'IconPreview');
+  if (!val) { box.innerHTML = '▣'; return; }
+  if (val.startsWith('/') || val.startsWith('http') || val.startsWith('blob:'))
+    box.innerHTML = `<img src="${val}" style="width:56px;height:56px;object-fit:cover;border-radius:12px;"/>`;
+  else
+    box.innerHTML = val;
+}
+
+function handleIconFile(prefix, input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (prefix === 'edit') editIconFileObj = file;
+  else                   addIconFileObj  = file;
+  renderIconPreview(prefix, URL.createObjectURL(file));
+  document.getElementById(prefix + 'Icon').value = '';
+  document.querySelectorAll(`#${prefix}EmojiGrid .emoji-btn`).forEach(b => b.classList.remove('active'));
+}
+
+function clearIcon(prefix) {
+  document.getElementById(prefix + 'Icon').value = '';
+  document.getElementById(prefix + 'IconFile').value = '';
+  if (prefix === 'edit') editIconFileObj = null;
+  else                   addIconFileObj  = null;
+  renderIconPreview(prefix, '');
+  document.querySelectorAll(`#${prefix}EmojiGrid .emoji-btn`).forEach(b => b.classList.remove('active'));
+}
+
+async function uploadIconFile(id, fileObj) {
+  const fd = new FormData();
+  fd.append('file', fileObj);
+  const res = await fetch(`/api/Asset/${id}/icon`, { method: 'POST', body: fd });
+  if (!res.ok) throw new Error('Upload neuspešen');
+  return (await res.json()).icon;
+}
+
+/* ── Render icon HTML ── */
+function iconHtml(val, size) {
+  if (!val) return `<span style="font-size:${size}px;color:var(--acc);">▣</span>`;
+  if (val.startsWith('/') || val.startsWith('http'))
+    return `<img src="${escHtml(val)}" style="width:${size*2}px;height:${size*2}px;object-fit:cover;border-radius:${Math.round(size/2)}px;"/>`;
+  return `<span style="font-size:${size}px;">${escHtml(val)}</span>`;
+}
+
+/* ── Load ── */
+async function loadAssets() {
+  const btn = document.getElementById('refreshBtn');
+  skBtnLoading(btn, true, '↺ Osveži');
+  document.getElementById('assetsGrid').innerHTML =
+    '<div class="state-loading"><div class="sk-spin"></div>Nalaganje…</div>';
+
+  const r = await skGet('/api/Asset');
+  skBtnLoading(btn, false, '↺ Osveži');
+
+  if (!r.ok || !r.data) {
+    document.getElementById('assetsGrid').innerHTML =
+      '<div class="state-empty">Napaka pri nalaganju sredstev.</div>';
+    return;
+  }
+  allAssets = r.data;
+  filterAssets();
+}
+
+/* ── Filter ── */
+function filterAssets() {
+  const q = (document.getElementById('searchInput').value || '').toLowerCase();
+  filteredAssets = q
+    ? allAssets.filter(a =>
+        (a.Name||a.name||'').toLowerCase().includes(q) ||
+        (a.Tag?.EpcAscii||a.tag?.epcAscii||'').toLowerCase().includes(q) ||
+        (a.Tag?.Epc||a.tag?.epc||'').toLowerCase().includes(q))
+    : [...allAssets];
+  renderGrid();
+}
+
+/* ── Render grid ── */
+function renderGrid() {
+  const grid = document.getElementById('assetsGrid');
+  if (!filteredAssets.length) {
+    grid.innerHTML = '<div class="state-empty">Ni sredstev.</div>';
+    return;
+  }
+
+  grid.innerHTML = filteredAssets.map(a => {
+    const id      = a.Id || a.id;
+    const name    = a.Name || a.name || '—';
+    const epc     = a.Tag?.Epc || a.tag?.epc || '';
+    const ascii   = a.Tag?.EpcAscii || a.tag?.epcAscii || hexToAscii(epc) || epc;
+    const details = a.Details || a.details || '';
+    const active  = a.ActiveLoan || a.activeLoan;
+    const icon    = a.Icon || a.icon || '';
+    const isSel   = selectedAsset && (selectedAsset.Id||selectedAsset.id) === id;
+
+    const badge = active
+      ? `<span class="sk-badge sk-badge-org">Izposojeno</span>`
+      : `<span class="sk-badge sk-badge-grn">Prosto</span>`;
+
+    const asciiLine = ascii
+      ? `<div class="ac-ascii">${escHtml(ascii)}</div>` : '';
+    const epcLine   = epc && epc !== ascii
+      ? `<div class="ac-epc">hex: ${escHtml(epc)}</div>` : '';
+
+    return `
+      <div class="asset-card${isSel?' selected':''}" onclick="selectAsset(${id})">
+        <div class="ac-head">
+          <div class="ac-icon">${iconHtml(icon, 22)}</div>
+          <div class="ac-meta">
+            <div class="ac-name">${escHtml(name)}</div>
+            ${asciiLine}${epcLine}
+          </div>
+        </div>
+        ${details ? `<div class="ac-body"><div class="ac-details-text">${escHtml(details)}</div></div>` : ''}
+        <div class="ac-foot">
+          <span style="font-size:10px;color:var(--sub);font-family:'JetBrains Mono',monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:55%;">${escHtml(ascii||'—')}</span>
+          ${badge}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+/* ── Select asset ── */
+async function selectAsset(id) {
+  selectedAsset = allAssets.find(a => (a.Id||a.id) === id) || null;
+  if (!selectedAsset) return;
+
+  renderGrid();
+
+  document.getElementById('detailPanel').classList.add('visible');
+
+  const epc   = selectedAsset.Tag?.Epc   || selectedAsset.tag?.epc   || '';
+  const ascii = selectedAsset.Tag?.EpcAscii || selectedAsset.tag?.epcAscii || hexToAscii(epc) || '';
+  const icon  = selectedAsset.Icon || selectedAsset.icon || '';
+
+  document.getElementById('detailIcon').innerHTML = iconHtml(icon, 26);
+  document.getElementById('detailName').textContent  = selectedAsset.Name || selectedAsset.name || '—';
+  document.getElementById('detailAscii').textContent = ascii || '';
+  document.getElementById('detailAscii').style.display = ascii ? '' : 'none';
+  document.getElementById('detailEpc').textContent = epc ? `hex: ${epc}` : '';
+  document.getElementById('detailEpc').style.display = (epc && epc !== ascii) ? '' : 'none';
+
+  await loadDetailTab(currentTab);
+}
+
+/* ── Tabs ── */
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.detail-tab').forEach(t =>
+    t.classList.toggle('active', t.dataset.tab === tab));
+  loadDetailTab(tab);
+}
+
+async function loadDetailTab(tab) {
+  if (!selectedAsset) return;
+  const body = document.getElementById('detailBody');
+  body.innerHTML = '<div class="state-loading"><div class="sk-spin"></div>Nalaganje…</div>';
+  if (tab === 'movements') await loadMovements(body);
+  else                     await loadLoanHistory(body);
+}
+
+/* ── Movements ── */
+async function loadMovements(body) {
+  const epc = selectedAsset.Tag?.Epc || selectedAsset.tag?.epc;
+  if (!epc) { body.innerHTML = '<div class="state-empty">Ni EPC oznake.</div>'; return; }
+
+  const r = await skGet(`/api/Tag/by-epc/details/${encodeURIComponent(epc)}`);
+  if (!r.ok || !r.data || !r.data.length) {
+    body.innerHTML = '<div class="state-empty">Ni zabeleženih premikov.</div>'; return;
+  }
+
+  body.innerHTML = `
+    <table class="dtable">
+      <thead><tr><th>Čas</th><th>Zona / čitalec</th><th>RSSI</th></tr></thead>
+      <tbody>
+        ${r.data.map(t => {
+          const rssi = t.rssi ?? t.RSSI;
+          const c = rssi == null ? 'var(--mut)' : rssi > -70 ? 'var(--grn)' : rssi > -85 ? '#fbbf24' : 'var(--red)';
+          return `<tr>
+            <td style="white-space:nowrap;">${skFmt(t.time||t.lastTime)}</td>
+            <td>${escHtml(t.zone||t.zoneName||t.hostname||t.Hostname||'—')}</td>
+            <td style="color:${c};">${rssi != null ? rssi+' dBm' : '—'}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`;
+}
+
+/* ── Loan history ── */
+async function loadLoanHistory(body) {
+  const id = selectedAsset.Id || selectedAsset.id;
+  const r  = await skGet('/api/Loan');
+  if (!r.ok || !r.data) { body.innerHTML = '<div class="state-empty">Napaka pri nalaganju.</div>'; return; }
+
+  const loans = r.data.filter(l => (l.AssetId||l.assetId) === id);
+  if (!loans.length) { body.innerHTML = '<div class="state-empty">Ni zgodovine izposoje.</div>'; return; }
+
+  body.innerHTML = `
+    <table class="dtable">
+      <thead><tr><th>Uporabnik</th><th>Od</th><th>Do</th><th>Status</th></tr></thead>
+      <tbody>
+        ${loans.map(l => {
+          const ret = l.ReturnedAt || l.returnedAt;
+          return `<tr>
+            <td>${escHtml(l.UserName||l.userName||`#${l.UserId||l.userId}`)}</td>
+            <td style="white-space:nowrap;">${skFmtDate(l.LoanedAt||l.loanedAt)}</td>
+            <td style="white-space:nowrap;">${ret ? skFmtDate(ret) : '—'}</td>
+            <td>${ret ? '<span class="sk-badge sk-badge-grn">Vrnjeno</span>' : '<span class="sk-badge sk-badge-org">Aktivno</span>'}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`;
+}
+
+/* ── Edit ── */
+function openEdit() {
+  if (!selectedAsset) return;
+  const icon  = selectedAsset.Icon || selectedAsset.icon || '';
+  const epc   = selectedAsset.Tag?.Epc   || selectedAsset.tag?.epc   || '';
+  const ascii = selectedAsset.Tag?.EpcAscii || selectedAsset.tag?.epcAscii || '';
+
+  document.getElementById('editIcon').value     = icon;
+  renderIconPreview('edit', icon);
+  editIconFileObj = null;
+  document.getElementById('editIconFile').value = '';
+  document.querySelectorAll('#editEmojiGrid .emoji-btn').forEach(b =>
+    b.classList.toggle('active', b.textContent === icon));
+
+  document.getElementById('editName').value     = selectedAsset.Name || selectedAsset.name || '';
+  document.getElementById('editDesc').value     = selectedAsset.Details || selectedAsset.details || '';
+  document.getElementById('editEpc').value      = epc;
+  document.getElementById('editEpcAscii').value = ascii || hexToAscii(epc) || '';
+  updateAsciiWarn('edit');
+  skModal('editModal');
+}
+
+async function saveEdit() {
+  if (!selectedAsset) return;
+  const btn      = document.getElementById('editSaveBtn');
+  const name     = document.getElementById('editName').value.trim();
+  const desc     = document.getElementById('editDesc').value.trim();
+  const epc      = document.getElementById('editEpc').value.trim();
+  const epcAscii = document.getElementById('editEpcAscii').value.trim() || hexToAscii(epc) || epc;
+  let   icon     = document.getElementById('editIcon').value || null;
+
+  if (!name) { skToast('Ime sredstva je obvezno.', 'error'); return; }
+
+  skBtnLoading(btn, true, 'Shrani');
+  const id = selectedAsset.Id || selectedAsset.id;
+
+  try {
+    if (editIconFileObj) {
+      icon = await uploadIconFile(id, editIconFileObj);
+      editIconFileObj = null;
+    }
+    const r = await skPut(`/api/Asset/${id}`, { name, description: desc, epc, epcAscii, icon: icon ?? '' });
+    if (!r.ok) { skToast(r.data?.message || `Napaka ${r.status}`, 'error'); return; }
+
+    skToast('Sredstvo posodobljeno.', 'success');
+    skModalClose('editModal');
+    await loadAssets();
+    const updated = allAssets.find(a => (a.Id||a.id) === id);
+    if (updated) { selectedAsset = updated; selectAsset(id); }
+  } finally {
+    skBtnLoading(btn, false, 'Shrani');
+  }
+}
+
+/* ── Delete ── */
+function confirmDelete() {
+  if (!selectedAsset) return;
+  document.getElementById('deleteName').textContent = selectedAsset.Name || selectedAsset.name || '—';
+  skModal('deleteModal');
+}
+
+async function executeDelete() {
+  if (!selectedAsset) return;
+  const btn = document.getElementById('deleteConfirmBtn');
+  skBtnLoading(btn, true, 'Izbriši');
+  const id = selectedAsset.Id || selectedAsset.id;
+  const r  = await skDel(`/api/Asset/${id}`);
+  skBtnLoading(btn, false, 'Izbriši');
+
+  if (!r.ok) { skToast(r.data?.message || `Napaka ${r.status}`, 'error'); return; }
+  skToast('Sredstvo izbrisano.', 'success');
+  skModalClose('deleteModal');
+  selectedAsset = null;
+  document.getElementById('detailPanel').classList.remove('visible');
+  await loadAssets();
+}
+
+/* ── Add ── */
+async function saveAdd() {
+  const btn      = document.getElementById('addSaveBtn');
+  const name     = document.getElementById('addName').value.trim();
+  const desc     = document.getElementById('addDesc').value.trim();
+  const epc      = document.getElementById('addEpc').value.trim();
+  const epcAscii = document.getElementById('addEpcAscii').value.trim() || hexToAscii(epc) || epc;
+  let   icon     = document.getElementById('addIcon').value || null;
+
+  if (!name || !epc) { skToast('Ime in EPC sta obvezna.', 'error'); return; }
+
+  skBtnLoading(btn, true, 'Dodaj');
+  try {
+    const r = await skPost('/api/Asset', { name, description: desc, epc, epcAscii, icon });
+    if (!r.ok) { skToast(r.data?.message || `Napaka ${r.status}`, 'error'); return; }
+
+    const newId = r.data?.id || r.data?.Id;
+    if (addIconFileObj && newId) {
+      try { await uploadIconFile(newId, addIconFileObj); } catch(e) { /* non-fatal */ }
+      addIconFileObj = null;
+    }
+
+    skToast('Sredstvo dodano.', 'success');
+    skModalClose('addModal');
+    document.getElementById('addName').value = '';
+    document.getElementById('addDesc').value = '';
+    document.getElementById('addEpc').value  = '';
+    document.getElementById('addEpcAscii').value = '';
+    clearIcon('add');
+    await loadAssets();
+  } finally {
+    skBtnLoading(btn, false, 'Dodaj');
+  }
+}
+
+/* ── Export ── */
+function exportAssets() {
+  window.location.href = '/api/Asset/export';
+}
+
+/* ── Template ── */
+function downloadTemplate() {
+  window.location.href = '/api/Asset/template';
+}
+
+/* ── Import ── */
+function onImportFileChange(input) {
+  const btn = document.getElementById('importBtn');
+  btn.disabled = !input.files.length;
+  document.getElementById('importStatus').style.display = 'none';
+}
+
+async function runImport() {
+  const input = document.getElementById('importFile');
+  if (!input.files.length) return;
+
+  const btn    = document.getElementById('importBtn');
+  const status = document.getElementById('importStatus');
+  skBtnLoading(btn, true, '⬆ Uvozi');
+  status.style.display = 'none';
+
+  const fd = new FormData();
+  fd.append('file', input.files[0]);
+
+  const res = await fetch('/api/Asset/import', { method: 'POST', body: fd });
+  skBtnLoading(btn, false, '⬆ Uvozi');
+
+  let msg, type;
+  if (!res.ok) {
+    const d = await res.json().catch(() => ({}));
+    msg  = `Napaka: ${d.message || res.status}`;
+    type = 'error';
+  } else {
+    const d = await res.json();
+    msg  = `Uvoženo: ${d.created} novih, ${d.updated} posodobljenih`;
+    if (d.skipped) msg += `, ${d.skipped} preskočenih`;
+    if (d.errors?.length) msg += `<br><span style="color:var(--red);">${d.errors.slice(0,5).map(e => escHtml(e)).join('<br>')}</span>`;
+    type = 'success';
+  }
+
+  status.innerHTML  = msg;
+  status.style.display = '';
+  status.style.color   = type === 'success' ? 'var(--grn)' : 'var(--red)';
+
+  if (type === 'success') {
+    skToast('Uvoz uspešen!', 'success');
+    input.value = '';
+    btn.disabled = true;
+    await loadAssets();
+  }
+}
+
+/* ── Helpers ── */
+function escHtml(s) {
+  return String(s||'')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+loadAssets();
+</script>
+</body>
+</html>

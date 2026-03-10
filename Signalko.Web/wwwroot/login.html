@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="sl">
+<head>
+<meta charset="utf-8"/>
+<title>Signalko · Prijava</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/css/sk.css"/>
+<style>
+.login-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100%;
+  padding: 40px 20px;
+}
+.login-wrap {
+  width: 100%;
+  max-width: 400px;
+  animation: fadeUp .25s ease;
+}
+@keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+
+.brand { text-align: center; margin-bottom: 32px; }
+.brand-name {
+  font-family: 'Syne', sans-serif; font-size: 34px; font-weight: 800;
+  letter-spacing: -1.5px; color: var(--txt);
+}
+.brand-name span { color: var(--acc); }
+.brand-sub { font-size: 9px; color: var(--mut); letter-spacing: 3px; text-transform: uppercase; margin-top: 6px; }
+
+.login-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden;
+}
+.tabs { display: flex; border-bottom: 1px solid var(--border); }
+.tab {
+  flex: 1; padding: 13px; background: none; border: none;
+  border-bottom: 2px solid transparent; color: var(--mut);
+  font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600;
+  letter-spacing: 1px; text-transform: uppercase; cursor: pointer; margin-bottom: -1px;
+  transition: color .13s, border-color .13s;
+}
+.tab:hover { color: var(--txt); }
+.tab.active { color: var(--txt); border-bottom-color: var(--acc); }
+
+.tab-pane { display: none; padding: 26px 28px; flex-direction: column; gap: 14px; }
+.tab-pane.active { display: flex; }
+
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field label { font-size: 9px; color: var(--mut); letter-spacing: 1.5px; text-transform: uppercase; }
+.field input {
+  background: var(--up); border: 1px solid var(--border); border-radius: 8px;
+  padding: 11px 13px; font-size: 12px; color: var(--txt); outline: none;
+  font-family: 'JetBrains Mono', monospace; transition: border .13s;
+}
+.field input:focus { border-color: var(--acc); }
+.field input::placeholder { color: var(--mut); }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.btn-acc {
+  width: 100%; padding: 12px; background: var(--acc); border: none; border-radius: 8px;
+  color: #fff; font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600;
+  cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: opacity .13s;
+}
+.btn-acc:hover { opacity: .82; }
+.btn-acc:disabled { opacity: .4; cursor: not-allowed; }
+.err {
+  background: rgba(248,113,113,.09); border: 1px solid rgba(248,113,113,.3); border-radius: 8px;
+  padding: 10px 13px; font-size: 11px; color: var(--red); display: none;
+}
+@keyframes spin { to { transform: rotate(360deg) } }
+.spin { width: 14px; height: 14px; border: 2px solid rgba(255,255,255,.3); border-top-color: #fff; border-radius: 50%; animation: spin .5s linear infinite; }
+</style>
+</head>
+<body>
+<div class="sk-layout">
+  <aside class="sk-sidebar-col" id="sidebarHost"></aside>
+
+  <main class="sk-main login-center">
+    <div class="login-wrap">
+      <div class="brand">
+        <div class="brand-name">signal<span>ko</span></div>
+        <div class="brand-sub">RFID Asset Management</div>
+      </div>
+
+      <div class="login-card">
+        <div class="tabs">
+          <button class="tab active" data-pane="login">Prijava</button>
+          <button class="tab"        data-pane="signup">Registracija</button>
+        </div>
+
+        <!-- Prijava -->
+        <div class="tab-pane active" id="pane-login">
+          <div class="field">
+            <label>Email</label>
+            <input id="loginEmail" type="email" placeholder="admin@signalko.si" autocomplete="email"/>
+          </div>
+          <div class="field">
+            <label>Geslo</label>
+            <input id="loginPass" type="password" placeholder="••••••••" autocomplete="current-password"/>
+          </div>
+          <div class="err" id="loginErr"></div>
+          <button class="btn-acc" id="loginBtn" onclick="doLogin()">Prijavi se</button>
+        </div>
+
+        <!-- Registracija -->
+        <div class="tab-pane" id="pane-signup">
+          <div class="two-col">
+            <div class="field"><label>Ime</label>    <input id="regName"    placeholder="Jakob"/></div>
+            <div class="field"><label>Priimek</label><input id="regSurname" placeholder="Šink"/></div>
+          </div>
+          <div class="field"><label>Email</label><input id="regEmail" type="email" placeholder="admin@signalko.si"/></div>
+          <div class="field"><label>Geslo</label> <input id="regPass"  type="password" placeholder="••••••••"/></div>
+          <div class="err" id="regErr"></div>
+          <button class="btn-acc" id="regBtn" onclick="doRegister()">Registriraj se</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="/css/sk.js"></script>
+<script>
+// Tabs
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.tab-pane').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById('pane-' + t.dataset.pane).classList.add('active');
+  });
+});
+
+['loginEmail','loginPass'].forEach(id => {
+  document.getElementById(id).addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+});
+['regEmail','regPass'].forEach(id => {
+  document.getElementById(id).addEventListener('keydown', e => { if(e.key==='Enter') doRegister(); });
+});
+
+function showErr(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.style.display = msg ? 'block' : 'none';
+}
+function setLoading(btnId, loading) {
+  const btn = document.getElementById(btnId);
+  btn.disabled = loading;
+  btn.innerHTML = loading ? '<div class="spin"></div>' : btn.dataset.label;
+}
+
+document.getElementById('loginBtn').dataset.label = 'Prijavi se';
+document.getElementById('regBtn').dataset.label   = 'Registriraj se';
+
+async function doLogin() {
+  showErr('loginErr', '');
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass  = document.getElementById('loginPass').value;
+  if (!email || !pass) { showErr('loginErr', 'Vnesi email in geslo.'); return; }
+
+  setLoading('loginBtn', true);
+  try {
+    const res  = await fetch('/api/Auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({ email, password: pass }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) { showErr('loginErr', data.message || data.title || `Napaka ${res.status}`); return; }
+
+    const tok = data.token || data.accessToken;
+    if (!tok) { showErr('loginErr', 'Token manjka v odgovoru.'); return; }
+
+    localStorage.setItem('token', tok);
+    localStorage.setItem('sk_user', JSON.stringify({
+      id:      data.id      || 0,
+      name:    data.name    || data.Name    || '',
+      surname: data.surname || data.Surname || '',
+      cardID:  data.cardID  || data.CardID  || '',
+      email,
+      roleId:  data.roleId  || null,
+      role:    data.role    || null,
+    }));
+    location.href = 'index.html';
+  } catch (e) {
+    showErr('loginErr', e.message || 'Napaka pri prijavi.');
+  } finally {
+    setLoading('loginBtn', false);
+  }
+}
+
+async function doRegister() {
+  showErr('regErr', '');
+  const name    = document.getElementById('regName').value.trim();
+  const surname = document.getElementById('regSurname').value.trim();
+  const email   = document.getElementById('regEmail').value.trim();
+  const pass    = document.getElementById('regPass').value;
+  if (!name || !email || !pass) { showErr('regErr', 'Izpolni vsa polja.'); return; }
+
+  setLoading('regBtn', true);
+  try {
+    const res  = await fetch('/api/Auth/signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({ name, surname, email, password: pass }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) { showErr('regErr', data.message || data.title || `Napaka ${res.status}`); return; }
+
+    const tok = data.token || data.accessToken;
+    if (tok) {
+      localStorage.setItem('token', tok);
+      localStorage.setItem('sk_user', JSON.stringify({
+        id: data.id || 0, name, surname, email,
+        cardID: data.cardID || data.CardID || '',
+        roleId: data.roleId || null,
+        role:   data.role   || null,
+      }));
+      location.href = 'index.html';
+    } else {
+      showErr('regErr', '');
+      document.querySelector('.tab[data-pane="login"]').click();
+    }
+  } catch (e) {
+    showErr('regErr', e.message || 'Napaka pri registraciji.');
+  } finally {
+    setLoading('regBtn', false);
+  }
+}
+</script>
+</body>
+</html>

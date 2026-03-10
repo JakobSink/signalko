@@ -1,0 +1,398 @@
+<!doctype html>
+<html lang="sl">
+<head>
+<meta charset="utf-8"/>
+<title>Signalko · Admin</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/css/sk.css"/>
+<style>
+.toolbar{display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap;}
+.search-box{
+  background:var(--surface);border:1px solid var(--border);border-radius:8px;
+  padding:8px 12px;font-size:12px;color:var(--txt);outline:none;
+  font-family:'JetBrains Mono',monospace;transition:border .13s;flex:1;min-width:200px;
+}
+.search-box:focus{border-color:var(--acc);}
+.search-box::placeholder{color:var(--mut);}
+.filter-sel{
+  background:var(--surface);border:1px solid var(--border);border-radius:8px;
+  padding:8px 10px;font-size:12px;color:var(--txt);
+  font-family:'JetBrains Mono',monospace;
+}
+
+/* Users table */
+.table-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--border);margin-bottom:20px;}
+table.user-table{width:100%;border-collapse:collapse;font-size:11px;}
+table.user-table th{
+  background:var(--up);color:var(--sub);font-weight:600;text-align:left;
+  padding:10px 14px;border-bottom:1px solid var(--border);white-space:nowrap;
+}
+table.user-table td{
+  padding:10px 14px;border-bottom:1px solid var(--border);color:var(--txt);
+  vertical-align:middle;
+}
+table.user-table tbody tr:last-child td{border-bottom:none;}
+table.user-table tbody tr:hover td{background:var(--up);}
+.user-avatar{
+  width:28px;height:28px;border-radius:7px;background:var(--accD);
+  display:inline-flex;align-items:center;justify-content:center;
+  font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--acc);
+  margin-right:8px;vertical-align:middle;flex-shrink:0;
+}
+
+/* Modal fields */
+.modal-field{display:flex;flex-direction:column;gap:5px;margin-bottom:14px;}
+.modal-field label{font-size:9px;color:var(--mut);letter-spacing:1.5px;text-transform:uppercase;}
+.modal-field input,.modal-field select{
+  background:var(--up);border:1px solid var(--border);border-radius:8px;
+  padding:10px 12px;font-size:12px;color:var(--txt);outline:none;
+  font-family:'JetBrains Mono',monospace;transition:border .13s;
+}
+.modal-field input:focus,.modal-field select:focus{border-color:var(--acc);}
+.modal-field input::placeholder{color:var(--mut);}
+.modal-hint{font-size:10px;color:var(--mut);margin-top:3px;}
+.modal-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:6px;}
+.state-empty{padding:40px;text-align:center;color:var(--mut);font-size:12px;}
+.state-loading{display:flex;align-items:center;justify-content:center;gap:10px;padding:40px;color:var(--sub);font-size:12px;}
+</style>
+</head>
+<body>
+<div class="sk-layout">
+  <aside class="sk-sidebar-col" id="sidebarHost"></aside>
+
+  <main class="sk-main">
+    <div class="sk-page-title">Upravljanje uporabnikov</div>
+    <div class="sk-page-sub" id="adminSub">Nalaganje…</div>
+
+    <div class="toolbar">
+      <input class="search-box" id="searchInput" placeholder="Išči (ime, email, kartica)…" oninput="applyFilter()"/>
+      <select class="filter-sel" id="filterRole" onchange="applyFilter()">
+        <option value="">Vse vloge</option>
+      </select>
+      <button class="sk-btn sk-btn-acc" onclick="openAdd()">+ Dodaj uporabnika</button>
+      <button class="sk-btn" id="refreshBtn" onclick="loadUsers()">↺ Osveži</button>
+    </div>
+
+    <div class="table-wrap">
+      <table class="user-table">
+        <thead>
+          <tr>
+            <th>Uporabnik</th>
+            <th>Kartica (CardID)</th>
+            <th>Email</th>
+            <th>Vloga</th>
+            <th>Akcije</th>
+          </tr>
+        </thead>
+        <tbody id="userTableBody">
+          <tr><td colspan="5"><div class="state-loading"><div class="sk-spin"></div>Nalaganje…</div></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Exchange requests section -->
+    <div style="margin-top:10px;">
+      <div class="sk-page-title" style="font-size:16px;margin-bottom:4px;">Zahteve za menjavo</div>
+      <div class="table-wrap">
+        <table class="user-table">
+          <thead>
+            <tr>
+              <th>Od</th><th>Za</th><th>Sredstvo</th><th>Status</th><th>Datum</th>
+            </tr>
+          </thead>
+          <tbody id="exchangeBody">
+            <tr><td colspan="5"><div class="state-loading"><div class="sk-spin"></div>Nalaganje…</div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ── Add/Edit user modal ── -->
+<div class="sk-modal-bg" id="userModal" onclick="if(event.target===this)skModalClose('userModal')">
+  <div class="sk-modal" style="max-width:500px;">
+    <div class="sk-modal-head">
+      <div class="sk-modal-title" id="userModalTitle">Dodaj uporabnika</div>
+      <button class="sk-modal-close" onclick="skModalClose('userModal')">✕</button>
+    </div>
+    <div class="sk-modal-content">
+    <input type="hidden" id="u-id"/>
+    <div class="modal-grid-2">
+      <div class="modal-field">
+        <label>Ime *</label>
+        <input id="u-name" placeholder="npr. Jakob"/>
+      </div>
+      <div class="modal-field">
+        <label>Priimek</label>
+        <input id="u-surname" placeholder="npr. Novak"/>
+      </div>
+    </div>
+    <div class="modal-field">
+      <label>Email *</label>
+      <input id="u-email" type="email" placeholder="jakob@primer.si"/>
+    </div>
+    <div class="modal-field">
+      <label>Geslo <span id="passLabel">(obvezno za novega)</span></label>
+      <input id="u-password" type="password" placeholder="••••••••"/>
+      <div class="modal-hint" id="passHint"></div>
+    </div>
+    <div class="modal-grid-2">
+      <div class="modal-field">
+        <label>Kartica (CardID)</label>
+        <input id="u-card" placeholder="6-mestna številka" maxlength="6"/>
+        <div class="modal-hint">Pusti prazno = samodejno</div>
+      </div>
+      <div class="modal-field">
+        <label>Vloga</label>
+        <select id="u-role">
+          <option value="">Brez vloge</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-field">
+      <label>Kartica EPC <span style="color:var(--mut);font-size:8px;letter-spacing:0;">— za prisotnostno sledenje</span></label>
+      <input id="u-cardepc" placeholder="npr. E2801160600002181922C3A8" style="font-family:'JetBrains Mono',monospace;font-size:11px;"/>
+      <div class="modal-hint">Hex EPC fizične RFID kartice uporabnika</div>
+    </div>
+    <div class="modal-actions">
+      <button class="sk-btn" onclick="skModalClose('userModal')">Prekliči</button>
+      <button class="sk-btn sk-btn-acc" id="userSaveBtn" onclick="saveUser()">Shrani</button>
+    </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Delete confirm modal ── -->
+<div class="sk-modal-bg" id="deleteModal" onclick="if(event.target===this)skModalClose('deleteModal')">
+  <div class="sk-modal" style="max-width:380px;">
+    <div class="sk-modal-head">
+      <div class="sk-modal-title">Izbriši uporabnika</div>
+      <button class="sk-modal-close" onclick="skModalClose('deleteModal')">✕</button>
+    </div>
+    <div class="sk-modal-content">
+    <p style="color:var(--sub);font-size:12px;margin-bottom:20px;line-height:1.6;">
+      Ali res želiš izbrisati uporabnika <strong id="deleteUserName" style="color:var(--txt);"></strong>?
+      Vse izposoje tega uporabnika bodo prav tako izbrisane.
+    </p>
+    <div class="modal-actions">
+      <button class="sk-btn" onclick="skModalClose('deleteModal')">Prekliči</button>
+      <button class="sk-btn sk-btn-red" id="deleteConfirmBtn" onclick="executeDelete()">Izbriši</button>
+    </div>
+    </div>
+  </div>
+</div>
+
+<script src="/css/sk.js"></script>
+<script>
+// Admin guard
+if (!skIsAdmin()) { location.href = '/index.html'; }
+
+let users = [], roles = [], filtered = [], pendingDeleteId = null;
+
+async function init() {
+  const [ru, rr] = await Promise.all([skGet('/api/User'), skGet('/api/User/roles')]);
+  roles = rr.ok && rr.data ? rr.data : [];
+  populateRoleFilter();
+  populateRoleDropdown();
+  if (ru.ok && ru.data) {
+    users = ru.data;
+    applyFilter();
+  }
+  document.getElementById('adminSub').textContent = `${users.length} uporabnikov`;
+  loadExchanges();
+}
+
+function populateRoleFilter() {
+  const sel = document.getElementById('filterRole');
+  sel.innerHTML = '<option value="">Vse vloge</option>';
+  roles.forEach(r => {
+    const o = document.createElement('option');
+    o.value = r.name || r.Name;
+    o.textContent = r.name || r.Name;
+    sel.appendChild(o);
+  });
+}
+
+function populateRoleDropdown() {
+  const sel = document.getElementById('u-role');
+  sel.innerHTML = '<option value="">Brez vloge</option>';
+  roles.forEach(r => {
+    const o = document.createElement('option');
+    o.value = r.id;
+    o.textContent = r.name || r.Name;
+    sel.appendChild(o);
+  });
+}
+
+function applyFilter() {
+  const q  = (document.getElementById('searchInput').value || '').toLowerCase();
+  const rf = document.getElementById('filterRole').value;
+  filtered = users.filter(u => {
+    const hay = `${u.Name||u.name||''} ${u.Surname||u.surname||''} ${u.Email||u.email||''} ${u.CardID||u.cardID||''}`.toLowerCase();
+    if (q && !hay.includes(q)) return false;
+    if (rf && (u.RoleName || u.roleName || '') !== rf) return false;
+    return true;
+  });
+  renderTable();
+}
+
+function renderTable() {
+  const tbody = document.getElementById('userTableBody');
+  if (!filtered.length) {
+    tbody.innerHTML = '<tr><td colspan="5"><div class="state-empty">Ni uporabnikov.</div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = filtered.map(u => {
+    const name     = [u.Name||u.name, u.Surname||u.surname].filter(Boolean).join(' ') || '—';
+    const initials = [(u.Name||u.name||'')[0], (u.Surname||u.surname||'')[0]].filter(Boolean).join('').toUpperCase() || '?';
+    const role     = u.RoleName || u.roleName || '—';
+    const roleClass = role === 'Admin' ? 'sk-badge-org' : 'sk-badge-acc';
+    const id       = u.Id || u.id;
+    return `<tr>
+      <td>
+        <span class="user-avatar">${initials}</span>
+        ${escHtml(name)}
+      </td>
+      <td style="font-family:'JetBrains Mono',monospace;">${escHtml(u.CardID||u.cardID||'—')}</td>
+      <td>${escHtml(u.Email||u.email||'—')}</td>
+      <td><span class="${role !== '—' ? roleClass : 'sk-badge-mut'} sk-badge">${escHtml(role)}</span></td>
+      <td>
+        <div style="display:flex;gap:6px;">
+          <button class="sk-btn" style="font-size:10px;padding:4px 10px;" onclick="openEdit(${id})">✎ Uredi</button>
+          <button class="sk-btn sk-btn-red" style="font-size:10px;padding:4px 10px;" onclick="confirmDelete(${id},'${escAttr(name)}')">✕</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function openAdd() {
+  document.getElementById('u-id').value       = '';
+  document.getElementById('u-name').value     = '';
+  document.getElementById('u-surname').value  = '';
+  document.getElementById('u-email').value    = '';
+  document.getElementById('u-password').value = '';
+  document.getElementById('u-card').value     = '';
+  document.getElementById('u-cardepc').value  = '';
+  document.getElementById('u-role').value     = '';
+  document.getElementById('userModalTitle').textContent = 'Dodaj uporabnika';
+  document.getElementById('passLabel').textContent      = '(obvezno za novega)';
+  document.getElementById('passHint').textContent       = '';
+  skModal('userModal');
+}
+
+function openEdit(id) {
+  const u = users.find(x => (x.Id||x.id) === id);
+  if (!u) return;
+  document.getElementById('u-id').value       = id;
+  document.getElementById('u-name').value     = u.Name    || u.name    || '';
+  document.getElementById('u-surname').value  = u.Surname || u.surname || '';
+  document.getElementById('u-email').value    = u.Email   || u.email   || '';
+  document.getElementById('u-password').value = '';
+  document.getElementById('u-card').value     = u.CardID   || u.cardID   || '';
+  document.getElementById('u-cardepc').value  = u.CardEpc  || u.cardEpc  || '';
+  document.getElementById('u-role').value     = u.RoleId   || u.roleId   || '';
+  document.getElementById('userModalTitle').textContent = 'Uredi uporabnika';
+  document.getElementById('passLabel').textContent      = '(pusti prazno = ne spremeni)';
+  document.getElementById('passHint').textContent       = 'Geslo se posodobi samo če ga vneseš.';
+  skModal('userModal');
+}
+
+async function saveUser() {
+  const btn     = document.getElementById('userSaveBtn');
+  const id      = document.getElementById('u-id').value ? +document.getElementById('u-id').value : null;
+  const Name    = document.getElementById('u-name').value.trim();
+  const Surname = document.getElementById('u-surname').value.trim() || null;
+  const Email   = document.getElementById('u-email').value.trim();
+  const Password = document.getElementById('u-password').value || null;
+  const CardID   = document.getElementById('u-card').value.trim()    || null;
+  const CardEpc  = document.getElementById('u-cardepc').value.trim() || null;
+  const RoleId   = document.getElementById('u-role').value ? +document.getElementById('u-role').value : null;
+
+  if (!Name)  { skToast('Ime je obvezno.', 'error'); return; }
+  if (!Email) { skToast('Email je obvezen.', 'error'); return; }
+  if (!id && !Password) { skToast('Geslo je obvezno za novega uporabnika.', 'error'); return; }
+
+  skBtnLoading(btn, true, 'Shrani');
+
+  let r;
+  if (id) {
+    r = await skPut(`/api/User/${id}`, { Name, Surname, Email, Password, CardID, CardEpc, RoleId });
+  } else {
+    const card = CardID || String(Math.floor(Math.random() * 1000000)).padStart(6, '0');
+    r = await skPost('/api/User', { CardID: card, Name, Surname, Email, Password, CardEpc, RoleId });
+  }
+
+  skBtnLoading(btn, false, 'Shrani');
+
+  if (!r.ok) { skToast(r.data?.message || `Napaka ${r.status}`, 'error'); return; }
+  skToast(id ? 'Uporabnik posodobljen.' : 'Uporabnik dodan.', 'success');
+  skModalClose('userModal');
+  await loadUsers();
+}
+
+function confirmDelete(id, name) {
+  pendingDeleteId = id;
+  document.getElementById('deleteUserName').textContent = name;
+  skModal('deleteModal');
+}
+
+async function executeDelete() {
+  if (!pendingDeleteId) return;
+  const btn = document.getElementById('deleteConfirmBtn');
+  skBtnLoading(btn, true, 'Izbriši');
+  const r = await skDel(`/api/User/${pendingDeleteId}`);
+  skBtnLoading(btn, false, 'Izbriši');
+  if (!r.ok) { skToast(r.data?.message || 'Napaka pri brisanju.', 'error'); return; }
+  skToast('Uporabnik izbrisan.', 'success');
+  skModalClose('deleteModal');
+  pendingDeleteId = null;
+  await loadUsers();
+}
+
+async function loadUsers() {
+  const btn = document.getElementById('refreshBtn');
+  skBtnLoading(btn, true, '↺ Osveži');
+  const r = await skGet('/api/User');
+  skBtnLoading(btn, false, '↺ Osveži');
+  if (r.ok && r.data) {
+    users = r.data;
+    document.getElementById('adminSub').textContent = `${users.length} uporabnikov`;
+    applyFilter();
+  }
+}
+
+async function loadExchanges() {
+  const r = await skGet('/api/Exchange/all');
+  const body = document.getElementById('exchangeBody');
+  if (!r.ok || !r.data || !r.data.length) {
+    body.innerHTML = '<tr><td colspan="5"><div class="state-empty">Ni zahtev za menjavo.</div></td></tr>';
+    return;
+  }
+  body.innerHTML = r.data.map(e => {
+    const statusClass = e.status === 'accepted' ? 'sk-badge-grn'
+                      : e.status === 'rejected' ? 'sk-badge-red'
+                      : e.status === 'pending'  ? 'sk-badge-org'
+                      : 'sk-badge-mut';
+    return `<tr>
+      <td>${escHtml(e.fromUserName||`#${e.fromUserId}`)}</td>
+      <td>${escHtml(e.toUserName||`#${e.toUserId}`)}</td>
+      <td>${escHtml(e.assetName||`#${e.assetId}`)}</td>
+      <td><span class="sk-badge ${statusClass}">${escHtml(e.status)}</span></td>
+      <td style="color:var(--mut);font-size:10px;">${skFmtDate(e.createdAt)}</td>
+    </tr>`;
+  }).join('');
+}
+
+function escHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function escAttr(s) { return String(s||'').replace(/'/g,"\\'"); }
+
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+[phases.build]
+cmds = [
+  "dotnet publish Signalko.Web/Signalko.Web.csproj -c Release -o /app/publish"
+]
+
+[start]
+cmd = "dotnet /app/publish/Signalko.Web.dll"

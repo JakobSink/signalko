@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="sl">
+<head>
+<meta charset="utf-8"/>
+<title>Signalko · Čitalci</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/css/sk.css"/>
+<style>
+/* ── Shared admin-page styles ─────────────────────────────── */
+.hint-bar{
+  background:var(--up);border:1px solid var(--border);border-radius:8px;
+  padding:10px 16px;font-size:11px;color:var(--sub);line-height:1.7;margin-bottom:18px;
+}
+.toolbar{display:flex;gap:10px;align-items:center;margin-bottom:18px;flex-wrap:wrap;}
+.search-box{
+  background:var(--surface);border:1px solid var(--border);border-radius:8px;
+  padding:8px 12px;font-size:12px;color:var(--txt);outline:none;
+  font-family:'JetBrains Mono',monospace;transition:border .13s;flex:1;min-width:180px;
+}
+.search-box:focus{border-color:var(--acc);}
+.search-box::placeholder{color:var(--mut);}
+.filter-sel{
+  background:var(--surface);border:1px solid var(--border);border-radius:8px;
+  padding:8px 10px;font-size:12px;color:var(--txt);font-family:'JetBrains Mono',monospace;
+}
+.ic-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px;}
+.ic-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  overflow:hidden;transition:border-color .13s,transform .13s;cursor:pointer;
+}
+.ic-card:hover{border-color:var(--acc);transform:translateY(-2px);}
+.ic-head{
+  display:flex;align-items:flex-start;justify-content:space-between;
+  padding:14px 16px 12px;border-bottom:1px solid var(--border);gap:10px;
+}
+.ic-icon{
+  width:36px;height:36px;border-radius:9px;background:var(--accD);
+  display:flex;align-items:center;justify-content:center;
+  font-size:15px;color:var(--acc);flex-shrink:0;
+}
+.ic-title-wrap{flex:1;min-width:0;}
+.ic-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ic-sub{font-size:10px;color:var(--mut);margin-top:2px;font-family:'JetBrains Mono',monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ic-kv{padding:10px 16px;display:grid;gap:0;}
+.ic-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border);font-size:11px;}
+.ic-row:last-child{border-bottom:none;}
+.ic-key{color:var(--sub);}
+.ic-val{color:var(--txt);font-family:'JetBrains Mono',monospace;font-size:10px;text-align:right;max-width:60%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ic-foot{display:flex;gap:8px;padding:10px 16px;border-top:1px solid var(--border);background:var(--up);}
+
+.modal-field{display:flex;flex-direction:column;gap:5px;margin-bottom:14px;}
+.modal-field label{font-size:9px;color:var(--mut);letter-spacing:1.5px;text-transform:uppercase;}
+.modal-field input{
+  background:var(--up);border:1px solid var(--border);border-radius:8px;
+  padding:10px 12px;font-size:12px;color:var(--txt);outline:none;
+  font-family:'JetBrains Mono',monospace;transition:border .13s;
+}
+.modal-field input:focus{border-color:var(--acc);}
+.modal-field input::placeholder{color:var(--mut);}
+.checkbox-row{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.checkbox-row label{font-size:12px;color:var(--sub);}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:6px;}
+.state-empty{padding:40px;text-align:center;color:var(--mut);font-size:12px;}
+.state-loading{display:flex;align-items:center;justify-content:center;gap:10px;padding:40px;color:var(--sub);font-size:12px;}
+</style>
+</head>
+<body>
+<div class="sk-layout">
+  <aside class="sk-sidebar-col" id="sidebarHost"></aside>
+  <main class="sk-main">
+
+    <div class="sk-page-title">Čitalci</div>
+    <div class="sk-page-sub">RFID bralniki in stanje</div>
+
+    <div class="hint-bar">
+      <strong>Čitalec (Reader)</strong> je fizična RFID naprava, ki prek anten bere tage. Vsak čitalec
+      mora imeti <strong>ime</strong> in <strong>IP naslov</strong>, da se sistem poveže z njim.
+      Neaktiven čitalec ne pošilja podatkov. Klikni kartico ali <strong>✎ Uredi</strong> za spremembo.
+      Z gumbom <strong>● / ○</strong> vklopiš ali izklopiš čitalec brez brisanja.
+    </div>
+
+    <div class="toolbar">
+      <input class="search-box" id="searchInput" placeholder="Išči (ime, IP, hostname)…" oninput="applyFilters()"/>
+      <select class="filter-sel" id="filterEnabled" onchange="applyFilters()">
+        <option value="">Vsi</option>
+        <option value="true">Samo aktivni</option>
+        <option value="false">Samo neaktivni</option>
+      </select>
+      <button class="sk-btn sk-btn-acc" onclick="openEditor(null)">+ Dodaj čitalec</button>
+      <button class="sk-btn" id="refreshBtn" onclick="loadReaders()">↺ Osveži</button>
+    </div>
+
+    <div id="gridHost">
+      <div class="state-loading"><div class="sk-spin"></div>Nalaganje…</div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Editor modal -->
+<div class="sk-modal-bg" id="editorModal" onclick="if(event.target===this)skModalClose('editorModal')">
+  <div class="sk-modal" style="max-width:420px;">
+    <div class="sk-modal-head">
+      <div class="sk-modal-title" id="editorTitle">Čitalec</div>
+      <button class="sk-modal-close" onclick="skModalClose('editorModal')">✕</button>
+    </div>
+    <div class="sk-modal-content">
+    <input type="hidden" id="e-id"/>
+    <div class="modal-field"><label>Ime *</label><input id="e-name" placeholder="npr. FX7500-Entrance"/></div>
+    <div class="modal-field"><label>IP naslov *</label><input id="e-ip" placeholder="npr. 192.168.1.50"/></div>
+    <div class="modal-field"><label>Hostname</label><input id="e-hostname" placeholder="npr. FX7500-123456"/></div>
+    <div class="checkbox-row">
+      <input type="checkbox" id="e-enabled"/>
+      <label for="e-enabled">Čitalec je aktiven</label>
+    </div>
+    <div class="modal-actions">
+      <button class="sk-btn" onclick="skModalClose('editorModal')">Prekliči</button>
+      <button class="sk-btn sk-btn-acc" id="editorSaveBtn" onclick="saveEditor()">Shrani</button>
+    </div>
+    </div>
+  </div>
+</div>
+
+<!-- Delete confirm -->
+<div class="sk-modal-bg" id="deleteModal" onclick="if(event.target===this)skModalClose('deleteModal')">
+  <div class="sk-modal" style="max-width:380px;">
+    <div class="sk-modal-head">
+      <div class="sk-modal-title">Izbriši čitalec</div>
+      <button class="sk-modal-close" onclick="skModalClose('deleteModal')">✕</button>
+    </div>
+    <div class="sk-modal-content">
+    <p style="color:var(--sub);font-size:12px;margin-bottom:20px;line-height:1.6;">
+      Ali res želiš izbrisati čitalec <strong id="deleteLabel" style="color:var(--txt);"></strong>?
+    </p>
+    <div class="modal-actions">
+      <button class="sk-btn" onclick="skModalClose('deleteModal')">Prekliči</button>
+      <button class="sk-btn sk-btn-red" id="deleteConfirmBtn" onclick="executeDelete()">Izbriši</button>
+    </div>
+    </div>
+  </div>
+</div>
+
+<script src="/css/sk.js"></script>
+<script>
+skRequireAdmin();
+let readers = [], filtered = [], pendingDelete = null;
+
+async function loadReaders() {
+  const btn = document.getElementById('refreshBtn');
+  skBtnLoading(btn, true, '↺ Osveži');
+  document.getElementById('gridHost').innerHTML = '<div class="state-loading"><div class="sk-spin"></div>Nalaganje…</div>';
+  const r = await skGet('/api/Reader');
+  skBtnLoading(btn, false, '↺ Osveži');
+  if (!r.ok || !r.data) { document.getElementById('gridHost').innerHTML = '<div class="state-empty">Napaka pri nalaganju.</div>'; return; }
+  readers = r.data;
+  applyFilters();
+}
+
+function applyFilters() {
+  const q  = (document.getElementById('searchInput').value || '').toLowerCase();
+  const en = document.getElementById('filterEnabled').value;
+  filtered = readers.filter(r => {
+    if (q && !`${r.name||''} ${r.ip||''} ${r.hostname||''}`.toLowerCase().includes(q)) return false;
+    if (en === 'true'  && !r.enabled) return false;
+    if (en === 'false' &&  r.enabled) return false;
+    return true;
+  });
+  renderGrid();
+}
+
+function renderGrid() {
+  const host = document.getElementById('gridHost');
+  if (!filtered.length) { host.innerHTML = '<div class="state-empty">Ni čitalcev.</div>'; return; }
+  host.innerHTML = '<div class="ic-grid"></div>';
+  const grid = host.querySelector('.ic-grid');
+  filtered.forEach(r => {
+    const card = document.createElement('div');
+    card.className = 'ic-card';
+    card.innerHTML = `
+      <div class="ic-head">
+        <div class="ic-icon">◉</div>
+        <div class="ic-title-wrap">
+          <div class="ic-title">${escHtml(r.name||'—')}</div>
+          <div class="ic-sub">${escHtml(r.ip||'—')}</div>
+        </div>
+        ${r.enabled
+          ? '<span class="sk-badge sk-badge-grn">Aktiven</span>'
+          : '<span class="sk-badge sk-badge-red">Izklopljen</span>'}
+      </div>
+      <div class="ic-kv">
+        <div class="ic-row"><span class="ic-key">Hostname</span><span class="ic-val">${escHtml(r.hostname||'—')}</span></div>
+        <div class="ic-row"><span class="ic-key">IP</span><span class="ic-val">${escHtml(r.ip||'—')}</span></div>
+        <div class="ic-row"><span class="ic-key">ID</span><span class="ic-val">${r.id}</span></div>
+      </div>
+      <div class="ic-foot">
+        <button class="sk-btn sk-btn-sm" data-act="edit">✎ Uredi</button>
+        <button class="sk-btn sk-btn-sm" data-act="toggle">${r.enabled ? '○ Onemogoči' : '● Omogoči'}</button>
+        <button class="sk-btn sk-btn-sm sk-btn-red" data-act="delete">✕</button>
+      </div>`;
+    card.querySelector('[data-act="edit"]').addEventListener('click',   e => { e.stopPropagation(); openEditor(r); });
+    card.querySelector('[data-act="toggle"]').addEventListener('click', e => { e.stopPropagation(); toggleEnabled(r); });
+    card.querySelector('[data-act="delete"]').addEventListener('click', e => { e.stopPropagation(); confirmDelete(r); });
+    card.addEventListener('click', () => openEditor(r));
+    grid.appendChild(card);
+  });
+}
+
+function openEditor(r) {
+  document.getElementById('e-id').value        = r?.id ?? '';
+  document.getElementById('e-name').value      = r?.name ?? '';
+  document.getElementById('e-ip').value        = r?.ip ?? '';
+  document.getElementById('e-hostname').value  = r?.hostname ?? '';
+  document.getElementById('e-enabled').checked = r ? !!r.enabled : true;
+  document.getElementById('editorTitle').textContent = r ? 'Uredi čitalec' : 'Dodaj čitalec';
+  skModal('editorModal');
+}
+
+async function saveEditor() {
+  const btn      = document.getElementById('editorSaveBtn');
+  const id       = document.getElementById('e-id').value ? +document.getElementById('e-id').value : null;
+  const Name     = document.getElementById('e-name').value.trim();
+  const Ip       = document.getElementById('e-ip').value.trim();
+  const Hostname = document.getElementById('e-hostname').value.trim() || null;
+  const Enabled  = document.getElementById('e-enabled').checked;
+  if (!Name) { skToast('Ime je obvezno.', 'error'); return; }
+  if (!Ip)   { skToast('IP naslov je obvezen.', 'error'); return; }
+  skBtnLoading(btn, true, 'Shrani');
+  const r = id
+    ? await skPut(`/api/Reader/${id}`, { Id: id, Name, Ip, Hostname, Enabled })
+    : await skPost('/api/Reader', { Name, Ip, Hostname, Enabled });
+  skBtnLoading(btn, false, 'Shrani');
+  if (!r.ok) { skToast(r.data?.message || `Napaka ${r.status}`, 'error'); return; }
+  skToast(id ? 'Čitalec posodobljen.' : 'Čitalec dodan.', 'success');
+  skModalClose('editorModal');
+  await loadReaders();
+}
+
+async function toggleEnabled(r) {
+  const res = await skPut(`/api/Reader/${r.id}`, { Id: r.id, Name: r.name, Ip: r.ip, Hostname: r.hostname||null, Enabled: !r.enabled });
+  if (!res.ok) { skToast('Preklop ni uspel.', 'error'); return; }
+  skToast(!r.enabled ? 'Čitalec omogočen.' : 'Čitalec onemogočen.', 'success');
+  await loadReaders();
+}
+
+function confirmDelete(r) {
+  pendingDelete = r;
+  document.getElementById('deleteLabel').textContent = r.name || '—';
+  skModal('deleteModal');
+}
+
+async function executeDelete() {
+  if (!pendingDelete) return;
+  const btn = document.getElementById('deleteConfirmBtn');
+  skBtnLoading(btn, true, 'Izbriši');
+  const r = await skDel(`/api/Reader/${pendingDelete.id}`);
+  skBtnLoading(btn, false, 'Izbriši');
+  if (!r.ok) { skToast(r.data?.message || 'Napaka pri brisanju.', 'error'); return; }
+  skToast('Čitalec izbrisan.', 'success');
+  skModalClose('deleteModal');
+  pendingDelete = null;
+  await loadReaders();
+}
+
+function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+loadReaders();
+</script>
+</body>
+</html>

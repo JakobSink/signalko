@@ -1,0 +1,380 @@
+<!doctype html>
+<html lang="sl">
+<head>
+<meta charset="utf-8"/>
+<title>Signalko · Profil</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/css/sk.css"/>
+<style>
+.profile-layout {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+@media (max-width: 900px) { .profile-layout { grid-template-columns: 1fr; } }
+
+/* Avatar card */
+.avatar-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 28px 20px; text-align: center;
+}
+.avatar-big {
+  width: 80px; height: 80px; border-radius: 20px; margin: 0 auto 16px;
+  background: var(--accD); border: 2px solid rgba(79,142,247,.3);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Syne', sans-serif; font-size: 30px; font-weight: 800; color: var(--acc);
+}
+.avatar-name {
+  font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 800;
+  margin-bottom: 4px; word-break: break-word;
+}
+.avatar-email { font-size: 11px; color: var(--sub); margin-bottom: 14px; }
+.avatar-badges { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; margin-bottom: 20px; }
+
+.card-id-box {
+  background: var(--up); border: 1px solid var(--border); border-radius: 8px;
+  padding: 10px 14px; text-align: left; margin-bottom: 20px;
+}
+.card-id-label { font-size: 9px; color: var(--mut); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px; }
+.card-id-val { font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 600; color: var(--txt); letter-spacing: 2px; }
+
+.logout-btn {
+  width: 100%; padding: 10px; background: none; border: 1px solid var(--border);
+  border-radius: 8px; color: var(--sub); font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; cursor: pointer; transition: border-color .13s, color .13s;
+}
+.logout-btn:hover { border-color: rgba(248,113,113,.5); color: var(--red); }
+
+/* Right column */
+.right-col { display: flex; flex-direction: column; gap: 18px; }
+
+/* Edit form */
+.edit-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden;
+}
+.edit-card-head {
+  padding: 14px 20px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.edit-card-body { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 600px) { .two-col { grid-template-columns: 1fr; } }
+
+/* Loans table inside card */
+.loans-table-wrap { overflow-x: auto; }
+</style>
+</head>
+<body>
+<div class="sk-layout">
+  <aside class="sk-sidebar-col" id="sidebarHost"></aside>
+
+  <main class="sk-main">
+    <div class="sk-page-title">Profil</div>
+    <div class="sk-page-sub">Vaši podatki in zgodovina izposoj</div>
+
+    <div id="notLoggedIn" style="display:none;">
+      <div class="sk-alert sk-alert-acc" style="max-width:460px;">
+        Za ogled profila se morate prijaviti.
+        <a href="/login.html" style="color:var(--acc);margin-left:8px;">⟶ Prijava</a>
+      </div>
+    </div>
+
+    <div id="profileContent" style="display:none;">
+      <div class="profile-layout">
+
+        <!-- LEFT: Avatar card -->
+        <div class="avatar-card">
+          <div class="avatar-big" id="profileAvatar">?</div>
+          <div class="avatar-name" id="profileName">—</div>
+          <div class="avatar-email" id="profileEmail">—</div>
+          <div class="avatar-badges" id="profileBadges"></div>
+          <div class="card-id-box">
+            <div class="card-id-label">RFID Card ID</div>
+            <div class="card-id-val" id="profileCard">—</div>
+          </div>
+          <button class="logout-btn" onclick="doLogout()">⏻ Odjava</button>
+        </div>
+
+        <!-- RIGHT -->
+        <div class="right-col">
+
+          <!-- Edit profile -->
+          <div class="edit-card">
+            <div class="edit-card-head">
+              <span class="sk-section-title">Uredi profil</span>
+              <span id="editStatus" style="font-size:11px;color:var(--grn);display:none;">✓ Shranjeno</span>
+            </div>
+            <div class="edit-card-body">
+              <div class="two-col">
+                <div class="sk-field">
+                  <label>Ime</label>
+                  <input class="sk-input" id="editName" placeholder="Ime"/>
+                </div>
+                <div class="sk-field">
+                  <label>Priimek</label>
+                  <input class="sk-input" id="editSurname" placeholder="Priimek"/>
+                </div>
+              </div>
+              <div class="sk-field">
+                <label>Email</label>
+                <input class="sk-input" id="editEmail" type="email" placeholder="email@example.com"/>
+              </div>
+              <div class="two-col">
+                <div class="sk-field">
+                  <label>Novo geslo</label>
+                  <input class="sk-input" id="editPass" type="password" placeholder="Pusti prazno = brez spremembe"/>
+                </div>
+                <div class="sk-field">
+                  <label>Potrdi geslo</label>
+                  <input class="sk-input" id="editPassConfirm" type="password" placeholder="Ponovi geslo"/>
+                </div>
+              </div>
+              <div id="editErr" class="sk-alert sk-alert-red" style="display:none;"></div>
+              <div>
+                <button class="sk-btn sk-btn-acc" id="saveProfileBtn" onclick="saveProfile()">Shrani spremembe</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Loan history -->
+          <div class="edit-card">
+            <div class="edit-card-head">
+              <span class="sk-section-title">Moje izposoje</span>
+              <span class="sk-badge sk-badge-mut" id="loansCount">—</span>
+            </div>
+            <div class="loans-table-wrap" id="loansBody">
+              <div class="sk-state-loading"><div class="sk-spin"></div>Nalaganje…</div>
+            </div>
+          </div>
+
+          <!-- Exchange requests -->
+          <div class="edit-card" id="exchangeCard">
+            <div class="edit-card-head">
+              <span class="sk-section-title">Zahteve za menjavo</span>
+              <span class="sk-badge sk-badge-mut" id="exCount">—</span>
+            </div>
+            <div id="exBody">
+              <div class="sk-state-loading"><div class="sk-spin"></div>Nalaganje…</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script src="/css/sk.js"></script>
+<script>
+const me = skCurrentUser();
+
+if (!skIsLoggedIn() || !me) {
+  document.getElementById('notLoggedIn').style.display = '';
+} else {
+  document.getElementById('profileContent').style.display = '';
+  initProfile();
+}
+
+function initProfile() {
+  const name    = me.name    || me.Name    || '';
+  const surname = me.surname || me.Surname || '';
+  const email   = me.email   || me.Email   || '';
+  const card    = me.cardID  || me.CardID  || '—';
+  const role    = me.role    || me.Role    || '';
+  const initials = [name[0], surname[0]].filter(Boolean).join('').toUpperCase() || '?';
+
+  document.getElementById('profileAvatar').textContent = initials;
+  document.getElementById('profileName').textContent   = [name, surname].filter(Boolean).join(' ') || '—';
+  document.getElementById('profileEmail').textContent  = email || '—';
+  document.getElementById('profileCard').textContent   = card;
+
+  const roleClass = role === 'Admin' ? 'sk-badge-org' : 'sk-badge-acc';
+  document.getElementById('profileBadges').innerHTML = role
+    ? `<span class="sk-badge ${roleClass}">${role}</span>` : '';
+
+  // Pre-fill edit form
+  document.getElementById('editName').value    = name;
+  document.getElementById('editSurname').value = surname;
+  document.getElementById('editEmail').value   = email;
+
+  loadLoans();
+  loadExchanges();
+}
+
+/* ── Load loans ── */
+async function loadLoans() {
+  const uid = me.id || me.Id || 0;
+  const r = await skGet(`/api/Loan/my?userId=${uid}`);
+  const body = document.getElementById('loansBody');
+
+  if (!r.ok || !r.data?.length) {
+    document.getElementById('loansCount').textContent = '0';
+    body.innerHTML = '<div class="sk-state-empty"><span>⇌</span><span>Ni izposoj.</span></div>';
+    return;
+  }
+
+  const loans = r.data;
+  document.getElementById('loansCount').textContent = loans.length;
+
+  body.innerHTML = `
+    <table class="sk-table">
+      <thead><tr>
+        <th></th><th>Sredstvo</th><th>Cona</th><th>Od</th><th>Do</th><th>Status</th>
+      </tr></thead>
+      <tbody>
+        ${loans.map(l => {
+          const active = !l.ReturnedAt && !l.returnedAt;
+          return `<tr>
+            <td><div class="sk-dot ${active ? 'sk-dot-org pulse' : 'sk-dot-mut'}"></div></td>
+            <td><strong>${l.AssetName || l.assetName || '—'}</strong></td>
+            <td style="color:var(--sub);">${l.ZoneName || l.zoneName || '—'}</td>
+            <td style="font-size:11px;">${skFmtDate(l.LoanedAt || l.loanedAt)}</td>
+            <td style="font-size:11px;">${l.ReturnedAt || l.returnedAt ? skFmtDate(l.ReturnedAt || l.returnedAt) : '—'}</td>
+            <td><span class="sk-badge ${active ? 'sk-badge-org' : 'sk-badge-grn'}">${active ? 'Aktivno' : 'Vrnjeno'}</span></td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`;
+}
+
+/* ── Load exchange requests ── */
+async function loadExchanges() {
+  const uid = me.id || me.Id || 0;
+  const [sentR, recvR] = await Promise.all([
+    skGet(`/api/Exchange/my?userId=${uid}`),
+    skGet(`/api/Exchange/pending?toUserId=${uid}`),
+  ]);
+
+  const sent    = sentR.ok  ? (sentR.data  || []) : [];
+  const pending = recvR.ok  ? (recvR.data  || []) : [];
+  const total   = sent.length + pending.length;
+  document.getElementById('exCount').textContent = total;
+
+  const body = document.getElementById('exBody');
+  if (!total) {
+    body.innerHTML = '<div class="sk-state-empty"><span>⇌</span><span>Ni zahtev za menjavo.</span></div>';
+    return;
+  }
+
+  const statusBadge = s => {
+    const map = { pending: 'sk-badge-org', accepted: 'sk-badge-grn', rejected: 'sk-badge-red', cancelled: 'sk-badge-mut' };
+    const lbl = { pending: 'Čaka', accepted: 'Sprejeto', rejected: 'Zavrnjeno', cancelled: 'Preklicano' };
+    return `<span class="sk-badge ${map[s]||'sk-badge-mut'}">${lbl[s]||s}</span>`;
+  };
+
+  let html = `<table class="sk-table"><thead><tr>
+    <th>Tip</th><th>Sredstvo</th><th>Od / Do</th><th>Status</th><th>Datum</th><th></th>
+  </tr></thead><tbody>`;
+
+  sent.forEach(e => {
+    html += `<tr>
+      <td><span class="sk-badge sk-badge-acc">Poslano</span></td>
+      <td><strong>${e.assetName || e.AssetName || '—'}</strong></td>
+      <td style="color:var(--sub);">${e.toUserName || e.ToUserName || '—'}</td>
+      <td>${statusBadge(e.status || e.Status || '')}</td>
+      <td style="font-size:11px;">${skFmtDate(e.createdAt || e.CreatedAt)}</td>
+      <td></td>
+    </tr>`;
+  });
+
+  pending.forEach(e => {
+    const eid = e.id || e.Id;
+    html += `<tr>
+      <td><span class="sk-badge sk-badge-org">Prejeto</span></td>
+      <td><strong>${e.assetName || e.AssetName || '—'}</strong></td>
+      <td style="color:var(--sub);">${e.fromUserName || e.FromUserName || '—'}</td>
+      <td>${statusBadge('pending')}</td>
+      <td style="font-size:11px;">${skFmtDate(e.createdAt || e.CreatedAt)}</td>
+      <td style="white-space:nowrap;">
+        <button class="sk-btn sk-btn-grn sk-btn-sm" onclick="respondExchange(${eid}, true)">✓ Sprejmi</button>
+        <button class="sk-btn sk-btn-red sk-btn-sm" style="margin-left:4px;" onclick="respondExchange(${eid}, false)">✗ Zavrni</button>
+      </td>
+    </tr>`;
+  });
+
+  html += '</tbody></table>';
+  body.innerHTML = html;
+}
+
+/* ── Save profile ── */
+async function saveProfile() {
+  const btn     = document.getElementById('saveProfileBtn');
+  const name    = document.getElementById('editName').value.trim();
+  const surname = document.getElementById('editSurname').value.trim();
+  const email   = document.getElementById('editEmail').value.trim();
+  const pass    = document.getElementById('editPass').value;
+  const passC   = document.getElementById('editPassConfirm').value;
+  const errEl   = document.getElementById('editErr');
+
+  errEl.style.display = 'none';
+
+  if (!name || !email) {
+    errEl.textContent = 'Ime in email sta obvezna.';
+    errEl.style.display = 'block';
+    return;
+  }
+  if (pass && pass !== passC) {
+    errEl.textContent = 'Gesli se ne ujemata.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  const uid = me.id || me.Id || 0;
+  const body = { name, surname, email };
+  if (pass) body.password = pass;
+
+  skBtnLoading(btn, true, 'Shrani spremembe');
+  const r = await skPut(`/api/User/${uid}`, body);
+  skBtnLoading(btn, false, 'Shrani spremembe');
+
+  if (!r.ok) {
+    errEl.textContent = r.data?.message || `Napaka ${r.status}`;
+    errEl.style.display = 'block';
+    return;
+  }
+
+  // Update localStorage
+  const updated = { ...me, name, surname, email };
+  localStorage.setItem('sk_user', JSON.stringify(updated));
+
+  // Update avatar chip
+  const initials = [name[0], surname[0]].filter(Boolean).join('').toUpperCase() || '?';
+  document.getElementById('profileAvatar').textContent = initials;
+  document.getElementById('profileName').textContent   = [name, surname].filter(Boolean).join(' ');
+  document.getElementById('profileEmail').textContent  = email;
+
+  document.getElementById('editPass').value = '';
+  document.getElementById('editPassConfirm').value = '';
+
+  const st = document.getElementById('editStatus');
+  st.style.display = 'inline';
+  setTimeout(() => { st.style.display = 'none'; }, 3000);
+
+  skToast('Profil posodobljen.', 'success');
+}
+
+/* ── Respond to incoming exchange request ── */
+async function respondExchange(id, accept) {
+  const r = await skPut(`/api/Exchange/${id}/respond`, { accept });
+  if (!r.ok) {
+    skToast(`Napaka: ${r.data?.message || ''}`, 'error');
+    return;
+  }
+  skToast(accept ? 'Menjava sprejeta!' : 'Zahteva zavrnjena.', accept ? 'success' : 'warning');
+  loadExchanges();
+  loadLoans();
+}
+
+/* ── Logout ── */
+function doLogout() {
+  localStorage.removeItem('token');
+  localStorage.removeItem('sk_token');
+  localStorage.removeItem('sk_user');
+  location.href = '/login.html';
+}
+</script>
+</body>
+</html>

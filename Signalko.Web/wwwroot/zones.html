@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="sl">
+<head>
+<meta charset="utf-8"/>
+<title>Signalko · Cone</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/css/sk.css"/>
+<style>
+/* ── Shared admin-page styles ─────────────────────────────── */
+.hint-bar{
+  background:var(--up);border:1px solid var(--border);border-radius:8px;
+  padding:10px 16px;font-size:11px;color:var(--sub);line-height:1.7;margin-bottom:18px;
+}
+.toolbar{display:flex;gap:10px;align-items:center;margin-bottom:18px;flex-wrap:wrap;}
+.search-box{
+  background:var(--surface);border:1px solid var(--border);border-radius:8px;
+  padding:8px 12px;font-size:12px;color:var(--txt);outline:none;
+  font-family:'JetBrains Mono',monospace;transition:border .13s;flex:1;min-width:180px;
+}
+.search-box:focus{border-color:var(--acc);}
+.search-box::placeholder{color:var(--mut);}
+.ic-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px;}
+.ic-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  overflow:hidden;transition:border-color .13s,transform .13s;cursor:pointer;
+}
+.ic-card:hover{border-color:var(--acc);transform:translateY(-2px);}
+.ic-head{
+  display:flex;align-items:flex-start;justify-content:space-between;
+  padding:14px 16px 12px;border-bottom:1px solid var(--border);gap:10px;
+}
+.ic-icon{
+  width:36px;height:36px;border-radius:9px;background:var(--accD);
+  display:flex;align-items:center;justify-content:center;
+  font-size:15px;color:var(--acc);flex-shrink:0;
+}
+.ic-title-wrap{flex:1;min-width:0;}
+.ic-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ic-sub{font-size:10px;color:var(--mut);margin-top:2px;font-family:'JetBrains Mono',monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ic-kv{padding:10px 16px;display:grid;gap:0;}
+.ic-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border);font-size:11px;}
+.ic-row:last-child{border-bottom:none;}
+.ic-key{color:var(--sub);}
+.ic-val{color:var(--txt);font-family:'JetBrains Mono',monospace;font-size:10px;text-align:right;max-width:60%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ic-foot{display:flex;gap:8px;padding:10px 16px;border-top:1px solid var(--border);background:var(--up);}
+
+.modal-field{display:flex;flex-direction:column;gap:5px;margin-bottom:14px;}
+.modal-field label{font-size:9px;color:var(--mut);letter-spacing:1.5px;text-transform:uppercase;}
+.modal-field input,.modal-field select{
+  background:var(--up);border:1px solid var(--border);border-radius:8px;
+  padding:10px 12px;font-size:12px;color:var(--txt);outline:none;
+  font-family:'JetBrains Mono',monospace;transition:border .13s;
+}
+.modal-field input:focus,.modal-field select:focus{border-color:var(--acc);}
+.modal-field input::placeholder{color:var(--mut);}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:6px;}
+
+/* Antenna table inside zone modal */
+.ant-table{width:100%;border-collapse:collapse;font-size:11px;}
+.ant-table th{color:var(--mut);font-weight:600;padding:7px 10px;border-bottom:1px solid var(--border);text-align:left;white-space:nowrap;}
+.ant-table td{padding:7px 10px;border-bottom:1px solid var(--border);color:var(--txt);}
+.ant-table tr:last-child td{border-bottom:none;}
+.ant-table tr:hover td{background:var(--up);}
+.ant-table select{
+  background:var(--up);border:1px solid var(--border);border-radius:5px;
+  padding:3px 8px;font-size:11px;color:var(--txt);font-family:'JetBrains Mono',monospace;
+}
+.ant-table select:focus{outline:none;border-color:var(--acc);}
+
+.state-empty{padding:40px;text-align:center;color:var(--mut);font-size:12px;}
+.state-loading{display:flex;align-items:center;justify-content:center;gap:10px;padding:40px;color:var(--sub);font-size:12px;}
+</style>
+</head>
+<body>
+<div class="sk-layout">
+  <aside class="sk-sidebar-col" id="sidebarHost"></aside>
+  <main class="sk-main">
+
+    <div class="sk-page-title">Cone</div>
+    <div class="sk-page-sub">Fizične lokacije in dodeljevanje anten</div>
+
+    <div class="hint-bar">
+      <strong>Cona</strong> je fizična lokacija (prostor, vrata, oder…). Vsaka antena je dodeljena eni coni.
+      Klikni <strong>⊕ Antene</strong> na karti cone, da vidiš njene antene in jim spreminjaš cono s spustnim menijem.
+      Z <strong>+ Dodaj cono</strong> dodaš novo lokacijo, z <strong>✎ Uredi</strong> pa preimenuj obstoječo.
+    </div>
+
+    <div class="toolbar">
+      <input class="search-box" id="searchInput" placeholder="Išči (ime, tip)…" oninput="applyFilters()"/>
+      <button class="sk-btn sk-btn-acc" onclick="openAddModal()">+ Dodaj cono</button>
+      <button class="sk-btn" id="refreshBtn" onclick="loadData()">↺ Osveži</button>
+    </div>
+
+    <div id="gridHost">
+      <div class="state-loading"><div class="sk-spin"></div>Nalaganje…</div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Add / Edit zone modal -->
+<div class="sk-modal-bg" id="zoneModal" onclick="if(event.target===this)skModalClose('zoneModal')">
+  <div class="sk-modal" style="max-width:380px;">
+    <div class="sk-modal-head">
+      <div class="sk-modal-title" id="zoneModalTitle">Dodaj cono</div>
+      <button class="sk-modal-close" onclick="skModalClose('zoneModal')">✕</button>
+    </div>
+    <div class="sk-modal-content">
+    <input type="hidden" id="z-id"/>
+    <div class="modal-field"><label>Ime cone *</label><input id="z-name" placeholder="npr. Vhod, Izhod"/></div>
+    <div class="modal-field">
+      <label>Tip cone <span style="font-weight:400;color:var(--muted);font-size:.82em;">— vpliva na sledenje prisotnosti</span></label>
+      <select id="z-type" style="width:100%;padding:8px 10px;border:1px solid var(--brd);border-radius:6px;background:var(--srf);color:var(--txt);font-size:.93em;">
+        <option value="">— Brez / splošna cona —</option>
+        <option value="Entrance">Entrance — zazna prihod (IN)</option>
+        <option value="Exit">Exit — zazna odhod (OUT)</option>
+        <option value="EntranceExit">EntranceExit — preklopi IN/OUT glede na zadnji event</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="sk-btn" onclick="skModalClose('zoneModal')">Prekliči</button>
+      <button class="sk-btn sk-btn-acc" id="zoneSaveBtn" onclick="saveZone()">Shrani</button>
+    </div>
+    </div>
+  </div>
+</div>
+
+<!-- Antenna management modal -->
+<div class="sk-modal-bg" id="antModal" onclick="if(event.target===this)skModalClose('antModal')">
+  <div class="sk-modal" style="max-width:600px;">
+    <div class="sk-modal-head">
+      <div class="sk-modal-title" id="antModalTitle">Antene v coni</div>
+      <button class="sk-modal-close" onclick="skModalClose('antModal')">✕</button>
+    </div>
+    <div class="sk-modal-content">
+    <div style="font-size:11px;color:var(--sub);margin-bottom:14px;line-height:1.6;">
+      Spustni meni v stolpcu <strong>Cona</strong> premakne anteno v drugo cono takoj po izbiri.
+    </div>
+    <div style="overflow-x:auto;" id="antModalBody">
+      <div class="state-loading"><div class="sk-spin"></div>Nalaganje…</div>
+    </div>
+    </div>
+  </div>
+</div>
+
+<!-- Delete confirm -->
+<div class="sk-modal-bg" id="deleteModal" onclick="if(event.target===this)skModalClose('deleteModal')">
+  <div class="sk-modal" style="max-width:380px;">
+    <div class="sk-modal-head">
+      <div class="sk-modal-title">Izbriši cono</div>
+      <button class="sk-modal-close" onclick="skModalClose('deleteModal')">✕</button>
+    </div>
+    <div class="sk-modal-content">
+    <p style="color:var(--sub);font-size:12px;margin-bottom:20px;line-height:1.6;">
+      Ali res želiš izbrisati cono <strong id="deleteLabel" style="color:var(--txt);"></strong>?
+      Antene v tej coni bodo ostale brez cone.
+    </p>
+    <div class="modal-actions">
+      <button class="sk-btn" onclick="skModalClose('deleteModal')">Prekliči</button>
+      <button class="sk-btn sk-btn-red" id="deleteConfirmBtn" onclick="executeDelete()">Izbriši</button>
+    </div>
+    </div>
+  </div>
+</div>
+
+<script src="/css/sk.js"></script>
+<script>
+skRequireAdmin();
+let zones = [], zonesOverview = [], allZones = [], readers = [], filtered = [];
+let pendingDelete = null, currentAntZoneId = null;
+
+async function loadData() {
+  const btn = document.getElementById('refreshBtn');
+  skBtnLoading(btn, true, '↺ Osveži');
+  document.getElementById('gridHost').innerHTML = '<div class="state-loading"><div class="sk-spin"></div>Nalaganje…</div>';
+  const [rz, ro, rr] = await Promise.all([
+    skGet('/api/Zone'),
+    skGet('/api/Zone/with-antennas'),
+    skGet('/api/Reader'),
+  ]);
+  skBtnLoading(btn, false, '↺ Osveži');
+  zones         = rz.ok && rz.data ? rz.data : [];
+  zonesOverview = ro.ok && ro.data ? ro.data : [];
+  allZones      = zones;
+  readers       = rr.ok && rr.data ? rr.data : [];
+  applyFilters();
+}
+
+function applyFilters() {
+  const q = (document.getElementById('searchInput').value || '').toLowerCase();
+  filtered = zonesOverview.filter(z => z.id !== 0).filter(z =>
+    !q || String(z.name||'').toLowerCase().includes(q) || String(z.type||'').toLowerCase().includes(q)
+  ).sort((a, b) => (a.id||0) - (b.id||0));
+  renderGrid();
+}
+
+function renderGrid() {
+  const host = document.getElementById('gridHost');
+  if (!filtered.length) { host.innerHTML = '<div class="state-empty">Ni con.</div>'; return; }
+  host.innerHTML = '<div class="ic-grid"></div>';
+  const grid = host.querySelector('.ic-grid');
+
+  filtered.forEach(z => {
+    const ants = z.antennas || [];
+    const card = document.createElement('div');
+    card.className = 'ic-card';
+    card.innerHTML = `
+      <div class="ic-head">
+        <div class="ic-icon">⬡</div>
+        <div class="ic-title-wrap">
+          <div class="ic-title">${escHtml(z.name||'(brez imena)')}</div>
+          <div class="ic-sub">${z.type ? escHtml(z.type) : 'Brez tipa'} · ID ${z.id}</div>
+        </div>
+        <span class="sk-badge sk-badge-mut">${ants.length} ant.</span>
+      </div>
+      <div class="ic-kv">
+        <div class="ic-row"><span class="ic-key">Tip</span><span class="ic-val">${escHtml(z.type||'—')}</span></div>
+        <div class="ic-row"><span class="ic-key">Antene</span><span class="ic-val">${ants.length ? ants.map(a => `Port ${a.port}`).join(', ') : '—'}</span></div>
+        <div class="ic-row"><span class="ic-key">ID</span><span class="ic-val">${z.id}</span></div>
+      </div>
+      <div class="ic-foot">
+        <button class="sk-btn sk-btn-sm sk-btn-acc" data-act="ants">⊕ Antene</button>
+        <button class="sk-btn sk-btn-sm" data-act="edit">✎ Uredi</button>
+        <button class="sk-btn sk-btn-sm sk-btn-red" data-act="delete">✕</button>
+      </div>`;
+    card.querySelector('[data-act="ants"]').addEventListener('click',   e => { e.stopPropagation(); openAntModal(z); });
+    card.querySelector('[data-act="edit"]').addEventListener('click',   e => { e.stopPropagation(); openEditModal(z); });
+    card.querySelector('[data-act="delete"]').addEventListener('click', e => { e.stopPropagation(); confirmDelete(z); });
+    card.addEventListener('click', () => openAntModal(z));
+    grid.appendChild(card);
+  });
+
+  // Unassigned antennas section
+  const unassigned = zonesOverview.find(z => z.id === 0);
+  const uants = unassigned?.antennas || [];
+  if (uants.length) {
+    const sec = document.createElement('div');
+    sec.style.cssText = 'margin-top:24px;';
+    sec.innerHTML = `
+      <div style="font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--mut);margin-bottom:10px;letter-spacing:.5px;">
+        ANTENE BREZ CONE (${uants.length})
+      </div>
+      <div class="ic-grid" id="unassignedGrid"></div>`;
+    host.appendChild(sec);
+    const ug = sec.querySelector('#unassignedGrid');
+    uants.forEach(a => {
+      const rdr = readers.find(r => String(r.id) === String(a.readerId));
+      const uc = document.createElement('div');
+      uc.className = 'ic-card';
+      uc.style.borderColor = 'rgba(251,146,60,.4)';
+      uc.innerHTML = `
+        <div class="ic-head">
+          <div class="ic-icon" style="background:rgba(251,146,60,.15);color:var(--org);">⊕</div>
+          <div class="ic-title-wrap">
+            <div class="ic-title">${escHtml(a.readerName||rdr?.name||`Reader #${a.readerId}`)} · Port ${a.port}</div>
+            <div class="ic-sub">${escHtml(a.readerIP||rdr?.ip||'—')}</div>
+          </div>
+          <span class="sk-badge sk-badge-org">Brez cone</span>
+        </div>
+        <div class="ic-kv">
+          <div class="ic-row"><span class="ic-key">Vloga</span><span class="ic-val">${escHtml(a.roleName||'—')}</span></div>
+        </div>
+        <div class="ic-foot">
+          <select style="flex:1;background:var(--up);border:1px solid var(--border);border-radius:6px;padding:5px 8px;font-size:11px;color:var(--txt);font-family:'JetBrains Mono',monospace;"
+            onchange="assignZone(${a.antennaId}, this.value, this)">
+            <option value="">Dodeli cono…</option>
+            ${allZones.map(z => `<option value="${z.id}">${escHtml(z.name||`#${z.id}`)}</option>`).join('')}
+          </select>
+        </div>`;
+      ug.appendChild(uc);
+    });
+  }
+}
+
+async function assignZone(antennaId, zoneId, sel) {
+  if (!zoneId) return;
+  const r = await skPost('/api/Zone/assign-antenna', { antennaId: +antennaId, zoneId: +zoneId });
+  if (!r.ok) { skToast(r.data?.message || 'Napaka.', 'error'); sel.value = ''; return; }
+  skToast('Antena dodeljena.', 'success');
+  await loadData();
+}
+
+/* ── Antenna modal ── */
+function openAntModal(z) {
+  currentAntZoneId = z.id;
+  document.getElementById('antModalTitle').textContent = `Antene v coni: ${z.name||''}`;
+  renderAntModal(z.antennas || []);
+  skModal('antModal');
+}
+
+function renderAntModal(ants) {
+  const body = document.getElementById('antModalBody');
+  if (!ants.length) {
+    body.innerHTML = '<div class="state-empty">Ta cona nima anten.</div>';
+    return;
+  }
+  body.innerHTML = `
+    <table class="ant-table">
+      <thead><tr><th>Reader</th><th>IP</th><th>Port</th><th>Vloga</th><th>Cona</th></tr></thead>
+      <tbody>
+        ${ants.map(a => {
+          const opts = allZones.map(z =>
+            `<option value="${z.id}" ${z.id === currentAntZoneId ? 'selected' : ''}>${escHtml(z.name||`#${z.id}`)}</option>`
+          ).join('');
+          return `<tr>
+            <td>${escHtml(a.readerName||`#${a.readerId}`)}</td>
+            <td style="color:var(--mut);">${escHtml(a.readerIP||'—')}</td>
+            <td>${a.port}</td>
+            <td>${escHtml(a.roleName||'—')}</td>
+            <td><select onchange="reassignFromModal(${a.antennaId}, this.value, this)">${opts}</select></td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`;
+}
+
+async function reassignFromModal(antennaId, zoneId, sel) {
+  const r = await skPost('/api/Zone/assign-antenna', { antennaId: +antennaId, zoneId: +zoneId });
+  if (!r.ok) { skToast(r.data?.message || 'Napaka.', 'error'); return; }
+  skToast('Antena prestavljena.', 'success');
+  await loadData();
+  skModalClose('antModal');
+}
+
+/* ── Zone add / edit ── */
+function openAddModal() {
+  document.getElementById('z-id').value   = '';
+  document.getElementById('z-name').value = '';
+  document.getElementById('z-type').value = '';
+  document.getElementById('zoneModalTitle').textContent = 'Dodaj cono';
+  skModal('zoneModal');
+}
+
+function openEditModal(z) {
+  document.getElementById('z-id').value   = z.id;
+  document.getElementById('z-name').value = z.name || '';
+  document.getElementById('z-type').value = z.type || '';
+  document.getElementById('zoneModalTitle').textContent = 'Uredi cono';
+  skModal('zoneModal');
+}
+
+async function saveZone() {
+  const btn  = document.getElementById('zoneSaveBtn');
+  const id   = document.getElementById('z-id').value ? +document.getElementById('z-id').value : null;
+  const name = document.getElementById('z-name').value.trim();
+  const type = document.getElementById('z-type').value.trim() || null;
+  if (!name) { skToast('Ime cone je obvezno.', 'error'); return; }
+  skBtnLoading(btn, true, 'Shrani');
+  const r = id
+    ? await skPut(`/api/Zone/${id}`, { id, name, type })
+    : await skPost('/api/Zone', { id: 0, name, type });
+  skBtnLoading(btn, false, 'Shrani');
+  if (!r.ok) { skToast(r.data?.message || `Napaka ${r.status}`, 'error'); return; }
+  skToast(id ? 'Cona posodobljena.' : 'Cona dodana.', 'success');
+  skModalClose('zoneModal');
+  await loadData();
+}
+
+/* ── Delete ── */
+function confirmDelete(z) {
+  pendingDelete = z;
+  document.getElementById('deleteLabel').textContent = z.name || '—';
+  skModal('deleteModal');
+}
+
+async function executeDelete() {
+  if (!pendingDelete) return;
+  const btn = document.getElementById('deleteConfirmBtn');
+  skBtnLoading(btn, true, 'Izbriši');
+  const r = await skDel(`/api/Zone/${pendingDelete.id}`);
+  skBtnLoading(btn, false, 'Izbriši');
+  if (!r.ok) { skToast(r.data?.message || 'Napaka pri brisanju.', 'error'); return; }
+  skToast('Cona izbrisana.', 'success');
+  skModalClose('deleteModal');
+  pendingDelete = null;
+  await loadData();
+}
+
+function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+loadData();
+</script>
+</body>
+</html>

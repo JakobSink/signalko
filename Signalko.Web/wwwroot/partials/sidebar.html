@@ -1,0 +1,280 @@
+<!-- Signalko Sidebar -->
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  :root {
+    --sb-bg:       #10131a;
+    --sb-surface:  #161b25;
+    --sb-border:   #1e2535;
+    --sb-accent:   #4f8ef7;
+    --sb-accent-d: rgba(79,142,247,.09);
+    --sb-red:      #f87171;
+    --sb-grn:      #34d399;
+    --sb-org:      #fb923c;
+    --sb-text:     #e8edf5;
+    --sb-sub:      #8897b0;
+    --sb-muted:    #4a5568;
+  }
+
+  .sb {
+    display: flex; flex-direction: column; height: 100vh;
+    background: var(--sb-bg); border-right: 1px solid var(--sb-border);
+    font-family: 'JetBrains Mono', monospace; overflow: hidden;
+  }
+
+  .sb-brand {
+    padding: 20px 16px 14px; border-bottom: 1px solid var(--sb-border); flex-shrink: 0;
+  }
+  .sb-brand-name {
+    font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800;
+    letter-spacing: -1px; color: var(--sb-text); line-height: 1;
+    text-decoration: none; display: block;
+  }
+  .sb-brand-name span { color: var(--sb-accent); }
+  .sb-brand-sub { font-size: 9px; color: var(--sb-muted); letter-spacing: 2.5px; text-transform: uppercase; margin-top: 4px; }
+
+  .sb-nav {
+    flex: 1; padding: 10px 8px; display: flex; flex-direction: column;
+    gap: 2px; overflow-y: auto; min-height: 0;
+  }
+
+  /* Pushes profile to the very bottom of the nav */
+  .sb-push { flex: 1; }
+
+  .sb-item {
+    display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+    border-radius: 8px; text-decoration: none; font-size: 12px; font-weight: 400;
+    color: var(--sb-sub); transition: background .13s, color .13s; border: 1px solid transparent;
+  }
+  .sb-item:hover { background: var(--sb-surface); color: var(--sb-text); }
+  .sb-item.active {
+    background: var(--sb-accent-d); border-color: rgba(79,142,247,.2);
+    color: var(--sb-accent); font-weight: 600;
+  }
+  .sb-item.admin-link { color: var(--sb-org); }
+  .sb-item.admin-link:hover { color: var(--sb-org); background: rgba(251,146,60,.08); }
+  .sb-item.admin-link.active { background: rgba(251,146,60,.1); border-color: rgba(251,146,60,.25); }
+
+  .sb-item.pres-link { color: var(--sb-accent); }
+  .sb-item.pres-link:hover { color: var(--sb-accent); background: var(--sb-accent-d); }
+  .sb-item.pres-link.active { background: var(--sb-accent-d); border-color: rgba(79,142,247,.25); color: var(--sb-accent); }
+
+  .sb-item-icon { font-size: 15px; width: 18px; text-align: center; flex-shrink: 0; }
+  .sb-label { flex: 1; }
+
+  .sb-section {
+    font-size: 9px; color: var(--sb-muted); letter-spacing: 2px;
+    text-transform: uppercase; padding: 12px 20px 6px;
+  }
+
+  /* Divider before profile */
+  .sb-divider { height: 1px; background: var(--sb-border); margin: 6px 8px; flex-shrink: 0; }
+
+  /* Profile item (logged in) */
+  .sb-profile-item {
+    display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+    border-radius: 8px; border: 1px solid var(--sb-border);
+    background: var(--sb-surface); flex-shrink: 0;
+  }
+  .sb-avatar {
+    width: 30px; height: 30px; border-radius: 7px; flex-shrink: 0;
+    background: var(--sb-accent-d); border: 1px solid rgba(79,142,247,.25);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 800;
+    color: var(--sb-accent);
+  }
+  .sb-profile-info { min-width: 0; flex: 1; }
+  .sb-profile-name {
+    font-size: 12px; font-weight: 600; color: var(--sb-text);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .sb-profile-meta { display: flex; align-items: center; gap: 5px; margin-top: 2px; }
+  .sb-profile-card { font-size: 10px; color: var(--sb-sub); }
+  .sb-role-badge {
+    font-size: 9px; font-weight: 700; padding: 1px 5px; border-radius: 4px;
+    background: rgba(251,146,60,.15); border: 1px solid rgba(251,146,60,.3); color: var(--sb-org);
+  }
+  .sb-role-badge.user-role {
+    background: rgba(79,142,247,.1); border-color: rgba(79,142,247,.25); color: var(--sb-accent);
+  }
+  .sb-logout-btn {
+    background: none; border: none; cursor: pointer; padding: 4px 6px;
+    color: var(--sb-muted); font-size: 13px; border-radius: 5px; flex-shrink: 0;
+    transition: color .13s, background .13s;
+  }
+  .sb-logout-btn:hover { color: var(--sb-red); background: rgba(248,113,113,.1); }
+
+</style>
+
+<div class="sb">
+  <div class="sb-brand">
+    <a class="sb-brand-name" href="/index.html">signal<span>ko</span></a>
+    <div class="sb-brand-sub">RFID Management</div>
+  </div>
+
+  <nav class="sb-nav" id="sbNav">
+    <a class="sb-item" href="/index.html">
+      <span class="sb-item-icon">◈</span>
+      <span class="sb-label">Pregled</span>
+    </a>
+    <a class="sb-item" href="/loans.html">
+      <span class="sb-item-icon">⇌</span>
+      <span class="sb-label">Izposoja</span>
+    </a>
+    <a class="sb-item" href="/assets.html">
+      <span class="sb-item-icon">▣</span>
+      <span class="sb-label">Sredstva</span>
+    </a>
+    <a class="sb-item" href="/tags.html">
+      <span class="sb-item-icon">◉</span>
+      <span class="sb-label">RFID Tagi</span>
+    </a>
+
+    <!-- Uporabnik section — visible to all logged-in users -->
+    <div class="sb-section" id="sbUserSection" style="display:none;">Uporabnik</div>
+    <a class="sb-item pres-link" id="sbPresLink" href="/presence.html" style="display:none;">
+      <span class="sb-item-icon">◎</span>
+      <span class="sb-label">Prisotnost</span>
+    </a>
+
+    <!-- Admin section — shown only when admin -->
+    <div class="sb-section" id="sbAdminSection" style="display:none;">Admin</div>
+    <a class="sb-item admin-link" id="sbAdminLink" href="/admin.html" style="display:none;">
+      <span class="sb-item-icon">⚙</span>
+      <span class="sb-label">Uporabniki</span>
+    </a>
+    <a class="sb-item admin-link" id="sbPresAdminLink" href="/presenceadmin.html" style="display:none;">
+      <span class="sb-item-icon">◎</span>
+      <span class="sb-label">Prisotnost — nadzor</span>
+    </a>
+
+    <!-- Config section — shown only when admin -->
+    <div class="sb-section" id="sbConfigSection" style="display:none;">Konfiguracija</div>
+    <a class="sb-item" id="sbReadersLink"   href="/readers.html"  style="display:none;">
+      <span class="sb-item-icon">⊡</span>
+      <span class="sb-label">Čitalci</span>
+    </a>
+    <a class="sb-item" id="sbAntennasLink"  href="/antennas.html" style="display:none;">
+      <span class="sb-item-icon">⊛</span>
+      <span class="sb-label">Antene</span>
+    </a>
+    <a class="sb-item" id="sbZonesLink"     href="/zones.html"    style="display:none;">
+      <span class="sb-item-icon">⊞</span>
+      <span class="sb-label">Cone</span>
+    </a>
+
+    <!-- Spacer + Profile pinned to bottom -->
+    <div class="sb-push"></div>
+    <div class="sb-divider"></div>
+    <div id="sbProfileLabel"></div>
+    <div id="sbProfile"><!-- populated by JS --></div>
+  </nav>
+</div>
+
+<script>
+(function() {
+  // ── Mark active page ──
+  const path = location.pathname.toLowerCase();
+  document.querySelectorAll('#sbNav .sb-item').forEach(a => {
+    const href = (a.getAttribute('href') || '').toLowerCase();
+    if (href && (path.endsWith(href) ||
+        (href !== '/index.html' && path.includes(href.replace(/\.html/, ''))))) {
+      a.classList.add('active');
+    }
+  });
+
+  const token = localStorage.getItem('token') || localStorage.getItem('sk_token');
+  let cached  = null;
+  try { cached = JSON.parse(localStorage.getItem('sk_user') || 'null'); } catch {}
+
+  // ── Render sidebar s podatki ──
+  function render(user) {
+    const loggedIn = !!(token && user);
+    // Use == for roleId so both number 1 and string "1" match
+    const isAdmin  = loggedIn && (
+      user.roleId == 1 || user.RoleId == 1 ||
+      user.role === 'Admin' || user.roleName === 'Admin' || user.RoleName === 'Admin'
+    );
+
+    // User section (visible to all logged-in users)
+    ['sbUserSection','sbPresLink'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = loggedIn ? '' : 'none';
+    });
+
+    // Admin nav
+    ['sbAdminSection','sbAdminLink','sbPresAdminLink','sbConfigSection',
+     'sbReadersLink','sbAntennasLink','sbZonesLink'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = isAdmin ? '' : 'none';
+    });
+
+    // Profil label
+    const labelEl = document.getElementById('sbProfileLabel');
+    if (labelEl) {
+      labelEl.innerHTML = loggedIn
+        ? '<div class="sb-section" style="padding:8px 12px 4px;">Profil</div>'
+        : '<a href="/login.html" class="sb-section" style="padding:8px 12px 4px;display:block;text-decoration:none;color:var(--sb-accent);">Profil</a>';
+    }
+
+    // Profil vsebina
+    const profileEl = document.getElementById('sbProfile');
+    if (!profileEl) return;
+
+    if (loggedIn) {
+      const name     = user.name    || user.Name    || '';
+      const surname  = user.surname || user.Surname || '';
+      const card     = user.cardID  || user.CardID  || '';
+      const role     = user.roleName|| user.RoleName|| user.role || user.Role || '';
+      const initials = [name[0], surname[0]].filter(Boolean).join('').toUpperCase() || '?';
+      const fullName = [name, surname].filter(Boolean).join(' ') || '—';
+      const roleClass = isAdmin ? 'admin-role' : 'user-role';
+
+      profileEl.innerHTML = `
+        <a class="sb-item" href="/profile.html" style="border-color:var(--sb-border);background:var(--sb-surface);text-decoration:none;">
+          <div class="sb-avatar">${initials}</div>
+          <div class="sb-profile-info">
+            <div class="sb-profile-name">${fullName}</div>
+            <div class="sb-profile-meta">
+              ${card ? `<span class="sb-profile-card">🪪 ${card}</span>` : ''}
+              ${role ? `<span class="sb-role-badge ${roleClass}">${role}</span>` : ''}
+            </div>
+          </div>
+        </a>`;
+    } else {
+      profileEl.innerHTML = `
+        <a class="sb-item" href="/login.html" style="color:var(--sb-accent);border-color:rgba(79,142,247,.2);background:var(--sb-accent-d);">
+          <span class="sb-item-icon">⟶</span>
+          <span class="sb-label">Prijava / Registracija</span>
+        </a>`;
+    }
+  }
+
+  // Takoj prikaži s cached podatki
+  render(cached);
+
+  // Vedno preveri vlogo iz baze (ne zaupaj samo localStorage)
+  if (token && cached && cached.id) {
+    fetch('/api/User/' + cached.id, {
+      headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' }
+    })
+    .then(function(r) { return r.ok ? r.json() : null; })
+    .then(function(fresh) {
+      if (!fresh) return;
+      var updated = {
+        id:      fresh.id      || fresh.Id      || cached.id,
+        name:    fresh.name    || fresh.Name    || cached.name,
+        surname: fresh.surname || fresh.Surname || cached.surname,
+        email:   fresh.email   || fresh.Email   || cached.email,
+        cardID:  fresh.cardID  || fresh.CardID  || cached.cardID,
+        roleId:  fresh.roleId  || fresh.RoleId  || null,
+        roleName:fresh.roleName|| fresh.RoleName|| null,
+        role:    fresh.role    || fresh.Role    || null,
+      };
+      localStorage.setItem('sk_user', JSON.stringify(updated));
+      render(updated);
+    })
+    .catch(function() {});
+  }
+})();
+</script>
