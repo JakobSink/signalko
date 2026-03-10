@@ -236,15 +236,18 @@
       </div>
       <div class="modal-field">
         <label>EPC oznaka (hex) *</label>
-        <input id="editEpc" placeholder="npr. E280110600002007…" oninput="onEpcInput('edit')"/>
+        <div class="input-with-btn">
+          <input id="editEpc" placeholder="npr. E280110600002007…" oninput="onEpcInput('edit')"/>
+          <button class="sk-btn" type="button" onclick="autoFillHex('edit')" title="Pretvori ASCII v hex EPC">⇄ hex</button>
+        </div>
       </div>
       <div class="modal-field">
         <label>EPC ASCII *</label>
         <div class="input-with-btn">
-          <input id="editEpcAscii" placeholder="npr. SN-12345"/>
-          <button class="sk-btn" type="button" onclick="autoFillAscii('edit')" title="Pretvori hex EPC v ASCII">⇄ Auto</button>
+          <input id="editEpcAscii" placeholder="npr. SN-12345" oninput="onAsciiInput('edit')"/>
+          <button class="sk-btn" type="button" onclick="autoFillAscii('edit')" title="Pretvori hex EPC v ASCII">⇄ ASCII</button>
         </div>
-        <span class="ascii-warn" id="editAsciiWarn" style="display:none">⚠ EPC ASCII je prazen — vnesi ročno ali klikni ⇄ Auto</span>
+        <span class="ascii-warn" id="editAsciiWarn" style="display:none">⚠ EPC ASCII je prazen — vnesi ročno ali klikni ⇄ ASCII</span>
       </div>
       <div class="modal-actions">
         <button class="sk-btn" onclick="skModalClose('editModal')">Prekliči</button>
@@ -308,15 +311,18 @@
       </div>
       <div class="modal-field">
         <label>EPC oznaka (hex) *</label>
-        <input id="addEpc" placeholder="npr. E280110600002007…" oninput="onEpcInput('add')"/>
+        <div class="input-with-btn">
+          <input id="addEpc" placeholder="npr. E280110600002007…" oninput="onEpcInput('add')"/>
+          <button class="sk-btn" type="button" onclick="autoFillHex('add')" title="Pretvori ASCII v hex EPC">⇄ hex</button>
+        </div>
       </div>
       <div class="modal-field">
         <label>EPC ASCII *</label>
         <div class="input-with-btn">
-          <input id="addEpcAscii" placeholder="npr. SN-12345"/>
-          <button class="sk-btn" type="button" onclick="autoFillAscii('add')" title="Pretvori hex EPC v ASCII">⇄ Auto</button>
+          <input id="addEpcAscii" placeholder="npr. SN-12345" oninput="onAsciiInput('add')"/>
+          <button class="sk-btn" type="button" onclick="autoFillAscii('add')" title="Pretvori hex EPC v ASCII">⇄ ASCII</button>
         </div>
-        <span class="ascii-warn" id="addAsciiWarn" style="display:none">⚠ EPC ASCII je prazen — vnesi ročno ali klikni ⇄ Auto</span>
+        <span class="ascii-warn" id="addAsciiWarn" style="display:none">⚠ EPC ASCII je prazen — vnesi ročno ali klikni ⇄ ASCII</span>
       </div>
       <div class="modal-actions">
         <button class="sk-btn" onclick="skModalClose('addModal')">Prekliči</button>
@@ -418,7 +424,7 @@ function buildEmojiGrid(prefix) {
 buildEmojiGrid('edit');
 buildEmojiGrid('add');
 
-/* ── Hex → ASCII helper ── */
+/* ── Hex ↔ ASCII helpers ── */
 function hexToAscii(hex) {
   hex = (hex || '').replace(/[\s\-:]/g, '');
   if (hex.length % 2 !== 0) hex = '0' + hex;
@@ -430,7 +436,14 @@ function hexToAscii(hex) {
   return out.trim();
 }
 
-/* Auto-fill ASCII from current hex EPC; show warning if result is empty */
+function asciiToHex(ascii) {
+  return Array.from(ascii || '')
+    .map(c => c.charCodeAt(0).toString(16).padStart(2, '0'))
+    .join('')
+    .toUpperCase();
+}
+
+/* ⇄ ASCII button: fill ASCII from hex */
 function autoFillAscii(prefix) {
   const hex = document.getElementById(prefix + 'Epc').value.trim();
   const ascii = hexToAscii(hex);
@@ -438,12 +451,30 @@ function autoFillAscii(prefix) {
   updateAsciiWarn(prefix);
 }
 
-/* When hex EPC changes, auto-fill ASCII only if ASCII field is empty */
+/* ⇄ hex button: fill hex from ASCII */
+function autoFillHex(prefix) {
+  const ascii = document.getElementById(prefix + 'EpcAscii').value.trim();
+  if (!ascii) return;
+  document.getElementById(prefix + 'Epc').value = asciiToHex(ascii);
+  updateAsciiWarn(prefix);
+}
+
+/* When hex changes, auto-fill ASCII only if ASCII field is empty */
 function onEpcInput(prefix) {
   const asciiField = document.getElementById(prefix + 'EpcAscii');
   if (!asciiField.value.trim()) {
     const hex = document.getElementById(prefix + 'Epc').value.trim();
     asciiField.value = hexToAscii(hex);
+  }
+  updateAsciiWarn(prefix);
+}
+
+/* When ASCII changes, auto-fill hex only if hex field is empty */
+function onAsciiInput(prefix) {
+  const hexField = document.getElementById(prefix + 'Epc');
+  if (!hexField.value.trim()) {
+    const ascii = document.getElementById(prefix + 'EpcAscii').value.trim();
+    hexField.value = asciiToHex(ascii);
   }
   updateAsciiWarn(prefix);
 }
