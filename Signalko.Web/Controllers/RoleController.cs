@@ -13,15 +13,13 @@ public class RoleController : ControllerBase
     private readonly AppDbContext _db;
     public RoleController(AppDbContext db) => _db = db;
 
-    // GET /api/Role/my-permissions
-    // Always fetches user's CURRENT role from DB — JWT roleId can be stale after role change
+    // GET /api/Role/my-permissions — fresh from DB, never from stale JWT
     [HttpGet("my-permissions"), Authorize]
     public async Task<IActionResult> GetMyPermissions()
     {
         var uid = GetUserId();
         if (uid == null) return Ok(Array.Empty<string>());
 
-        // Get current RoleId from DB (never trust stale JWT)
         var roleId = await _db.users.AsNoTracking()
             .Where(u => u.id == uid)
             .Select(u => u.RoleId)
@@ -78,8 +76,10 @@ public class RoleController : ControllerBase
     [HttpPost, Authorize]
     public async Task<IActionResult> Create([FromBody] RoleWriteDto dto)
     {
-        if (!await IsAdminAsync()) return StatusCode(403, new { message = "Samo admin lahko upravlja vloge." });
-        if (string.IsNullOrWhiteSpace(dto.Name)) return BadRequest(new { message = "Ime je obvezno." });
+        if (!await HasPermissionAsync("roles.manage"))
+            return StatusCode(403, new { message = "Nimaš dovoljenja za upravljanje vlog (roles.manage)." });
+        if (string.IsNullOrWhiteSpace(dto.Name))
+            return BadRequest(new { message = "Ime je obvezno." });
         if (await _db.Roles.AnyAsync(r => r.Name == dto.Name))
             return Conflict(new { message = "Vloga s tem imenom že obstaja." });
 
@@ -103,10 +103,13 @@ public class RoleController : ControllerBase
     [HttpPut("{id:int}"), Authorize]
     public async Task<IActionResult> Update(int id, [FromBody] RoleWriteDto dto)
     {
-        if (!await IsAdminAsync()) return StatusCode(403, new { message = "Samo admin lahko upravlja vloge." });
+        if (!await HasPermissionAsync("roles.manage"))
+            return StatusCode(403, new { message = "Nimaš dovoljenja za upravljanje vlog (roles.manage)." });
+
         var role = await _db.Roles.FirstOrDefaultAsync(r => r.id == id);
         if (role == null) return NotFound();
-        if (role.Name == "Admin") return BadRequest(new { message = "Pravice vloge Admin ni mogoče urejati." });
+        if (role.Name == "Admin")
+            return BadRequest(new { message = "Pravice vloge Admin ni mogoče urejati." });
 
         if (!string.IsNullOrWhiteSpace(dto.Name) && role.Name != "User")
             role.Name = dto.Name.Trim();
@@ -128,7 +131,9 @@ public class RoleController : ControllerBase
     [HttpDelete("{id:int}"), Authorize]
     public async Task<IActionResult> Delete(int id)
     {
-        if (!await IsAdminAsync()) return StatusCode(403, new { message = "Samo admin lahko upravlja vloge." });
+        if (!await HasPermissionAsync("roles.manage"))
+            return StatusCode(403, new { message = "Nimaš dovoljenja za upravljanje vlog (roles.manage)." });
+
         var role = await _db.Roles.FirstOrDefaultAsync(r => r.id == id);
         if (role == null) return NotFound();
         if (role.Name is "Admin" or "User")
@@ -143,50 +148,65 @@ public class RoleController : ControllerBase
 
     // ── helpers ──────────────────────────────────────────────────────────────
 
+    // Extracts user ID from any possible JWT claim location
     private int? GetUserId()
     {
-        // Try all possible locations for the user ID claim
-        var raw = User.Identity?.Name                                                   // "sub" via NameClaimType="sub"
-               ?? User.FindFirst("sub")?.Value
-               ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-        return int.TryParse(raw, out var id) ? id : null;
+        // Try every possible claim type — behavior differs by .NET version & claim mapping
+        string? raw = null;
+        foreach (var c in User.Claims)
+        {
+            if (c.Type == "sub" || c.Type == System.Security.Claims.ClaimTypes.NameIdentifier)
+            {
+                raw = c.Value;
+                break;
+            }
+        }
+        // Fallback: User.Identity.Name (set when NameClaimType="sub" in TokenValidationParameters)
+        raw ??= User.Identity?.Name;
+
+        if (!int.TryParse(raw, out var id))
+        {
+            Console.WriteLine($"[Auth] GetUserId: FAILED — claims: {string.Join(" | ", User.Claims.Select(c => $"{c.Type}={c.Value}"))}");
+            return null;
+        }
+        return id;
     }
 
-    // Bulletproof admin check: JWT first (fast), DB second (stale token fallback)
-    private async Task<bool> IsAdminAsync()
+    // Permission-based check — works for any role that has the permission, not just Admin
+    private async Task<bool> HasPermissionAsync(string permCode)
     {
-        // 1. JWT: check every possible location for the "Admin" role claim
-        if (User.IsInRole("Admin")) return true;
-        if (User.Claims.Any(c =>
-            (c.Type == "role" || c.Type == System.Security.Claims.ClaimTypes.Role)
-            && c.Value == "Admin"))
-            return true;
-
-        // 2. DB: always authoritative (handles legacy accounts or stale tokens)
         var uid = GetUserId();
-        if (uid == null)
+        if (uid == null) return false;
+
+        // Get fresh roleId from DB — never trust potentially stale JWT roleId
+        var roleId = await _db.users.AsNoTracking()
+            .Where(u => u.id == uid)
+            .Select(u => u.RoleId)
+            .FirstOrDefaultAsync();
+
+        if (roleId == null)
         {
-            Console.WriteLine("[Auth] IsAdminAsync: no user ID in token");
+            Console.WriteLine($"[Auth] HasPermission({permCode}): uid={uid} has no role in DB");
             return false;
         }
 
-        var roleName = await _db.users
-            .Where(u => u.id == uid)
-            .Select(u => u.Role!.Name)
-            .FirstOrDefaultAsync();
+        var hasPerm = await _db.RolePermissions
+            .AnyAsync(rp => rp.RoleId == roleId && rp.Permission!.Code == permCode);
 
-        Console.WriteLine($"[Auth] IsAdminAsync: uid={uid} roleName={roleName ?? "null"}");
-        return roleName == "Admin";
+        Console.WriteLine($"[Auth] HasPermission({permCode}): uid={uid} roleId={roleId} => {hasPerm}");
+        return hasPerm;
     }
 
     private async Task SetPermissionsAsync(int roleId, IEnumerable<string> codes)
     {
+        // Remove all existing permissions for this role
         var existing = await _db.RolePermissions.Where(rp => rp.RoleId == roleId).ToListAsync();
         _db.RolePermissions.RemoveRange(existing);
 
         var codeList = codes.ToList();
         if (codeList.Count > 0)
         {
+            // Look up permission IDs by code, then insert rows into role_permissions
             var permIds = await _db.Permissions
                 .Where(p => codeList.Contains(p.Code))
                 .Select(p => p.id)
@@ -197,6 +217,7 @@ public class RoleController : ControllerBase
         }
 
         await _db.SaveChangesAsync();
+        Console.WriteLine($"[Roles] SetPermissions: roleId={roleId} codes=[{string.Join(",", codeList)}]");
     }
 }
 
