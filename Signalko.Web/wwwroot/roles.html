@@ -106,19 +106,26 @@ function renderList() {
     const total = ALL_PERMS.length;
     const color = r.isAdmin ? 'var(--grn)' : r.isSystem ? 'var(--acc)' : 'var(--org)';
     const sel   = SEL?.id === r.id;
-    return `<div class="role-item${sel?' active':''}" onclick="select(${r.id})">
-      <div class="role-dot" style="background:${color};${r.isAdmin?'box-shadow:0 0 6px var(--grn);':''}"></div>
+    if (r.isAdmin) {
+      return `<div class="role-item" style="cursor:default;opacity:.75;border-color:rgba(52,211,153,.2);background:rgba(52,211,153,.04);">
+        <div class="role-dot" style="background:var(--grn);box-shadow:0 0 6px var(--grn);"></div>
+        <div class="role-name" style="color:var(--grn);">${h(r.name||r.Name)}</div>
+        <span style="font-size:10px;color:var(--grn);font-weight:700;">⊗ zaklenjeno</span>
+      </div>`;
+    }
+    return `<div class="role-item${sel?' active':''}" onclick="select(${r.id})" style="cursor:pointer;">
+      <div class="role-dot" style="background:${color};"></div>
       <div class="role-name">${h(r.name||r.Name)}</div>
-      ${r.isAdmin
-        ? '<span style="font-size:10px;color:var(--grn);font-weight:700;">VSE PRAVICE</span>'
-        : `<span class="role-count">${perms.length}${total?'/'+total:''}</span>`}
+      <span class="role-count">${perms.length}${total?'/'+total:''}</span>
     </div>`;
   }).join('');
 }
 
 /* ── Select ────────────────────────────────────────────────── */
 function select(id) {
-  SEL = ALL_ROLES.find(r => r.id === id) || null;
+  const role = ALL_ROLES.find(r => r.id === id);
+  if (!role || role.isAdmin) return; // Admin is not selectable
+  SEL = role;
   renderList();
   renderEditor();
 }
