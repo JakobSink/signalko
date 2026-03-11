@@ -155,6 +155,51 @@ static async Task MigrateAndSeedCoreAsync(WebApplication app)
             await db.SaveChangesAsync();
             Console.WriteLine("[Seed] Admin created — email: admin@signalko.si, password: admin123");
         }
+
+        // Seed permissions
+        var allPerms = new (string Code, string Label, string Category)[]
+        {
+            ("assets.view",     "Ogled sredstev",           "Sredstva"),
+            ("assets.edit",     "Urejanje sredstev",        "Sredstva"),
+            ("loans.view",      "Ogled izposoj",            "Izposoja"),
+            ("loans.create",    "Nova izposoja",            "Izposoja"),
+            ("loans.return",    "Vrnitev sredstev",         "Izposoja"),
+            ("users.view",      "Ogled uporabnikov",        "Uporabniki"),
+            ("users.manage",    "Upravljanje uporabnikov",  "Uporabniki"),
+            ("readers.view",    "Ogled čitalcev",           "Strojna oprema"),
+            ("readers.manage",  "Upravljanje čitalcev",     "Strojna oprema"),
+            ("zones.view",      "Ogled con",                "Strojna oprema"),
+            ("zones.manage",    "Upravljanje con",          "Strojna oprema"),
+            ("antennas.view",   "Ogled anten",              "Strojna oprema"),
+            ("antennas.manage", "Upravljanje anten",        "Strojna oprema"),
+            ("presence.view",   "Ogled prisotnosti",        "Prisotnost"),
+            ("presence.manage", "Admin prisotnost",         "Prisotnost"),
+            ("tags.view",       "Ogled RFID tagov",         "RFID"),
+            ("roles.manage",    "Upravljanje pravic",       "Sistem"),
+        };
+        foreach (var p in allPerms)
+        {
+            if (!await db.Permissions.AnyAsync(x => x.Code == p.Code))
+                db.Permissions.Add(new Permission { Code = p.Code, Label = p.Label, Category = p.Category });
+        }
+        await db.SaveChangesAsync();
+        Console.WriteLine("[Seed] Permissions seeded.");
+
+        // Give Admin role all permissions
+        var adminRoleP = await db.Roles.FirstOrDefaultAsync(r => r.Name == "Admin");
+        if (adminRoleP != null)
+        {
+            var existingPids = await db.RolePermissions
+                .Where(rp => rp.RoleId == adminRoleP.id)
+                .Select(rp => rp.PermissionId)
+                .ToListAsync();
+            var allPermEntities = await db.Permissions.ToListAsync();
+            foreach (var perm in allPermEntities)
+                if (!existingPids.Contains(perm.id))
+                    db.RolePermissions.Add(new RolePermission { RoleId = adminRoleP.id, PermissionId = perm.id });
+            await db.SaveChangesAsync();
+            Console.WriteLine("[Seed] Admin permissions assigned.");
+        }
     }
     catch (Exception ex)
     {

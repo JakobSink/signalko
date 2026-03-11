@@ -172,7 +172,7 @@ let pendingDelete = null;
 async function init() {
   document.getElementById('gridHost').innerHTML = '<div class="state-loading"><div class="sk-spin"></div>Nalaganje…</div>';
   const [ra, rr, rz, rl] = await Promise.all([
-    skGet('/api/Antenna'), skGet('/api/Reader'), skGet('/api/Zone'), skGet('/api/Role')
+    skGet('/api/Antenna'), skGet('/api/Reader'), skGet('/api/Zone'), skGet('/api/AntennaRole')
   ]);
   antennas = ra.ok && ra.data ? ra.data : [];
   readers  = rr.ok && rr.data ? rr.data : [];
@@ -330,22 +330,22 @@ async function addRole() {
   const name = document.getElementById('newRoleName').value.trim();
   if (!name) { skToast('Ime vloge je obvezno.', 'error'); return; }
   skBtnLoading(btn, true, 'Dodaj');
-  const r = await skPost('/api/Role', { name });
+  const r = await skPost('/api/AntennaRole', { name });
   skBtnLoading(btn, false, 'Dodaj');
   if (!r.ok) { skToast(r.data?.message || 'Napaka.', 'error'); return; }
   skToast('Vloga dodana.', 'success');
   document.getElementById('newRoleName').value = '';
-  const rl = await skGet('/api/Role');
+  const rl = await skGet('/api/AntennaRole');
   roles = rl.ok && rl.data ? rl.data : roles;
   renderRolesDropdown(); renderRolesList();
 }
 
 async function deleteRole(id, name) {
   if (!confirm(`Izbriši vlogo "${name}"?`)) return;
-  const r = await skDel(`/api/Role/${id}`);
+  const r = await skDel(`/api/AntennaRole/${id}`);
   if (!r.ok) { skToast('Brisanje ni uspelo.', 'error'); return; }
   skToast('Vloga izbrisana.', 'success');
-  const rl = await skGet('/api/Role');
+  const rl = await skGet('/api/AntennaRole');
   roles = rl.ok && rl.data ? rl.data : roles;
   renderRolesDropdown(); renderRolesList(); await init();
 }

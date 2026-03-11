@@ -23,6 +23,8 @@ public class AppDbContext : DbContext
     public DbSet<Tag>             TAG              => Set<Tag>();
     public DbSet<ExchangeRequest> ExchangeRequests => Set<ExchangeRequest>();
     public DbSet<UserPresence>    UserPresences    => Set<UserPresence>();
+    public DbSet<Permission>     Permissions     => Set<Permission>();
+    public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -94,6 +96,19 @@ public class AppDbContext : DbContext
              .WithMany()
              .HasForeignKey(x => x.TagId)
              .IsRequired(false);
+        });
+
+        b.Entity<RolePermission>(e =>
+        {
+            e.HasKey(rp => new { rp.RoleId, rp.PermissionId });
+            e.HasOne(rp => rp.Role)
+             .WithMany(r => r.RolePermissions)
+             .HasForeignKey(rp => rp.RoleId)
+             .OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(rp => rp.Permission)
+             .WithMany(p => p.RolePermissions)
+             .HasForeignKey(rp => rp.PermissionId)
+             .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

@@ -17,6 +17,9 @@ public class UserRole
 {
     [Key] public int id { get; set; }
     public string? Name { get; set; }
+
+    [JsonIgnore]
+    public ICollection<RolePermission> RolePermissions { get; set; } = new List<RolePermission>();
 }
 
 [Table("Role")]
@@ -212,6 +215,29 @@ public class UserPresence
     [ForeignKey(nameof(UserId))]    public User?    User    { get; set; }
     [ForeignKey(nameof(ZoneId))]    public Zone?    Zone    { get; set; }
     [ForeignKey(nameof(AntennaId))] public Antenna? Antenna { get; set; }
+}
+
+// ============ PRAVICE (PERMISSIONS) ============
+[Table("permissions")]
+public class Permission
+{
+    [Key] public int id { get; set; }
+    [Required, MaxLength(100)] public string Code { get; set; } = "";
+    [MaxLength(200)] public string? Label { get; set; }
+    [MaxLength(100)] public string? Category { get; set; }
+
+    [JsonIgnore]
+    public ICollection<RolePermission> RolePermissions { get; set; } = new List<RolePermission>();
+}
+
+[Table("role_permissions")]
+public class RolePermission
+{
+    public int RoleId { get; set; }
+    public int PermissionId { get; set; }
+
+    [ForeignKey(nameof(RoleId))]       public UserRole?   Role       { get; set; }
+    [ForeignKey(nameof(PermissionId))] public Permission? Permission { get; set; }
 }
 
 // ============ TAG ============
