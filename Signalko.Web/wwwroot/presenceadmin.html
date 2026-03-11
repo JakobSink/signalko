@@ -163,8 +163,7 @@
 </div>
 <script src="/css/sk.js"></script>
 <script>
-skRequireLogin();
-if (!skIsAdmin()) { location.replace('/presence.html'); }
+skRequirePerm('presence.manage');
 
 let pg = 1, dbTimer = null;
 

@@ -263,56 +263,52 @@
   function render(user, userPerms) {
     var loggedIn = !!(token && user);
     var isAdmin  = loggedIn && (
-      user.roleId == 1 || user.RoleId == 1 ||
       user.role === 'Admin' || user.roleName === 'Admin' || user.RoleName === 'Admin'
     );
-    var permSet = new Set(Array.isArray(userPerms) ? userPerms : []);
+    var permsLoaded = Array.isArray(userPerms);
+    var permSet = new Set(permsLoaded ? userPerms : []);
 
-    // Page links: for non-admin logged-in users, filter by page.* permissions
-    // For admins and guests: show all public pages
-    var pageIds = {
-      loans:    { d: 'sbLoansLink',    m: 'smmLoansLink'    },
-      assets:   { d: 'sbAssetsLink',   m: 'smmAssetsLink'   },
-      tags:     { d: 'sbTagsLink',     m: 'smmTagsLink'     },
-      presence: { d: 'sbPresLink',     m: 'smmPresLink'     },
+    // canShow: decides if a link should be visible
+    // guestOk=true  → visible for guests; hidden for logged-in users without the perm
+    // guestOk=false → only visible when logged in AND has the perm (or is admin)
+    function canShow(perm, guestOk) {
+      if (!loggedIn) return !!guestOk;
+      if (isAdmin) return true;
+      if (!permsLoaded) return !!guestOk; // perms loading, use default
+      return permSet.has(perm);
+    }
+
+    // Map: { desktopId: [mobileId, permCode, guestOk] }
+    var linkMap = {
+      sbLoansLink:     ['smmLoansLink',     'page.loans',        true ],
+      sbAssetsLink:    ['smmAssetsLink',     'page.assets',       true ],
+      sbTagsLink:      ['smmTagsLink',       'page.tags',         true ],
+      sbPresLink:      ['smmPresLink',       'page.presence',     false],
+      sbAdminLink:     ['smmAdminLink',      'users.manage',      false],
+      sbPresAdminLink: ['smmPresAdminLink',  'presence.manage',   false],
+      sbRolesLink:     ['smmRolesLink',      'roles.manage',      false],
+      sbReadersLink:   ['smmReadersLink',    'readers.view',      false],
+      sbAntennasLink:  ['smmAntennasLink',   'antennas.view',     false],
+      sbZonesLink:     ['smmZonesLink',      'zones.view',        false],
     };
-    var pagePerms = { loans: 'page.loans', assets: 'page.assets', tags: 'page.tags', presence: 'page.presence' };
 
-    Object.keys(pageIds).forEach(function(page) {
-      var ids = pageIds[page];
-      var show;
-      if (page === 'presence') {
-        // presence always needs login; for non-admins also needs page.presence
-        show = loggedIn && (isAdmin || !userPerms || permSet.has(pagePerms[page]));
-      } else {
-        // public pages: always show for guests/admins; for logged-in non-admins check perm
-        show = !loggedIn || isAdmin || !userPerms || permSet.has(pagePerms[page]);
-      }
-      var d = document.getElementById(ids.d);
-      var m = document.getElementById(ids.m);
+    Object.keys(linkMap).forEach(function(dId) {
+      var cfg  = linkMap[dId];
+      var show = canShow(cfg[1], cfg[2]);
+      var d = document.getElementById(dId);
+      var m = document.getElementById(cfg[0]);
       if (d) d.style.display = show ? '' : 'none';
       if (m) m.style.display = show ? '' : 'none';
     });
 
-    // Desktop: user section header (only presence, now handled above)
-    var uSec = document.getElementById('sbUserSection');
-    if (uSec) uSec.style.display = loggedIn ? '' : 'none';
-    // Desktop: admin section
-    ['sbAdminSection','sbAdminLink','sbPresAdminLink','sbRolesLink','sbConfigSection',
-     'sbReadersLink','sbAntennasLink','sbZonesLink'].forEach(function(id) {
-      var el = document.getElementById(id);
-      if (el) el.style.display = isAdmin ? '' : 'none';
-    });
+    // Section headers — show only if at least one link in that section is visible
+    var hasUserSec   = loggedIn;
+    var hasAdminSec  = canShow('users.manage',false) || canShow('presence.manage',false) || canShow('roles.manage',false);
+    var hasConfigSec = canShow('readers.view',false)  || canShow('antennas.view',false)   || canShow('zones.view',false);
 
-    // Mobile menu: user section header
-    var mSec = document.getElementById('smmUserSection');
-    if (mSec) mSec.style.display = loggedIn ? '' : 'none';
-    // Mobile menu: admin section
-    ['smmAdminSection','smmAdminLink','smmPresAdminLink','smmRolesLink','smmConfigSection',
-     'smmReadersLink','smmAntennasLink','smmZonesLink'].forEach(function(id) {
-      var el = document.getElementById(id);
-      if (el) el.style.display = isAdmin ? '' : 'none';
-    });
+    ['sbUserSection',  'smmUserSection' ].forEach(function(id) { var el=document.getElementById(id);   if(el) el.style.display = hasUserSec   ? '' : 'none'; });
+    ['sbAdminSection', 'smmAdminSection'].forEach(function(id) { var el=document.getElementById(id);   if(el) el.style.display = hasAdminSec  ? '' : 'none'; });
+    ['sbConfigSection','smmConfigSection'].forEach(function(id){ var el=document.getElementById(id);   if(el) el.style.display = hasConfigSec ? '' : 'none'; });
 
     // Desktop: profile label
     var labelEl = document.getElementById('sbProfileLabel');

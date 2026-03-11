@@ -64,11 +64,25 @@ function skRequireAdmin() {
   if (!skIsAdmin()) location.href = '/index.html';
 }
 
-// Require a specific permission — redirect if missing
+// Require a specific permission — redirect if missing.
+// Sync if cache exists, async (with page hidden) if not yet cached.
 function skRequirePerm(code) {
+  if (!skIsLoggedIn()) { location.href = '/login.html'; return; }
+  if (skIsAdmin()) return; // admin has all permissions
+  const cached = skGetPerms();
+  if (cached !== null) {
+    // Perms already cached — instant check
+    if (!cached.includes(code)) location.href = '/index.html';
+    return;
+  }
+  // No cache yet — hide page, fetch, then decide
+  document.documentElement.style.visibility = 'hidden';
   skRefreshPerms().then(perms => {
-    const isAdmin = skIsAdmin();
-    if (!isAdmin && !perms.includes(code)) location.href = '/index.html';
+    if (!skIsAdmin() && !perms.includes(code)) {
+      location.href = '/index.html';
+    } else {
+      document.documentElement.style.visibility = '';
+    }
   });
 }
 

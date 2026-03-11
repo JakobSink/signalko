@@ -192,8 +192,7 @@ table.user-table tbody tr:hover td{background:var(--up);}
 
 <script src="/css/sk.js"></script>
 <script>
-// Admin guard
-if (!skIsAdmin()) { location.href = '/index.html'; }
+skRequirePerm('users.manage');
 
 let users = [], roles = [], filtered = [], pendingDeleteId = null;
 

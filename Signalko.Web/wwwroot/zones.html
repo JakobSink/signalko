@@ -174,7 +174,7 @@
 
 <script src="/css/sk.js"></script>
 <script>
-skRequireAdmin();
+skRequirePerm('zones.manage');
 let zones = [], zonesOverview = [], allZones = [], readers = [], filtered = [];
 let pendingDelete = null, currentAntZoneId = null;
 

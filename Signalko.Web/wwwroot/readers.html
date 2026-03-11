@@ -150,7 +150,7 @@
 
 <script src="/css/sk.js"></script>
 <script>
-skRequireAdmin();
+skRequirePerm('readers.manage');
 let readers = [], filtered = [], pendingDelete = null;
 
 async function loadReaders() {
