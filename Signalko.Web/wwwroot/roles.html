@@ -109,11 +109,11 @@ const PAGE_GROUPS = [
   { label:'Sredstva',      icon:'📦', pageCode:'page.assets',   perms:['assets.view','assets.edit'] },
   { label:'RFID tagi',     icon:'🏷️',  pageCode:'page.tags',     perms:['tags.view'] },
   { label:'Prisotnost',    icon:'🟢', pageCode:'page.presence', perms:['presence.view','presence.manage'] },
-  { label:'Uporabniki',    icon:'👥', pageCode:null,             perms:['users.view','users.manage'] },
-  { label:'Bralniki',      icon:'📡', pageCode:null,             perms:['readers.view','readers.manage'] },
-  { label:'Antene',        icon:'📶', pageCode:null,             perms:['antennas.view','antennas.manage'] },
-  { label:'Cone',          icon:'🗺️',  pageCode:null,             perms:['zones.view','zones.manage'] },
-  { label:'Vloge',         icon:'🔑', pageCode:null,             perms:['roles.manage'] },
+  { label:'Uporabniki',    icon:'👥', pageCode:'page.users',    perms:['users.view','users.manage'] },
+  { label:'Bralniki',      icon:'📡', pageCode:'page.readers',  perms:['readers.view','readers.manage'] },
+  { label:'Antene',        icon:'📶', pageCode:'page.antennas', perms:['antennas.view','antennas.manage'] },
+  { label:'Cone',          icon:'🗺️',  pageCode:'page.zones',    perms:['zones.view','zones.manage'] },
+  { label:'Vloge',         icon:'🔑', pageCode:'page.roles',    perms:['roles.manage'] },
 ];
 
 let ALL_PERMS = [];
