@@ -30,6 +30,9 @@ builder.Services
             IssuerSigningKey         = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
             ValidateIssuer           = false,
             ValidateAudience         = false,
+            // Map JWT "role" claim directly so User.IsInRole("Admin") works
+            RoleClaimType            = "role",
+            NameClaimType            = "sub",
         };
     });
 builder.Services.AddAuthorization();

@@ -18,26 +18,19 @@ public class RoleController : ControllerBase
     [HttpGet("my-permissions"), Authorize]
     public async Task<IActionResult> GetMyPermissions()
     {
-        var sub = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
-               ?? User.FindFirst("sub")?.Value;
+        var uid = GetUserId();
+        if (uid == null) return Ok(Array.Empty<string>());
 
-        int? rid = null;
-        if (int.TryParse(sub, out var uid))
-        {
-            var u = await _db.users.AsNoTracking()
-                .Select(x => new { x.id, x.RoleId })
-                .FirstOrDefaultAsync(x => x.id == uid);
-            rid = u?.RoleId;
-        }
+        // Get current RoleId from DB (never trust stale JWT)
+        var roleId = await _db.users.AsNoTracking()
+            .Where(u => u.id == uid)
+            .Select(u => u.RoleId)
+            .FirstOrDefaultAsync();
 
-        // Fallback: JWT roleId claim
-        if (rid == null && int.TryParse(User.FindFirst("roleId")?.Value, out var r1))
-            rid = r1;
-
-        if (rid == null) return Ok(Array.Empty<string>());
+        if (roleId == null) return Ok(Array.Empty<string>());
 
         var codes = await _db.RolePermissions
-            .Where(rp => rp.RoleId == rid)
+            .Where(rp => rp.RoleId == roleId)
             .Select(rp => rp.Permission!.Code)
             .ToListAsync();
 
@@ -85,7 +78,7 @@ public class RoleController : ControllerBase
     [HttpPost, Authorize]
     public async Task<IActionResult> Create([FromBody] RoleWriteDto dto)
     {
-        if (!await IsAdminAsync()) return Forbid();
+        if (!await IsAdminAsync()) return StatusCode(403, new { message = "Samo admin lahko upravlja vloge." });
         if (string.IsNullOrWhiteSpace(dto.Name)) return BadRequest(new { message = "Ime je obvezno." });
         if (await _db.Roles.AnyAsync(r => r.Name == dto.Name))
             return Conflict(new { message = "Vloga s tem imenom že obstaja." });
@@ -110,7 +103,7 @@ public class RoleController : ControllerBase
     [HttpPut("{id:int}"), Authorize]
     public async Task<IActionResult> Update(int id, [FromBody] RoleWriteDto dto)
     {
-        if (!await IsAdminAsync()) return Forbid();
+        if (!await IsAdminAsync()) return StatusCode(403, new { message = "Samo admin lahko upravlja vloge." });
         var role = await _db.Roles.FirstOrDefaultAsync(r => r.id == id);
         if (role == null) return NotFound();
         if (role.Name == "Admin") return BadRequest(new { message = "Pravice vloge Admin ni mogoče urejati." });
@@ -118,7 +111,6 @@ public class RoleController : ControllerBase
         if (!string.IsNullOrWhiteSpace(dto.Name) && role.Name != "User")
             role.Name = dto.Name.Trim();
 
-        // Save name change first, then replace permissions
         await _db.SaveChangesAsync();
         await SetPermissionsAsync(id, dto.Permissions ?? []);
 
@@ -136,7 +128,7 @@ public class RoleController : ControllerBase
     [HttpDelete("{id:int}"), Authorize]
     public async Task<IActionResult> Delete(int id)
     {
-        if (!await IsAdminAsync()) return Forbid();
+        if (!await IsAdminAsync()) return StatusCode(403, new { message = "Samo admin lahko upravlja vloge." });
         var role = await _db.Roles.FirstOrDefaultAsync(r => r.id == id);
         if (role == null) return NotFound();
         if (role.Name is "Admin" or "User")
@@ -150,41 +142,61 @@ public class RoleController : ControllerBase
     }
 
     // ── helpers ──────────────────────────────────────────────────────────────
+
+    private int? GetUserId()
+    {
+        // Try all possible locations for the user ID claim
+        var raw = User.Identity?.Name                                                   // "sub" via NameClaimType="sub"
+               ?? User.FindFirst("sub")?.Value
+               ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        return int.TryParse(raw, out var id) ? id : null;
+    }
+
+    // Bulletproof admin check: JWT first (fast), DB second (stale token fallback)
+    private async Task<bool> IsAdminAsync()
+    {
+        // 1. JWT: check every possible location for the "Admin" role claim
+        if (User.IsInRole("Admin")) return true;
+        if (User.Claims.Any(c =>
+            (c.Type == "role" || c.Type == System.Security.Claims.ClaimTypes.Role)
+            && c.Value == "Admin"))
+            return true;
+
+        // 2. DB: always authoritative (handles legacy accounts or stale tokens)
+        var uid = GetUserId();
+        if (uid == null)
+        {
+            Console.WriteLine("[Auth] IsAdminAsync: no user ID in token");
+            return false;
+        }
+
+        var roleName = await _db.users
+            .Where(u => u.id == uid)
+            .Select(u => u.Role!.Name)
+            .FirstOrDefaultAsync();
+
+        Console.WriteLine($"[Auth] IsAdminAsync: uid={uid} roleName={roleName ?? "null"}");
+        return roleName == "Admin";
+    }
+
     private async Task SetPermissionsAsync(int roleId, IEnumerable<string> codes)
     {
         var existing = await _db.RolePermissions.Where(rp => rp.RoleId == roleId).ToListAsync();
         _db.RolePermissions.RemoveRange(existing);
 
         var codeList = codes.ToList();
-        var permIds  = await _db.Permissions
-            .Where(p => codeList.Contains(p.Code))
-            .Select(p => p.id)
-            .ToListAsync();
+        if (codeList.Count > 0)
+        {
+            var permIds = await _db.Permissions
+                .Where(p => codeList.Contains(p.Code))
+                .Select(p => p.id)
+                .ToListAsync();
 
-        foreach (var pid in permIds)
-            _db.RolePermissions.Add(new RolePermission { RoleId = roleId, PermissionId = pid });
+            foreach (var pid in permIds)
+                _db.RolePermissions.Add(new RolePermission { RoleId = roleId, PermissionId = pid });
+        }
 
         await _db.SaveChangesAsync();
-    }
-
-    // Check JWT first (fast), then DB (authoritative for stale tokens)
-    private async Task<bool> IsAdminAsync()
-    {
-        // Fast path: JWT role claim
-        var jwtRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value
-                   ?? User.FindFirst("role")?.Value;
-        if (jwtRole == "Admin") return true;
-
-        // Slow path: DB lookup (handles stale JWT after role change)
-        var sub = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
-               ?? User.FindFirst("sub")?.Value;
-        if (int.TryParse(sub, out var uid))
-        {
-            var u = await _db.users.AsNoTracking().Include(u => u.Role)
-                .FirstOrDefaultAsync(u => u.id == uid);
-            if (u?.Role?.Name == "Admin") return true;
-        }
-        return false;
     }
 }
 
