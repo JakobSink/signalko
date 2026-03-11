@@ -14,9 +14,46 @@ function skCurrentUser() {
 
 function skIsAdmin() {
   const u = skCurrentUser();
-  return u?.role === 'Admin' || u?.Role === 'Admin'
-      || u?.roleName === 'Admin' || u?.RoleName === 'Admin'
-      || u?.roleId == 1 || u?.RoleId == 1;   // == handles both number 1 and string "1"
+  if (!u) return false;
+  // Check cached role name/id (refreshed on every page load via sidebar)
+  if (u.role === 'Admin' || u.Role === 'Admin') return true;
+  if (u.roleName === 'Admin' || u.RoleName === 'Admin') return true;
+  if (u.roleId == 1 || u.RoleId == 1) return true;
+  return false;
+}
+
+/* ── Permission helpers ──────────────────────────────────── */
+function skGetPerms() {
+  try { return JSON.parse(localStorage.getItem('sk_user_perms') || 'null'); } catch { return null; }
+}
+
+// Check if current user has a specific permission.
+// Admins always return true (they have all permissions).
+function skHasPerm(code) {
+  if (skIsAdmin()) return true;
+  const perms = skGetPerms();
+  if (!Array.isArray(perms)) return false;
+  return perms.includes(code);
+}
+
+function skHasAnyPerm(...codes) {
+  return codes.some(c => skHasPerm(c));
+}
+
+// Fetch fresh permissions from server and update localStorage cache.
+// Called automatically by sidebar; call manually if needed before rendering.
+async function skRefreshPerms() {
+  const token = localStorage.getItem('token') || localStorage.getItem('sk_token');
+  if (!token) { localStorage.removeItem('sk_user_perms'); return []; }
+  try {
+    const res = await fetch('/api/Role/my-permissions', {
+      headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }
+    });
+    if (!res.ok) return skGetPerms() || [];
+    const perms = await res.json();
+    if (Array.isArray(perms)) localStorage.setItem('sk_user_perms', JSON.stringify(perms));
+    return Array.isArray(perms) ? perms : [];
+  } catch { return skGetPerms() || []; }
 }
 
 /* ── Auth guard (optional — call on pages that need login) ── */
@@ -25,6 +62,14 @@ function skRequireLogin() {
 }
 function skRequireAdmin() {
   if (!skIsAdmin()) location.href = '/index.html';
+}
+
+// Require a specific permission — redirect if missing
+function skRequirePerm(code) {
+  skRefreshPerms().then(perms => {
+    const isAdmin = skIsAdmin();
+    if (!isAdmin && !perms.includes(code)) location.href = '/index.html';
+  });
 }
 
 /* ── HTTP ───────────────────────────────────────────────────── */

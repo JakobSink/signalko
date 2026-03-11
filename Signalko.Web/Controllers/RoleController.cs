@@ -14,28 +14,36 @@ public class RoleController : ControllerBase
     public RoleController(AppDbContext db) => _db = db;
 
     // GET /api/Role/my-permissions
+    // Always looks up the user's CURRENT role from DB (JWT roleId can be stale after role change)
     [HttpGet("my-permissions"), Authorize]
     public async Task<IActionResult> GetMyPermissions()
     {
+        var sub = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+               ?? User.FindFirst("sub")?.Value;
+
         int? rid = null;
-        var roleIdClaim = User.FindFirst("roleId")?.Value;
-        if (int.TryParse(roleIdClaim, out var r1)) rid = r1;
-        else
+        if (int.TryParse(sub, out var uid))
         {
-            var sub = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
-                   ?? User.FindFirst("sub")?.Value;
-            if (int.TryParse(sub, out var uid))
-            {
-                var u = await _db.users.AsNoTracking().Select(x => new { x.id, x.RoleId }).FirstOrDefaultAsync(x => x.id == uid);
-                if (u != null) rid = u.RoleId;
-            }
+            // Always fetch fresh role from DB — never trust JWT roleId
+            var u = await _db.users.AsNoTracking()
+                .Select(x => new { x.id, x.RoleId })
+                .FirstOrDefaultAsync(x => x.id == uid);
+            rid = u?.RoleId;
         }
+
+        // Fallback: if sub claim missing (shouldn't happen), try JWT roleId
+        if (rid == null)
+        {
+            if (int.TryParse(User.FindFirst("roleId")?.Value, out var r1)) rid = r1;
+        }
+
         if (rid == null) return Ok(Array.Empty<string>());
+
         var codes = await _db.RolePermissions
             .Where(rp => rp.RoleId == rid)
-            .Include(rp => rp.Permission)
             .Select(rp => rp.Permission!.Code)
             .ToListAsync();
+
         return Ok(codes);
     }
 

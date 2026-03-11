@@ -208,22 +208,28 @@ static async Task MigrateAndSeedCoreAsync(WebApplication app)
             Console.WriteLine("[Seed] Admin permissions assigned.");
         }
 
-        // Seed default User role permissions (only if none assigned yet)
+        // Ensure User role has at least the default permissions (add missing ones, never remove)
         var userRoleP = await db.Roles.FirstOrDefaultAsync(r => r.Name == "User");
-        if (userRoleP != null && !await db.RolePermissions.AnyAsync(rp => rp.RoleId == userRoleP.id))
+        if (userRoleP != null)
         {
             var defaultCodes = new[] {
                 "assets.view", "loans.view", "loans.create", "loans.return", "tags.view",
                 "page.assets", "page.loans", "page.tags", "page.presence"
             };
-            var defaultPermIds = await db.Permissions
-                .Where(p => defaultCodes.Contains(p.Code))
-                .Select(p => p.id)
+            var existingPermIds = await db.RolePermissions
+                .Where(rp => rp.RoleId == userRoleP.id)
+                .Select(rp => rp.PermissionId)
                 .ToListAsync();
-            foreach (var pid in defaultPermIds)
-                db.RolePermissions.Add(new RolePermission { RoleId = userRoleP.id, PermissionId = pid });
-            await db.SaveChangesAsync();
-            Console.WriteLine("[Seed] User role default permissions assigned.");
+            var missingPerms = await db.Permissions
+                .Where(p => defaultCodes.Contains(p.Code) && !existingPermIds.Contains(p.id))
+                .ToListAsync();
+            foreach (var p in missingPerms)
+                db.RolePermissions.Add(new RolePermission { RoleId = userRoleP.id, PermissionId = p.id });
+            if (missingPerms.Count > 0)
+            {
+                await db.SaveChangesAsync();
+                Console.WriteLine($"[Seed] User role: added {missingPerms.Count} missing default permissions.");
+            }
         }
     }
     catch (Exception ex)
