@@ -258,25 +258,21 @@ async function loadLoans() {
   const isAdmin = skIsAdmin();
   const titleEl = document.getElementById('loansPanelTitle');
 
-  let r;
+  // Always fetch all loans (endpoint requires no auth) — filter client-side for non-admins.
+  const r = await skGet('/api/Loan');
+  if (!r.ok) { renderLoansPanel(); return; }
+
+  const all = Array.isArray(r.data) ? r.data : [];
   if (isAdmin) {
     if (titleEl) titleEl.textContent = 'Vse izposoje';
-    r = await skGet('/api/Loan');
+    ST.allLoans = all;
   } else if (me) {
     if (titleEl) titleEl.textContent = 'Moje izposoje';
-    r = await skGet(`/api/Loan/my?userId=${me.id || me.Id || 0}`);
+    const myId = me.id || me.Id || 0;
+    ST.allLoans = all.filter(l => (l.userId||l.UserId) === myId);
   } else {
     if (titleEl) titleEl.textContent = 'Izposoje';
-    r = { ok: true, data: [] };
-  }
-
-  if (r.ok) {
-    ST.allLoans = Array.isArray(r.data) ? r.data : [];
-  } else if (!isAdmin && me) {
-    // Non-admin API call failed — try the full list as fallback (visible to all)
-    const fallback = await skGet('/api/Loan');
-    if (fallback.ok) ST.allLoans = (Array.isArray(fallback.data) ? fallback.data : [])
-      .filter(l => (l.UserId||l.userId) === (me.id||me.Id||0));
+    ST.allLoans = [];
   }
   renderLoansPanel();
 }
@@ -692,8 +688,10 @@ async function processAsset(asset) {
   const assetId = asset.id || asset.Id;
 
   // Vedno pridobi aktivno izposojo tega sredstva iz baze (ne zaupamo lokalnemu filtru)
-  const loanR = await skGet('/api/Loan?active=true');
-  const activeLoans = loanR.ok ? (loanR.data || []) : [];
+  const loanR = await skGet('/api/Loan');
+  const activeLoans = loanR.ok
+    ? (Array.isArray(loanR.data) ? loanR.data : []).filter(isActive)
+    : [];
 
   // 1. Ali ta uporabnik že ima to sredstvo?
   const myLoan = activeLoans.find(l =>
@@ -898,8 +896,17 @@ async function executeConfirm() {
     const zoneId = ST.selStation?.ZoneId || ST.selStation?.zoneId || null;
     const r = await skPost('/api/Loan', { UserId: uid, AssetId: aid, ZoneId: zoneId });
     if (!r.ok) {
-      skToast(`Napaka: ${r.data?.message||''}`, 'error');
       skBtnLoading(btn, false, '✓ Potrdi izposojo');
+      const msg = r.data?.message || r.data?.Message || '';
+      // 409: user already has this asset — offer return
+      if (r.status === 409 && r.data?.loanId) {
+        const loanId = r.data.loanId || r.data.LoanId;
+        const fakeLoan = { id: loanId, loanedAt: null };
+        setState({ scenario: 'already_have', conflictLoan: fakeLoan, step: 'confirm' });
+        skToast('Že imaš to sredstvo — ponujena je vrnitev.', 'info');
+        return;
+      }
+      skToast(`Napaka: ${msg}`, 'error');
       return;
     }
     skToast('Izposoja zabeležena!');
