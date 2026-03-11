@@ -270,7 +270,14 @@ async function loadLoans() {
     r = { ok: true, data: [] };
   }
 
-  if (r.ok) ST.allLoans = r.data || [];
+  if (r.ok) {
+    ST.allLoans = Array.isArray(r.data) ? r.data : [];
+  } else if (!isAdmin && me) {
+    // Non-admin API call failed — try the full list as fallback (visible to all)
+    const fallback = await skGet('/api/Loan');
+    if (fallback.ok) ST.allLoans = (Array.isArray(fallback.data) ? fallback.data : [])
+      .filter(l => (l.UserId||l.userId) === (me.id||me.Id||0));
+  }
   renderLoansPanel();
 }
 
@@ -391,7 +398,10 @@ function renderStepStation() {
       <div class="sk-section-title" style="margin-bottom:4px;">Izberi izposojevalnico</div>
       <div style="font-size:11px;color:var(--mut);margin-bottom:16px;">Na kateri postaji si trenutno?</div>
       ${ST.stations.length === 0
-        ? `<div class="sk-alert sk-alert-org">Ni LOAN izposojevalnic. V nastavitvah dodaj antene z vlogo LOAN.</div>`
+        ? `<div class="sk-alert sk-alert-org" style="margin-bottom:14px;">Ni LOAN izposojevalnic. V nastavitvah dodaj antene z vlogo LOAN.</div>
+           <button class="sk-btn sk-btn-acc sk-btn-full" onclick="setState({step:'user',selStation:null})">
+             ✎ Ročna izposoja (brez RFID postaje)
+           </button>`
         : ST.stations.map(a => {
             const zid  = a.ZoneId  || a.zoneId  || 0;
             const zone = ST.zones[zid] || `Cona ${zid}`;
@@ -407,7 +417,10 @@ function renderStepStation() {
                 </div>
                 <span class="sk-badge sk-badge-grn">LOAN</span>
               </div>`;
-          }).join('')}
+          }).join('')
+          + `<button class="sk-btn sk-btn-full" style="margin-top:12px;" onclick="setState({step:'user',selStation:null})">
+               ✎ Ročna izposoja (brez postaje)
+             </button>`}
     </div>`;
   return d;
 }
