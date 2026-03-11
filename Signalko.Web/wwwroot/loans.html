@@ -262,18 +262,8 @@ async function loadLoans() {
   const r = await skGet('/api/Loan');
   if (!r.ok) { renderLoansPanel(); return; }
 
-  const all = Array.isArray(r.data) ? r.data : [];
-  if (isAdmin) {
-    if (titleEl) titleEl.textContent = 'Vse izposoje';
-    ST.allLoans = all;
-  } else if (me) {
-    if (titleEl) titleEl.textContent = 'Moje izposoje';
-    const myId = me.id || me.Id || 0;
-    ST.allLoans = all.filter(l => (l.userId||l.UserId) === myId);
-  } else {
-    if (titleEl) titleEl.textContent = 'Izposoje';
-    ST.allLoans = [];
-  }
+  if (titleEl) titleEl.textContent = 'Vse izposoje';
+  ST.allLoans = Array.isArray(r.data) ? r.data : [];
   renderLoansPanel();
 }
 
@@ -962,6 +952,9 @@ function renderLoansPanel() {
 }
 
 function buildLoanTable(loans, compact) {
+  const me      = getMeUser();
+  const isAdmin = skIsAdmin();
+  const myId    = me ? (me.id || me.Id || 0) : 0;
   return `
     <table class="sk-table">
       <thead>
@@ -974,9 +967,11 @@ function buildLoanTable(loans, compact) {
         ${loans.map(l => {
           const active    = isActive(l);
           const id        = l.Id        || l.id;
+          const lUserId   = l.userId    || l.UserId || 0;
           const assetName = l.AssetName || l.assetName || '—';
           const userName  = l.UserName  || l.userName  || '—';
           const zoneName  = l.ZoneName  || l.zoneName  || '—';
+          const canReturn = active && (isAdmin || (myId && lUserId === myId));
           return `
             <tr>
               <td><div class="sk-dot ${active ? 'sk-dot-org pulse' : 'sk-dot-mut'}"></div></td>
@@ -989,10 +984,10 @@ function buildLoanTable(loans, compact) {
                   ${active ? 'aktivno' : 'vrnjeno'}
                 </span>
               </td>
-              <td>${active
+              <td>${canReturn
                 ? `<button class="sk-btn sk-btn-sm sk-btn-grn"
                      onclick="openReturnModal(${id},'${esc(assetName)}','${esc(userName)}')">↩ Vrni</button>`
-                : `<span style="font-size:10px;color:var(--mut);">${skFmt(l.ReturnedAt||l.returnedAt)}</span>`}
+                : active ? '' : `<span style="font-size:10px;color:var(--mut);">${skFmt(l.ReturnedAt||l.returnedAt)}</span>`}
               </td>
             </tr>`;
         }).join('')}
@@ -1003,29 +998,19 @@ function buildLoanTable(loans, compact) {
 /* ════════════════════════════════════════════════════════════
    Tab handlers
 ════════════════════════════════════════════════════════════ */
-function loansApiUrl(active) {
-  const me = getMeUser();
-  if (skIsAdmin()) return active ? '/api/Loan?active=true' : '/api/Loan';
-  if (me) return `/api/Loan/my?userId=${me.id || me.Id || 0}`;
-  return null;
-}
-
 async function loadTabActive() {
   const c = document.getElementById('tabActiveCard');
   c.innerHTML = '<div class="sk-state-loading"><div class="sk-spin"></div>Nalaganje…</div>';
-  const url = loansApiUrl(true);
-  if (!url) { c.innerHTML = emptyState('⇌', 'Ni aktivnih izposoj.'); return; }
-  const r = await skGet(url);
-  const data = r.ok ? (r.data||[]).filter(l => !l.ReturnedAt && !l.returnedAt) : [];
+  const r = await skGet('/api/Loan');
+  const data = r.ok ? (Array.isArray(r.data) ? r.data : []).filter(isActive) : [];
   c.innerHTML = data.length ? buildLoanTable(data) : emptyState('⇌', 'Ni aktivnih izposoj.');
 }
 async function loadTabHistory() {
   const c = document.getElementById('tabHistoryCard');
   c.innerHTML = '<div class="sk-state-loading"><div class="sk-spin"></div>Nalaganje…</div>';
-  const url = loansApiUrl(false);
-  if (!url) { c.innerHTML = emptyState('⇌', 'Ni izposoj.'); return; }
-  const r = await skGet(url);
-  c.innerHTML = r.ok && r.data?.length ? buildLoanTable(r.data) : emptyState('⇌', 'Ni izposoj.');
+  const r = await skGet('/api/Loan');
+  const data = r.ok ? (Array.isArray(r.data) ? r.data : []) : [];
+  c.innerHTML = data.length ? buildLoanTable(data) : emptyState('⇌', 'Ni izposoj.');
 }
 
 /* ════════════════════════════════════════════════════════════
