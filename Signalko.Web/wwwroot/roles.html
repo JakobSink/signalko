@@ -249,7 +249,7 @@ async function createRole() {
   skBtnLoading(btn, true, '+');
   const r = await skPost('/api/Role', { name, permissions: [] });
   skBtnLoading(btn, false, '+');
-  if (!r.ok) { skToast(r.data?.message || 'Napaka', 'error'); return; }
+  if (!r.ok) { skToast(`Napaka ${r.status}: ${r.data?.message || 'Neznana napaka'}`, 'error'); return; }
   document.getElementById('newName').value = '';
   ALL_ROLES.push(r.data);
   SEL = r.data;
@@ -267,7 +267,7 @@ async function save() {
   skBtnLoading(btn, true, '✓ Shrani');
   const r = await skPut(`/api/Role/${SEL.id}`, { name, permissions: perms });
   skBtnLoading(btn, false, '✓ Shrani');
-  if (!r.ok) { skToast(r.data?.message || 'Napaka', 'error'); return; }
+  if (!r.ok) { skToast(`Napaka ${r.status}: ${r.data?.message || 'Neznana napaka'}`, 'error'); return; }
   const idx = ALL_ROLES.findIndex(x => x.id === SEL.id);
   if (idx >= 0) { ALL_ROLES[idx] = { ...ALL_ROLES[idx], ...r.data, permissions: perms }; SEL = ALL_ROLES[idx]; }
   renderList();
@@ -278,7 +278,7 @@ async function save() {
 async function del(id) {
   if (!confirm('Izbriši to vlogo? Tega ni mogoče razveljaviti.')) return;
   const r = await skDel(`/api/Role/${id}`);
-  if (!r.ok) { skToast(r.data?.message || 'Napaka', 'error'); return; }
+  if (!r.ok) { skToast(`Napaka ${r.status}: ${r.data?.message || 'Neznana napaka'}`, 'error'); return; }
   ALL_ROLES = ALL_ROLES.filter(x => x.id !== id);
   SEL = null;
   renderList();

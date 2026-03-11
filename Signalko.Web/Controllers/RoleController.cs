@@ -167,9 +167,15 @@ public class RoleController : ControllerBase
         await _db.SaveChangesAsync();
     }
 
-    // Always checks DB for current role — JWT claims can be stale
+    // Check JWT first (fast), then DB (authoritative for stale tokens)
     private async Task<bool> IsAdminAsync()
     {
+        // Fast path: JWT role claim
+        var jwtRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value
+                   ?? User.FindFirst("role")?.Value;
+        if (jwtRole == "Admin") return true;
+
+        // Slow path: DB lookup (handles stale JWT after role change)
         var sub = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
                ?? User.FindFirst("sub")?.Value;
         if (int.TryParse(sub, out var uid))
@@ -178,10 +184,7 @@ public class RoleController : ControllerBase
                 .FirstOrDefaultAsync(u => u.id == uid);
             if (u?.Role?.Name == "Admin") return true;
         }
-        // JWT fallbacks (for edge cases)
-        var role = User.FindFirst("role")?.Value
-                ?? User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
-        return role == "Admin";
+        return false;
     }
 }
 

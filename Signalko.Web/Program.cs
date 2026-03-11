@@ -123,6 +123,27 @@ static async Task MigrateAndSeedCoreAsync(WebApplication app)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
         ");
 
+        // RBAC tables — belt-and-suspenders in case EF migration didn't run
+        await db.Database.ExecuteSqlRawAsync(@"
+            CREATE TABLE IF NOT EXISTS `permissions` (
+                `id`       INT AUTO_INCREMENT PRIMARY KEY,
+                `Code`     VARCHAR(100) NOT NULL,
+                `Label`    VARCHAR(200) NOT NULL,
+                `Category` VARCHAR(100) NOT NULL,
+                UNIQUE INDEX `uix_perm_code` (`Code`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        ");
+        await db.Database.ExecuteSqlRawAsync(@"
+            CREATE TABLE IF NOT EXISTS `role_permissions` (
+                `RoleId`       INT NOT NULL,
+                `PermissionId` INT NOT NULL,
+                PRIMARY KEY (`RoleId`, `PermissionId`),
+                CONSTRAINT `fk_rp_role` FOREIGN KEY (`RoleId`)       REFERENCES `Roles`(`id`)       ON DELETE CASCADE,
+                CONSTRAINT `fk_rp_perm` FOREIGN KEY (`PermissionId`) REFERENCES `permissions`(`id`) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        ");
+        Console.WriteLine("[DB] RBAC tables ensured.");
+
         // Seed roles
         if (!await db.Roles.AnyAsync())
         {

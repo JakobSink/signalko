@@ -104,6 +104,7 @@ function skToast(msg, type = 'success') {
     warning: 'var(--org)',
     info:    'var(--acc)',
   };
+  const duration = (type === 'error') ? 8000 : 3200;
   let container = document.getElementById('sk-toasts');
   if (!container) {
     container = document.createElement('div');
@@ -115,8 +116,8 @@ function skToast(msg, type = 'success') {
   div.style.borderLeftColor = colors[type] || colors.success;
   div.innerHTML = msg;
   container.appendChild(div);
-  setTimeout(() => { div.style.transition = 'opacity .3s'; div.style.opacity = '0'; }, 3200);
-  setTimeout(() => div.remove(), 3600);
+  setTimeout(() => { div.style.transition = 'opacity .3s'; div.style.opacity = '0'; }, duration);
+  setTimeout(() => div.remove(), duration + 400);
 }
 
 /* ── Modal helpers ──────────────────────────────────────────── */
