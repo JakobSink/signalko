@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="sl">
 <head>
 <meta charset="utf-8"/>
@@ -16,28 +16,39 @@
 .role-name{font-size:13px;font-weight:600;flex:1;}
 .role-count{font-size:10px;color:var(--mut);font-family:'JetBrains Mono',monospace;}
 
-.perm-cat{font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--mut);margin:20px 0 6px;padding-bottom:6px;border-bottom:1px solid var(--border);}
-.perm-cat:first-child{margin-top:0;}
-.perm-row{display:flex;align-items:center;gap:14px;padding:8px 10px;border-radius:8px;transition:background .1s;}
-.perm-row.is-on{background:rgba(79,142,247,.07);}
+/* Page group card */
+.pg-card{border:1px solid var(--border);border-radius:12px;margin-bottom:10px;overflow:hidden;transition:border-color .15s;}
+.pg-card.pg-on{border-color:rgba(79,142,247,.35);}
+.pg-header{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--up);cursor:default;user-select:none;}
+.pg-icon{font-size:16px;width:24px;text-align:center;flex-shrink:0;}
+.pg-title{font-size:12px;font-weight:700;flex:1;text-transform:uppercase;letter-spacing:.06em;}
+.pg-state{font-size:10px;font-weight:700;min-width:24px;text-align:right;transition:color .15s;}
+.pg-state.on{color:var(--acc);}
+.pg-state.off{color:var(--mut);}
+
+/* Sub-perms */
+.pg-body{padding:6px 16px 10px;}
+.pg-body.pg-disabled{opacity:.45;pointer-events:none;}
+.perm-row{display:flex;align-items:center;gap:14px;padding:7px 0;border-bottom:1px solid var(--border);}
+.perm-row:last-child{border-bottom:none;}
 .perm-info{flex:1;}
 .perm-label{font-size:12px;color:var(--txt);line-height:1.4;}
 .perm-code{font-size:10px;color:var(--mut);font-family:'JetBrains Mono',monospace;margin-top:1px;}
-.perm-state{font-size:10px;font-weight:600;min-width:28px;text-align:right;}
+.perm-state{font-size:10px;font-weight:600;min-width:24px;text-align:right;}
 .perm-state.on{color:var(--acc);}
 .perm-state.off{color:var(--mut);}
 
+/* Toggle */
 .tog{position:relative;width:38px;height:22px;flex-shrink:0;}
 .tog input{opacity:0;width:0;height:0;position:absolute;}
 .tog-track{position:absolute;inset:0;border-radius:22px;background:var(--border);transition:.18s;cursor:pointer;}
 .tog-track::before{content:'';position:absolute;width:16px;height:16px;left:3px;top:3px;border-radius:50%;background:var(--sub);transition:.18s;}
 .tog input:checked~.tog-track{background:var(--acc);}
 .tog input:checked~.tog-track::before{transform:translateX(16px);background:#fff;}
-.tog input:disabled~.tog-track{opacity:.45;cursor:not-allowed;}
+.tog input:disabled~.tog-track{opacity:.4;cursor:not-allowed;}
 
-/* Admin read-only view */
+/* Admin banner */
 .admin-banner{display:flex;align-items:center;gap:12px;padding:14px 16px;background:rgba(52,211,153,.06);border:1px solid rgba(52,211,153,.2);border-radius:10px;margin-bottom:20px;}
-.admin-banner-ico{font-size:20px;flex-shrink:0;}
 .admin-banner-title{font-size:13px;font-weight:700;color:var(--grn);}
 .admin-banner-sub{font-size:11px;color:var(--mut);margin-top:1px;}
 .perm-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(79,142,247,.1);border:1px solid rgba(79,142,247,.2);border-radius:6px;padding:4px 9px;font-size:11px;font-weight:600;color:var(--acc);margin:3px;}
@@ -46,6 +57,11 @@
 
 .editor-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:64px 20px;color:var(--mut);font-size:12px;text-align:center;}
 .editor-empty .ico{font-size:32px;opacity:.25;line-height:1;}
+
+/* Count badge */
+.cnt-badge{display:flex;align-items:baseline;gap:4px;font-family:'JetBrains Mono',monospace;}
+.cnt-num{font-size:24px;font-weight:800;color:var(--acc);}
+.cnt-total{font-size:11px;color:var(--mut);}
 </style>
 </head>
 <body>
@@ -57,7 +73,7 @@
 
     <div class="roles-layout">
 
-      <!-- LEFT -->
+      <!-- LEFT: role list -->
       <div>
         <div class="sk-card sk-card-pad" style="margin-bottom:14px;">
           <div style="font-size:11px;color:var(--mut);margin-bottom:8px;font-weight:600;">NOVA VLOGA</div>
@@ -70,7 +86,7 @@
         <div id="roleList"><div class="sk-state-loading"><div class="sk-spin"></div>Nalaganje…</div></div>
       </div>
 
-      <!-- RIGHT -->
+      <!-- RIGHT: editor -->
       <div class="sk-card" id="editor">
         <div class="editor-empty">
           <span class="ico">⊚</span>
@@ -86,33 +102,46 @@
 <script>
 skRequirePerm('roles.manage');
 
+// ── Page groups: vsaka stran ima pageCode (master toggle) + podpravice ────
+// pageCode: null = ni vidnostnega togglea (admin/system strani)
+const PAGE_GROUPS = [
+  { label:'Izposoje',      icon:'📋', pageCode:'page.loans',    perms:['loans.view','loans.create','loans.return'] },
+  { label:'Sredstva',      icon:'📦', pageCode:'page.assets',   perms:['assets.view','assets.edit'] },
+  { label:'RFID tagi',     icon:'🏷️',  pageCode:'page.tags',     perms:['tags.view'] },
+  { label:'Prisotnost',    icon:'🟢', pageCode:'page.presence', perms:['presence.view','presence.manage'] },
+  { label:'Uporabniki',    icon:'👥', pageCode:null,             perms:['users.view','users.manage'] },
+  { label:'Bralniki',      icon:'📡', pageCode:null,             perms:['readers.view','readers.manage'] },
+  { label:'Antene',        icon:'📶', pageCode:null,             perms:['antennas.view','antennas.manage'] },
+  { label:'Cone',          icon:'🗺️',  pageCode:null,             perms:['zones.view','zones.manage'] },
+  { label:'Vloge',         icon:'🔑', pageCode:null,             perms:['roles.manage'] },
+];
+
 let ALL_PERMS = [];
 let ALL_ROLES = [];
 let SEL       = null;
 
+// Build label lookup from API
+let LABEL = {};  // code -> label
+
 async function load() {
   const [pr, rr] = await Promise.all([skGet('/api/Role/permissions'), skGet('/api/Role')]);
-  if (pr.ok) ALL_PERMS = pr.data || [];
+  if (pr.ok) {
+    ALL_PERMS = pr.data || [];
+    ALL_PERMS.forEach(p => { LABEL[p.code||p.Code] = p.label||p.Label||p.code||p.Code; });
+  }
   if (rr.ok) ALL_ROLES = rr.data || [];
   renderList();
 }
 
-// Bulletproof admin check — handles both camelCase and PascalCase JSON, and by name
-function isAdminRole(r) {
-  return !!(r.isAdmin || r.IsAdmin ||
-            (r.name  || r.Name  || '').toLowerCase() === 'admin');
-}
-function isSystemRole(r) {
-  return !!(r.isSystem || r.IsSystem || isAdminRole(r) ||
-            (r.name || r.Name || '').toLowerCase() === 'user');
-}
+function isAdminRole(r)  { return !!(r.isAdmin||r.IsAdmin||(r.name||r.Name||'').toLowerCase()==='admin'); }
+function isSystemRole(r) { return !!(r.isSystem||r.IsSystem||isAdminRole(r)||(r.name||r.Name||'').toLowerCase()==='user'); }
 
-/* ── List ──────────────────────────────────────────────────── */
+/* ── Role list ─────────────────────────────────────────────── */
 function renderList() {
   const el = document.getElementById('roleList');
   if (!ALL_ROLES.length) { el.innerHTML = '<div style="color:var(--mut);font-size:12px;padding:8px 0;">Ni vlog.</div>'; return; }
   el.innerHTML = ALL_ROLES.map(r => {
-    const perms = r.permissions || r.Permissions || [];
+    const perms = r.permissions||r.Permissions||[];
     const total = ALL_PERMS.length;
     const color = isAdminRole(r) ? 'var(--grn)' : isSystemRole(r) ? 'var(--acc)' : 'var(--org)';
     const sel   = SEL?.id === r.id;
@@ -123,7 +152,7 @@ function renderList() {
         <span style="font-size:10px;color:var(--grn);font-weight:700;">⊗ zaklenjeno</span>
       </div>`;
     }
-    return `<div class="role-item${sel?' active':''}" onclick="select(${r.id})" style="cursor:pointer;">
+    return `<div class="role-item${sel?' active':''}" onclick="selectRole(${r.id})">
       <div class="role-dot" style="background:${color};"></div>
       <div class="role-name">${h(r.name||r.Name)}</div>
       <span class="role-count">${perms.length}${total?'/'+total:''}</span>
@@ -132,9 +161,9 @@ function renderList() {
 }
 
 /* ── Select ────────────────────────────────────────────────── */
-function select(id) {
+function selectRole(id) {
   const role = ALL_ROLES.find(r => r.id === id);
-  if (!role || isAdminRole(role)) return; // Admin is not selectable
+  if (!role || isAdminRole(role)) return;
   SEL = role;
   renderList();
   renderEditor();
@@ -143,102 +172,166 @@ function select(id) {
 /* ── Editor ────────────────────────────────────────────────── */
 function renderEditor() {
   const el = document.getElementById('editor');
-  if (!SEL) { el.innerHTML = '<div class="editor-empty"><span class="ico">⊚</span><div>Izberi vlogo na levi za urejanje pravic</div></div>'; return; }
-
+  if (!SEL) {
+    el.innerHTML = '<div class="editor-empty"><span class="ico">⊚</span><div>Izberi vlogo na levi za urejanje pravic</div></div>';
+    return;
+  }
   const r = SEL;
 
-  // Admin: read-only view
+  // Admin: read-only
   if (isAdminRole(r)) {
     const cats = {};
-    ALL_PERMS.forEach(p => {
-      const c = p.category || p.Category || 'Ostalo';
-      (cats[c] = cats[c] || []).push(p);
-    });
-    const badges = Object.entries(cats).map(([cat, perms]) =>
-      `<div class="perm-badge-cat">${h(cat)}</div>` +
-      perms.map(p => `<span class="perm-badge">✓ ${h(p.label||p.Label||p.code||p.Code)}</span>`).join('')
+    ALL_PERMS.forEach(p => { const c=p.category||p.Category||'Ostalo'; (cats[c]=cats[c]||[]).push(p); });
+    const badges = Object.entries(cats).map(([cat,perms]) =>
+      `<div class="perm-badge-cat">${h(cat)}</div>`+
+      perms.map(p=>`<span class="perm-badge">✓ ${h(p.label||p.Label||p.code||p.Code)}</span>`).join('')
     ).join('');
     el.innerHTML = `<div class="sk-card-pad">
       <div class="admin-banner">
-        <span class="admin-banner-ico">⊚</span>
-        <div>
-          <div class="admin-banner-title">Admin — vse pravice</div>
-          <div class="admin-banner-sub">Ta vloga ima popoln dostop. Pravic ni mogoče urejati.</div>
-        </div>
-      </div>
-      ${badges}
-    </div>`;
+        <span style="font-size:20px;">⊚</span>
+        <div><div class="admin-banner-title">Admin — vse pravice</div>
+        <div class="admin-banner-sub">Ta vloga ima popoln dostop. Pravic ni mogoče urejati.</div></div>
+      </div>${badges}</div>`;
     return;
   }
 
-  // Editable role
-  const mySet = new Set((r.permissions || r.Permissions || []).map(String));
-  const enabledCount = mySet.size;
-
-  const cats = {};
-  ALL_PERMS.forEach(p => {
-    const c = p.category || p.Category || 'Ostalo';
-    (cats[c] = cats[c] || []).push(p);
-  });
-
-  const matrix = Object.entries(cats).map(([cat, perms]) => `
-    <div class="perm-cat">${h(cat)}</div>
-    ${perms.map(p => {
-      const code = p.code || p.Code;
-      const on   = mySet.has(code);
-      return `<div class="perm-row${on?' is-on':''}">
-        <div class="perm-info">
-          <div class="perm-label">${h(p.label||p.Label||code)}</div>
-          <div class="perm-code">${h(code)}</div>
-        </div>
-        <span class="perm-state${on?' on':' off'}">${on?'DA':'NE'}</span>
-        <label class="tog">
-          <input type="checkbox" data-code="${h(code)}" ${on?'checked':''}
-            onchange="toggle(this)"/>
-          <span class="tog-track"></span>
-        </label>
-      </div>`;
-    }).join('')}`).join('');
-
+  // Editable
+  const mySet    = new Set((r.permissions||r.Permissions||[]).map(String));
   const isSystem = isSystemRole(r);
+
+  const groups = PAGE_GROUPS.map(g => buildGroup(g, mySet)).join('');
+
   el.innerHTML = `<div class="sk-card-pad">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;gap:12px;">
       ${!isSystem
-        ? `<div class="sk-field" style="margin:0;flex:1;margin-right:12px;">
+        ? `<div class="sk-field" style="margin:0;flex:1;">
              <label style="font-size:10px;">IME VLOGE</label>
              <input class="sk-input" id="eName" value="${h(r.name||r.Name)}" style="margin-top:4px;"/>
            </div>`
         : `<div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:800;">${h(r.name||r.Name)}</div>`}
-      <div style="text-align:right;flex-shrink:0;">
-        <div style="font-size:22px;font-weight:800;color:var(--acc);font-family:'JetBrains Mono',monospace;">${enabledCount}</div>
-        <div style="font-size:10px;color:var(--mut);">/ ${ALL_PERMS.length} pravic</div>
+      <div class="cnt-badge" style="flex-shrink:0;text-align:right;">
+        <span class="cnt-num" id="cntNum">${mySet.size}</span>
+        <span class="cnt-total">/ ${ALL_PERMS.length}</span>
       </div>
     </div>
-    ${matrix}
-    <div style="display:flex;gap:10px;margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
+    ${groups}
+    <div style="display:flex;gap:10px;margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
       <button class="sk-btn sk-btn-acc sk-btn-full" id="saveBtn" onclick="save()">✓ Shrani</button>
       ${!isSystem ? `<button class="sk-btn sk-btn-red" onclick="del(${r.id})" title="Izbriši vlogo">🗑</button>` : ''}
     </div>
   </div>`;
 }
 
-function toggle(cb) {
+function buildGroup(g, mySet) {
+  const pageOn = g.pageCode ? mySet.has(g.pageCode) : true;  // no pageCode = always "accessible"
+  const cardOn = pageOn;
+
+  // header toggle (page visibility)
+  const headerToggle = g.pageCode ? `
+    <span class="perm-state ${pageOn?'on':'off'}" id="pgst_${CSS.escape(g.pageCode)}">${pageOn?'DA':'NE'}</span>
+    <label class="tog">
+      <input type="checkbox" data-pagecode="${h(g.pageCode)}" ${pageOn?'checked':''}
+        onchange="togglePage(this)"/>
+      <span class="tog-track"></span>
+    </label>` : '';
+
+  // sub-perms
+  const rows = g.perms.map(code => {
+    const on  = mySet.has(code);
+    const lbl = LABEL[code] || code;
+    return `<div class="perm-row">
+      <div class="perm-info">
+        <div class="perm-label">${h(lbl)}</div>
+        <div class="perm-code">${h(code)}</div>
+      </div>
+      <span class="perm-state ${on?'on':'off'}">${on?'DA':'NE'}</span>
+      <label class="tog">
+        <input type="checkbox" data-code="${h(code)}" ${on?'checked':''}
+          ${!pageOn?'disabled':''}
+          onchange="togglePerm(this)"/>
+        <span class="tog-track"></span>
+      </label>
+    </div>`;
+  }).join('');
+
+  return `<div class="pg-card ${cardOn?'pg-on':''}" id="pgcard_${g.pageCode||g.label.replace(/\s/g,'_')}">
+    <div class="pg-header">
+      <span class="pg-icon">${g.icon}</span>
+      <span class="pg-title">${h(g.label)}</span>
+      ${headerToggle}
+    </div>
+    <div class="pg-body ${!pageOn?'pg-disabled':''}" id="pgbody_${g.pageCode||g.label.replace(/\s/g,'_')}">${rows}</div>
+  </div>`;
+}
+
+/* ── Toggle: page master switch ────────────────────────────── */
+function togglePage(cb) {
   if (!SEL) return;
-  const perms = new Set((SEL.permissions || SEL.Permissions || []).map(String));
+  const pageCode = cb.dataset.pagecode;
+  const perms = new Set((SEL.permissions||SEL.Permissions||[]).map(String));
+
+  if (cb.checked) {
+    perms.add(pageCode);
+  } else {
+    // Page OFF → remove pageCode + all sub-perms for this group
+    perms.delete(pageCode);
+    const g = PAGE_GROUPS.find(x => x.pageCode === pageCode);
+    if (g) g.perms.forEach(c => perms.delete(c));
+  }
+
+  SEL.permissions = [...perms];
+  SEL.Permissions = SEL.permissions;
+
+  // Update card visual
+  const card   = cb.closest('.pg-card');
+  const body   = card?.querySelector('.pg-body');
+  const stEl   = card?.querySelector('.perm-state');
+  const cardId = card?.id;
+
+  if (card)  card.classList.toggle('pg-on', cb.checked);
+  if (body)  body.classList.toggle('pg-disabled', !cb.checked);
+  if (stEl)  { stEl.textContent = cb.checked?'DA':'NE'; stEl.className = 'perm-state '+(cb.checked?'on':'off'); }
+
+  // Disable/enable sub-perm toggles and uncheck them if page goes off
+  if (body) {
+    body.querySelectorAll('input[data-code]').forEach(inp => {
+      inp.disabled = !cb.checked;
+      if (!cb.checked) {
+        inp.checked = false;
+        const row = inp.closest('.perm-row');
+        if (row) {
+          const st = row.querySelector('.perm-state');
+          if (st) { st.textContent = 'NE'; st.className = 'perm-state off'; }
+        }
+      }
+    });
+  }
+
+  updateCounter(perms.size);
+  renderList();
+}
+
+/* ── Toggle: individual permission ────────────────────────── */
+function togglePerm(cb) {
+  if (!SEL) return;
+  const perms = new Set((SEL.permissions||SEL.Permissions||[]).map(String));
   cb.checked ? perms.add(cb.dataset.code) : perms.delete(cb.dataset.code);
   SEL.permissions = [...perms];
   SEL.Permissions = SEL.permissions;
-  // update row highlight + state label + counter
+
   const row = cb.closest('.perm-row');
   if (row) {
-    row.classList.toggle('is-on', cb.checked);
     const st = row.querySelector('.perm-state');
-    if (st) { st.textContent = cb.checked ? 'DA' : 'NE'; st.className = 'perm-state ' + (cb.checked?'on':'off'); }
+    if (st) { st.textContent = cb.checked?'DA':'NE'; st.className = 'perm-state '+(cb.checked?'on':'off'); }
   }
+
+  updateCounter(perms.size);
   renderList();
-  // update count badge
-  const cnt = document.querySelector('.sk-card-pad [style*="font-size:22px"]');
-  if (cnt) cnt.textContent = perms.size;
+}
+
+function updateCounter(n) {
+  const el = document.getElementById('cntNum');
+  if (el) el.textContent = n;
 }
 
 /* ── Create ────────────────────────────────────────────────── */
@@ -249,7 +342,7 @@ async function createRole() {
   skBtnLoading(btn, true, '+');
   const r = await skPost('/api/Role', { name, permissions: [] });
   skBtnLoading(btn, false, '+');
-  if (!r.ok) { skToast(`Napaka ${r.status}: ${r.data?.message || 'Neznana napaka'}`, 'error'); return; }
+  if (!r.ok) { skToast(`Napaka ${r.status}: ${r.data?.message||'Neznana napaka'}`, 'error'); return; }
   document.getElementById('newName').value = '';
   ALL_ROLES.push(r.data);
   SEL = r.data;
@@ -261,13 +354,13 @@ async function createRole() {
 /* ── Save ──────────────────────────────────────────────────── */
 async function save() {
   if (!SEL) return;
-  const btn   = document.getElementById('saveBtn');
-  const name  = document.getElementById('eName')?.value.trim() || SEL.name || SEL.Name;
-  const perms = SEL.permissions || SEL.Permissions || [];
+  const btn  = document.getElementById('saveBtn');
+  const name = document.getElementById('eName')?.value.trim() || SEL.name||SEL.Name;
+  const perms = SEL.permissions||SEL.Permissions||[];
   skBtnLoading(btn, true, '✓ Shrani');
   const r = await skPut(`/api/Role/${SEL.id}`, { name, permissions: perms });
   skBtnLoading(btn, false, '✓ Shrani');
-  if (!r.ok) { skToast(`Napaka ${r.status}: ${r.data?.message || 'Neznana napaka'}`, 'error'); return; }
+  if (!r.ok) { skToast(`Napaka ${r.status}: ${r.data?.message||'Neznana napaka'}`, 'error'); return; }
   const idx = ALL_ROLES.findIndex(x => x.id === SEL.id);
   if (idx >= 0) { ALL_ROLES[idx] = { ...ALL_ROLES[idx], ...r.data, permissions: perms }; SEL = ALL_ROLES[idx]; }
   renderList();
@@ -278,7 +371,7 @@ async function save() {
 async function del(id) {
   if (!confirm('Izbriši to vlogo? Tega ni mogoče razveljaviti.')) return;
   const r = await skDel(`/api/Role/${id}`);
-  if (!r.ok) { skToast(`Napaka ${r.status}: ${r.data?.message || 'Neznana napaka'}`, 'error'); return; }
+  if (!r.ok) { skToast(`Napaka ${r.status}: ${r.data?.message||'Neznana napaka'}`, 'error'); return; }
   ALL_ROLES = ALL_ROLES.filter(x => x.id !== id);
   SEL = null;
   renderList();
