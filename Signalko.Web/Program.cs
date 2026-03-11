@@ -134,27 +134,7 @@ static async Task MigrateAndSeedCoreAsync(WebApplication app)
             Console.WriteLine("[Seed] Roles created.");
         }
 
-        // Seed admin user
-        var adminRole = await db.Roles.FirstOrDefaultAsync(r => r.Name == "Admin");
-        if (adminRole != null && !await db.users.AnyAsync(u => u.RoleId == adminRole.id))
-        {
-            var rng    = new Random();
-            var cardId = "000001";
-            for (int i = 0; i < 30 && await db.users.AnyAsync(u => u.CardID == cardId); i++)
-                cardId = rng.Next(0, 1_000_000).ToString("D6");
-
-            db.users.Add(new User
-            {
-                Name     = "Admin",
-                Surname  = "Signalko",
-                Email    = "admin@signalko.si",
-                Password = PasswordHasher.Hash("admin123"),
-                CardID   = cardId,
-                RoleId   = adminRole.id,
-            });
-            await db.SaveChangesAsync();
-            Console.WriteLine("[Seed] Admin created — email: admin@signalko.si, password: admin123");
-        }
+        // No hardcoded admin user — first user to register via signup gets Admin role automatically
 
         // Seed permissions
         var allPerms = new (string Code, string Label, string Category)[]

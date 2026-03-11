@@ -33,8 +33,11 @@ public class AuthController : ControllerBase
         if (await _db.users.AnyAsync(u => u.Email == email))
             return Conflict(new { message = "Email je že registriran." });
 
-        // Default role = "User" (id varies — query by name)
-        var userRole = await _db.Roles.FirstOrDefaultAsync(r => r.Name == "User");
+        // First user to register gets Admin; all others get User
+        var adminRole = await _db.Roles.FirstOrDefaultAsync(r => r.Name == "Admin");
+        var userRole  = await _db.Roles.FirstOrDefaultAsync(r => r.Name == "User");
+        var hasAdmin  = adminRole != null && await _db.users.AnyAsync(u => u.RoleId == adminRole.id);
+        var assignedRole = (!hasAdmin && adminRole != null) ? adminRole : userRole;
 
         var user = new User
         {
@@ -43,13 +46,13 @@ public class AuthController : ControllerBase
             Email    = email,
             Password = PasswordHasher.Hash(req.Password),
             CardID   = await GenerateUniqueCardIdAsync(),
-            RoleId   = userRole?.id
+            RoleId   = assignedRole?.id
         };
 
         _db.users.Add(user);
         await _db.SaveChangesAsync();
 
-        var token = _jwt.CreateToken(user, userRole?.Name);
+        var token = _jwt.CreateToken(user, assignedRole?.Name);
 
         return Ok(new AuthResponse
         {
@@ -59,8 +62,8 @@ public class AuthController : ControllerBase
             name    = user.Name,
             surname = user.Surname,
             email   = user.Email,
-            roleId  = userRole?.id,
-            role    = userRole?.Name
+            roleId  = assignedRole?.id,
+            role    = assignedRole?.Name
         });
     }
 

@@ -97,6 +97,16 @@ async function load() {
   renderList();
 }
 
+// Bulletproof admin check — handles both camelCase and PascalCase JSON, and by name
+function isAdminRole(r) {
+  return !!(r.isAdmin || r.IsAdmin ||
+            (r.name  || r.Name  || '').toLowerCase() === 'admin');
+}
+function isSystemRole(r) {
+  return !!(r.isSystem || r.IsSystem || isAdminRole(r) ||
+            (r.name || r.Name || '').toLowerCase() === 'user');
+}
+
 /* ── List ──────────────────────────────────────────────────── */
 function renderList() {
   const el = document.getElementById('roleList');
@@ -104,9 +114,9 @@ function renderList() {
   el.innerHTML = ALL_ROLES.map(r => {
     const perms = r.permissions || r.Permissions || [];
     const total = ALL_PERMS.length;
-    const color = r.isAdmin ? 'var(--grn)' : r.isSystem ? 'var(--acc)' : 'var(--org)';
+    const color = isAdminRole(r) ? 'var(--grn)' : isSystemRole(r) ? 'var(--acc)' : 'var(--org)';
     const sel   = SEL?.id === r.id;
-    if (r.isAdmin) {
+    if (isAdminRole(r)) {
       return `<div class="role-item" style="cursor:default;opacity:.75;border-color:rgba(52,211,153,.2);background:rgba(52,211,153,.04);">
         <div class="role-dot" style="background:var(--grn);box-shadow:0 0 6px var(--grn);"></div>
         <div class="role-name" style="color:var(--grn);">${h(r.name||r.Name)}</div>
@@ -124,7 +134,7 @@ function renderList() {
 /* ── Select ────────────────────────────────────────────────── */
 function select(id) {
   const role = ALL_ROLES.find(r => r.id === id);
-  if (!role || role.isAdmin) return; // Admin is not selectable
+  if (!role || isAdminRole(role)) return; // Admin is not selectable
   SEL = role;
   renderList();
   renderEditor();
@@ -138,7 +148,7 @@ function renderEditor() {
   const r = SEL;
 
   // Admin: read-only view
-  if (r.isAdmin) {
+  if (isAdminRole(r)) {
     const cats = {};
     ALL_PERMS.forEach(p => {
       const c = p.category || p.Category || 'Ostalo';
@@ -190,7 +200,7 @@ function renderEditor() {
       </div>`;
     }).join('')}`).join('');
 
-  const isSystem = r.isSystem;
+  const isSystem = isSystemRole(r);
   el.innerHTML = `<div class="sk-card-pad">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
       ${!isSystem

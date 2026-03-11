@@ -14,7 +14,7 @@ public class RoleController : ControllerBase
     public RoleController(AppDbContext db) => _db = db;
 
     // GET /api/Role/my-permissions
-    // Always looks up the user's CURRENT role from DB (JWT roleId can be stale after role change)
+    // Always fetches user's CURRENT role from DB — JWT roleId can be stale after role change
     [HttpGet("my-permissions"), Authorize]
     public async Task<IActionResult> GetMyPermissions()
     {
@@ -24,18 +24,15 @@ public class RoleController : ControllerBase
         int? rid = null;
         if (int.TryParse(sub, out var uid))
         {
-            // Always fetch fresh role from DB — never trust JWT roleId
             var u = await _db.users.AsNoTracking()
                 .Select(x => new { x.id, x.RoleId })
                 .FirstOrDefaultAsync(x => x.id == uid);
             rid = u?.RoleId;
         }
 
-        // Fallback: if sub claim missing (shouldn't happen), try JWT roleId
-        if (rid == null)
-        {
-            if (int.TryParse(User.FindFirst("roleId")?.Value, out var r1)) rid = r1;
-        }
+        // Fallback: JWT roleId claim
+        if (rid == null && int.TryParse(User.FindFirst("roleId")?.Value, out var r1))
+            rid = r1;
 
         if (rid == null) return Ok(Array.Empty<string>());
 
@@ -54,7 +51,13 @@ public class RoleController : ControllerBase
         var perms = await _db.Permissions.AsNoTracking()
             .OrderBy(p => p.Category).ThenBy(p => p.Code)
             .ToListAsync();
-        return Ok(perms);
+        return Ok(perms.Select(p => new
+        {
+            id       = p.id,
+            code     = p.Code,
+            label    = p.Label,
+            category = p.Category,
+        }));
     }
 
     // GET /api/Role
@@ -67,11 +70,11 @@ public class RoleController : ControllerBase
 
         return Ok(roles.Select(r => new
         {
-            r.id,
-            r.Name,
-            IsSystem = r.Name == "Admin" || r.Name == "User",
-            IsAdmin  = r.Name == "Admin",
-            Permissions = r.RolePermissions
+            id          = r.id,
+            name        = r.Name,
+            isSystem    = r.Name == "Admin" || r.Name == "User",
+            isAdmin     = r.Name == "Admin",
+            permissions = r.RolePermissions
                 .Where(rp => rp.Permission != null)
                 .Select(rp => rp.Permission!.Code)
                 .ToList()
@@ -95,9 +98,11 @@ public class RoleController : ControllerBase
 
         return Ok(new
         {
-            role.id, role.Name,
-            IsSystem = false, IsAdmin = false,
-            Permissions = dto.Permissions ?? (IEnumerable<string>)[]
+            id          = role.id,
+            name        = role.Name,
+            isSystem    = false,
+            isAdmin     = false,
+            permissions = dto.Permissions ?? (IEnumerable<string>)[]
         });
     }
 
@@ -113,15 +118,17 @@ public class RoleController : ControllerBase
         if (!string.IsNullOrWhiteSpace(dto.Name) && role.Name != "User")
             role.Name = dto.Name.Trim();
 
-        await SetPermissionsAsync(id, dto.Permissions ?? []);
+        // Save name change first, then replace permissions
         await _db.SaveChangesAsync();
+        await SetPermissionsAsync(id, dto.Permissions ?? []);
 
         return Ok(new
         {
-            role.id, role.Name,
-            IsSystem = role.Name is "Admin" or "User",
-            IsAdmin  = false,
-            Permissions = dto.Permissions ?? (IEnumerable<string>)[]
+            id          = role.id,
+            name        = role.Name,
+            isSystem    = role.Name is "Admin" or "User",
+            isAdmin     = false,
+            permissions = dto.Permissions ?? (IEnumerable<string>)[]
         });
     }
 
@@ -160,30 +167,21 @@ public class RoleController : ControllerBase
         await _db.SaveChangesAsync();
     }
 
+    // Always checks DB for current role — JWT claims can be stale
     private async Task<bool> IsAdminAsync()
     {
-        var role = User.FindFirst("role")?.Value
-                ?? User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
-        if (role == "Admin") return true;
-        var rid = User.FindFirst("roleId")?.Value;
-        if (rid == "1") return true;
         var sub = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
                ?? User.FindFirst("sub")?.Value;
-        if (int.TryParse(sub, out var userId))
+        if (int.TryParse(sub, out var uid))
         {
-            var byId = await _db.users.AsNoTracking().Include(u => u.Role)
-                .FirstOrDefaultAsync(u => u.id == userId);
-            if (byId?.Role?.Name == "Admin") return true;
+            var u = await _db.users.AsNoTracking().Include(u => u.Role)
+                .FirstOrDefaultAsync(u => u.id == uid);
+            if (u?.Role?.Name == "Admin") return true;
         }
-        var email = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value
-                 ?? User.FindFirst("email")?.Value;
-        if (!string.IsNullOrEmpty(email))
-        {
-            var byEmail = await _db.users.AsNoTracking().Include(u => u.Role)
-                .FirstOrDefaultAsync(u => u.Email == email);
-            if (byEmail?.Role?.Name == "Admin") return true;
-        }
-        return false;
+        // JWT fallbacks (for edge cases)
+        var role = User.FindFirst("role")?.Value
+                ?? User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+        return role == "Admin";
     }
 }
 
