@@ -1,4 +1,4 @@
-using ClosedXML.Excel;
+﻿using ClosedXML.Excel;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -12,20 +12,19 @@ namespace Signalko.Web.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class AssetController : ControllerBase
+public class AssetController : PermissionedController
 {
-    private readonly AppDbContext _db;
     private readonly IWebHostEnvironment _env;
-    public AssetController(AppDbContext db, IWebHostEnvironment env)
+    public AssetController(AppDbContext db, IWebHostEnvironment env) : base(db)
     {
-        _db  = db;
         _env = env;
     }
 
     // ── GET /api/Asset ────────────────────────────────────────────────────────
-    [HttpGet]
+    [HttpGet, Authorize]
     public async Task<IActionResult> GetAssets()
     {
+        if (!await HasPermAsync("assets.view")) return Forbidden("assets.view");
         // One-time backfill: set EpcAscii for any tag that still has it empty
         var tagsToFix = await _db.TAG
             .Where(t => !string.IsNullOrEmpty(t.Epc) && string.IsNullOrEmpty(t.EpcAscii))
@@ -60,9 +59,10 @@ public class AssetController : ControllerBase
     }
 
     // ── GET /api/Asset/{id} ───────────────────────────────────────────────────
-    [HttpGet("{id:int}")]
+    [HttpGet("{id:int}"), Authorize]
     public async Task<IActionResult> GetAsset(int id)
     {
+        if (!await HasPermAsync("assets.view")) return Forbidden("assets.view");
         var a = await _db.ASSET
             .Include(x => x.Author)
             .Include(x => x.Tag)
@@ -73,9 +73,10 @@ public class AssetController : ControllerBase
     }
 
     // ── GET /api/Asset/by-epc/{epc} ───────────────────────────────────────────
-    [HttpGet("by-epc/{epc}")]
+    [HttpGet("by-epc/{epc}"), Authorize]
     public async Task<IActionResult> GetByEpc(string epc)
     {
+        if (!await HasPermAsync("assets.view")) return Forbidden("assets.view");
         var tag = await _db.TAG.AsNoTracking()
             .FirstOrDefaultAsync(t => t.Epc == epc || t.EpcAscii == epc);
         if (tag == null) return NotFound();
@@ -93,7 +94,7 @@ public class AssetController : ControllerBase
     [HttpPost, Authorize]
     public async Task<IActionResult> AddAsset([FromBody] AssetUpsertDto dto)
     {
-        if (!await IsAdminAsync()) return Forbid();
+        if (!await HasPermAsync("assets.edit")) return Forbidden("assets.edit");
         int? tagId = dto.TagId;
 
         if (!string.IsNullOrWhiteSpace(dto.Epc))
@@ -128,9 +129,10 @@ public class AssetController : ControllerBase
     }
 
     // ── PUT /api/Asset/{id} ───────────────────────────────────────────────────
-    [HttpPut("{id:int}")]
+    [HttpPut("{id:int}"), Authorize]
     public async Task<IActionResult> UpdateAsset(int id, [FromBody] AssetUpsertDto dto)
     {
+        if (!await HasPermAsync("assets.edit")) return Forbidden("assets.edit");
         var entity = await _db.ASSET.Include(a => a.Tag).FirstOrDefaultAsync(a => a.id == id);
         if (entity == null) return NotFound();
 
@@ -171,9 +173,10 @@ public class AssetController : ControllerBase
     }
 
     // ── POST /api/Asset/{id}/icon ─────────────────────────────────────────────
-    [HttpPost("{id:int}/icon")]
+    [HttpPost("{id:int}/icon"), Authorize]
     public async Task<IActionResult> UploadIcon(int id, IFormFile file)
     {
+        if (!await HasPermAsync("assets.edit")) return Forbidden("assets.edit");
         var entity = await _db.ASSET.FindAsync(id);
         if (entity == null) return NotFound();
 
@@ -199,9 +202,10 @@ public class AssetController : ControllerBase
     }
 
     // ── DELETE /api/Asset/{id} ────────────────────────────────────────────────
-    [HttpDelete("{id:int}")]
+    [HttpDelete("{id:int}"), Authorize]
     public async Task<IActionResult> DeleteAsset(int id)
     {
+        if (!await HasPermAsync("assets.edit")) return Forbidden("assets.edit");
         var entity = await _db.ASSET.FirstOrDefaultAsync(a => a.id == id);
         if (entity == null) return NotFound();
         _db.ASSET.Remove(entity);
@@ -210,7 +214,7 @@ public class AssetController : ControllerBase
     }
 
     // ── GET /api/Asset/template ───────────────────────────────────────────────
-    [HttpGet("template")]
+    [HttpGet("template"), Authorize]
     public IActionResult DownloadTemplate()
     {
         var bytes = BuildWorkbook(Array.Empty<(string, string, string, string)>());
@@ -220,7 +224,7 @@ public class AssetController : ControllerBase
     }
 
     // ── GET /api/Asset/export ─────────────────────────────────────────────────
-    [HttpGet("export")]
+    [HttpGet("export"), Authorize]
     public async Task<IActionResult> Export()
     {
         // Single query — join ASSET + TAG in DB, no per-row round-trips
@@ -248,7 +252,7 @@ public class AssetController : ControllerBase
     [HttpPost("import"), Authorize]
     public async Task<IActionResult> Import(IFormFile file)
     {
-        if (!await IsAdminAsync()) return Forbid();
+        if (!await HasPermAsync("assets.edit")) return Forbidden("assets.edit");
         if (file == null || file.Length == 0)
             return BadRequest(new { message = "Datoteka je prazna." });
 
@@ -376,52 +380,6 @@ public class AssetController : ControllerBase
         using var ms = new MemoryStream();
         wb.SaveAs(ms);
         return ms.ToArray();
-    }
-
-    private static void StyleHeader(IXLWorksheet ws)
-    {
-        var hdr = ws.Range(1, 1, 1, ExcelHeaders.Length);
-        hdr.Style.Font.Bold = true;
-        hdr.Style.Fill.BackgroundColor = XLColor.FromHtml("#1e293b");
-        hdr.Style.Font.FontColor = XLColor.White;
-        hdr.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
-    }
-
-    // ── Admin check: JWT claims → DB by userId → DB by email ────────────────
-    private async Task<bool> IsAdminAsync()
-    {
-        // 1) JWT role claim
-        var role = User.FindFirst("role")?.Value
-                ?? User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
-        if (role == "Admin") return true;
-
-        // 2) JWT roleId claim
-        var rid = User.FindFirst("roleId")?.Value;
-        if (rid == "1") return true;
-
-        // 3) DB lookup by userId
-        var sub = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
-               ?? User.FindFirst("sub")?.Value;
-        if (int.TryParse(sub, out var userId))
-        {
-            var byId = await _db.users.AsNoTracking()
-                .Include(u => u.Role)
-                .FirstOrDefaultAsync(u => u.id == userId);
-            if (byId?.Role?.Name == "Admin") return true;
-        }
-
-        // 4) DB lookup by email — handles DB resets where userId changed
-        var email = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value
-                 ?? User.FindFirst("email")?.Value;
-        if (!string.IsNullOrEmpty(email))
-        {
-            var byEmail = await _db.users.AsNoTracking()
-                .Include(u => u.Role)
-                .FirstOrDefaultAsync(u => u.Email == email);
-            if (byEmail?.Role?.Name == "Admin") return true;
-        }
-
-        return false;
     }
 
 }

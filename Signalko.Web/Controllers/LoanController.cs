@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Signalko.Core;
@@ -8,19 +9,16 @@ namespace Signalko.Web.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class LoanController : ControllerBase
+public class LoanController : PermissionedController
 {
-    private readonly AppDbContext _db;
     private const int LOAN_ROLE_ID = 1;
 
-    public LoanController(AppDbContext db) => _db = db;
+    public LoanController(AppDbContext db) : base(db) {}
 
-    // ── GET /api/Loan ─────────────────────────────────────────────────────────
-    // Returns all loans with user + asset + zone names resolved.
-    // Optional: ?active=true  → only open loans (ReturnedAt IS NULL)
-    [HttpGet]
+    [HttpGet, Authorize]
     public async Task<IActionResult> GetAll([FromQuery] bool? active)
     {
+        if (!await HasPermAsync("loans.view")) return Forbidden("loans.view");
         var q = _db.assets_loans
             .Include(l => l.Asset)
             .Include(l => l.User)
@@ -50,10 +48,7 @@ public class LoanController : ControllerBase
         return Ok(result);
     }
 
-    // ── GET /api/Loan/my ──────────────────────────────────────────────────────
-    // Returns loans for the currently authenticated user.
-    // Reads userId from JWT claim "sub". Falls back to query param for dev.
-    [HttpGet("my")]
+    [HttpGet("my"), Authorize]
     public async Task<IActionResult> GetMine([FromQuery] int? userId)
     {
         // Try to get userId from JWT sub claim
@@ -89,8 +84,7 @@ public class LoanController : ControllerBase
         return Ok(result);
     }
 
-    // ── GET /api/Loan/{id} ────────────────────────────────────────────────────
-    [HttpGet("{id:int}")]
+    [HttpGet("{id:int}"), Authorize]
     public async Task<IActionResult> GetOne(int id)
     {
         var l = await _db.assets_loans
@@ -116,16 +110,10 @@ public class LoanController : ControllerBase
         ));
     }
 
-    // ── POST /api/Loan ────────────────────────────────────────────────────────
-    // Creates a new loan. Validates:
-    //   - asset exists
-    //   - user exists
-    //   - asset is not already on active loan by someone else
-    //   - user doesn't already have this asset
-    [HttpPost]
+    [HttpPost, Authorize]
     public async Task<IActionResult> Create([FromBody] LoanCreateRequestDto dto)
     {
-        // Validate asset
+        if (!await HasPermAsync("loans.create")) return Forbidden("loans.create");
         var asset = await _db.ASSET.AsNoTracking().FirstOrDefaultAsync(a => a.id == dto.AssetId);
         if (asset == null)
             return NotFound($"Sredstvo z ID {dto.AssetId} ne obstaja.");
@@ -182,11 +170,10 @@ public class LoanController : ControllerBase
         ));
     }
 
-    // ── POST /api/Loan/return ─────────────────────────────────────────────────
-    // Closes a loan by setting ReturnedAt = now.
-    [HttpPost("return")]
+    [HttpPost("return"), Authorize]
     public async Task<IActionResult> Return([FromBody] LoanReturnDto dto)
     {
+        if (!await HasPermAsync("loans.return")) return Forbidden("loans.return");
         var loan = await _db.assets_loans.FirstOrDefaultAsync(l => l.id == dto.LoanId);
         if (loan == null)
             return NotFound($"Izposoja z ID {dto.LoanId} ne obstaja.");
@@ -200,10 +187,8 @@ public class LoanController : ControllerBase
         return Ok(new { message = "Sredstvo vrnjeno.", loanId = loan.id, returnedAt = loan.ReturnedAt });
     }
 
-    // ── GET /api/Loan/last-users-by-antenna/{antennaId} ─────────────────────
-    // Legacy endpoint - users last seen on a LOAN antenna
-    [HttpGet("last-users-by-antenna/{antennaId:int}")]
-    public async Task<ActionResult<IEnumerable<LoanUserLastSeenDto>>> LastUsersByAntenna(int antennaId)
+    [HttpGet("last-users-by-antenna/{antennaId:int}"), Authorize]
+    public async Task<IActionResult> LastUsersByAntenna(int antennaId)
     {
         var antenna = await _db.antennas.AsNoTracking().FirstOrDefaultAsync(a => a.id == antennaId);
         if (antenna == null) return NotFound($"Antena z ID {antennaId} ne obstaja.");

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Signalko.Core;
@@ -9,16 +10,15 @@ namespace Signalko.Web.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class UserController : ControllerBase
+public class UserController : PermissionedController
 {
-    private readonly AppDbContext _db;
-    public UserController(AppDbContext db) => _db = db;
+    public UserController(AppDbContext db) : base(db) {}
 
     // ── GET /api/User  ────────────────────────────────────────────────────────
-    // Returns all users with role info (admin use)
-    [HttpGet]
+    [HttpGet, Authorize]
     public async Task<IActionResult> GetUsers()
     {
+        if (!await HasPermAsync("users.view")) return Forbidden("users.view");
         var users = await _db.users
             .Include(u => u.Role)
             .AsNoTracking()
@@ -30,14 +30,16 @@ public class UserController : ControllerBase
     }
 
     // ── GET /api/User/roles ───────────────────────────────────────────────────
-    [HttpGet("roles")]
+    [HttpGet("roles"), Authorize]
     public async Task<IActionResult> GetRoles()
         => Ok(await _db.Roles.AsNoTracking().ToListAsync());
 
     // ── GET /api/User/{id} ────────────────────────────────────────────────────
-    [HttpGet("{id:int}")]
+    // Own profile always allowed; viewing others requires users.view
+    [HttpGet("{id:int}"), Authorize]
     public async Task<IActionResult> GetUser(int id)
     {
+        if (GetUserId() != id && !await HasPermAsync("users.view")) return Forbidden("users.view");
         var u = await _db.users
             .Include(x => x.Role)
             .AsNoTracking()
@@ -47,6 +49,7 @@ public class UserController : ControllerBase
     }
 
     // ── GET /api/User/by-card/{cardId} ────────────────────────────────────────
+    // No auth — used by hardware/RFID scanners
     [HttpGet("by-card/{cardId}")]
     public async Task<IActionResult> GetByCard(string cardId)
     {
@@ -59,9 +62,10 @@ public class UserController : ControllerBase
     }
 
     // ── POST /api/User ────────────────────────────────────────────────────────
-    [HttpPost]
+    [HttpPost, Authorize]
     public async Task<IActionResult> AddUser([FromBody] UserCreateDto dto)
     {
+        if (!await HasPermAsync("users.manage")) return Forbidden("users.manage");
         if (await _db.users.AnyAsync(u => u.Email == dto.Email))
             return Conflict(new { message = "Email je že registriran." });
         if (await _db.users.AnyAsync(u => u.CardID == dto.CardID))
@@ -86,10 +90,10 @@ public class UserController : ControllerBase
     }
 
     // ── PUT /api/User/{id} ────────────────────────────────────────────────────
-    // Admin: update any user field except id
-    [HttpPut("{id:int}")]
+    [HttpPut("{id:int}"), Authorize]
     public async Task<IActionResult> UpdateUser(int id, [FromBody] UserUpdateDto dto)
     {
+        if (!await HasPermAsync("users.manage")) return Forbidden("users.manage");
         var entity = await _db.users.Include(u => u.Role).FirstOrDefaultAsync(u => u.id == id);
         if (entity == null) return NotFound();
 
@@ -119,9 +123,10 @@ public class UserController : ControllerBase
     }
 
     // ── DELETE /api/User/{id} ─────────────────────────────────────────────────
-    [HttpDelete("{id:int}")]
+    [HttpDelete("{id:int}"), Authorize]
     public async Task<IActionResult> DeleteUser(int id)
     {
+        if (!await HasPermAsync("users.manage")) return Forbidden("users.manage");
         var entity = await _db.users.FirstOrDefaultAsync(u => u.id == id);
         if (entity == null) return NotFound();
         _db.users.Remove(entity);

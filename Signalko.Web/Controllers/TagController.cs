@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Signalko.Infrastructure;
 using Signalko.Web.Services;
@@ -11,13 +12,11 @@ namespace Signalko.Web.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class TagController : ControllerBase
+public class TagController : PermissionedController
 {
-    private readonly AppDbContext    _db;
     private readonly PresenceService _presence;
-    public TagController(AppDbContext db, PresenceService presence)
+    public TagController(AppDbContext db, PresenceService presence) : base(db)
     {
-        _db       = db;
         _presence = presence;
     }
 
@@ -41,7 +40,7 @@ public class TagController : ControllerBase
         return new string(buf[..j]);
     }
 
-    // 🇸🇮 Parser za Zebra “timestamp” (npr. 2025-10-23T08:06:47.198+0000)
+    // 🇸🇮 Parser za Zebra "timestamp" (npr. 2025-10-23T08:06:47.198+0000)
     private static bool TryParseZebraTimestamp(string? s, out DateTime dt)
     {
         dt = default;
@@ -87,17 +86,20 @@ public class TagController : ControllerBase
 
     // ──────────────────────────────────────────────────────────────────────────
     // 🇸🇮 Najnovejši raw TAG zapisi (preprosto)
-    [HttpGet("latest")]
+    [HttpGet("latest"), Authorize]
     public async Task<IActionResult> Latest([FromQuery] int take = 50)
-        => Ok(await _db.TAG.AsNoTracking()
+    {
+        if (!await HasPermAsync("tags.view")) return Forbidden("tags.view");
+        return Ok(await _db.TAG.AsNoTracking()
                            .OrderByDescending(t => t.id)
                            .Take(Math.Clamp(take, 1, 500))
                            .ToListAsync());
+    }
 
     // ──────────────────────────────────────────────────────────────────────────
     // 🇸🇮 Paged + filtri po stolpcih (za tags.html glavno tabelo)
     // GET /api/tag/grouped-table?page=1&pageSize=20&q=&epc=&ascii=&hostname=&reader=&zone=&antenna=&from=...&to=...&rssiMin=&rssiMax=
-    [HttpGet("grouped-table")]
+    [HttpGet("grouped-table"), Authorize]
     public async Task<IActionResult> GroupedTable(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
@@ -113,6 +115,7 @@ public class TagController : ControllerBase
         [FromQuery] int? rssiMin = null,
         [FromQuery] int? rssiMax = null)
     {
+        if (!await HasPermAsync("tags.view")) return Forbidden("tags.view");
         page = page <= 0 ? 1 : page;
         pageSize = pageSize switch { <= 0 => 20, > 200 => 200, _ => pageSize };
         var skip = (page - 1) * pageSize;
@@ -281,10 +284,11 @@ LIMIT @p_skip, @p_take;";
     }
 
     // ──────────────────────────────────────────────────────────────────────────
-    // 🇸🇮 Desni panel – “rich” zgodovina (reader + cona za izbran EPC)
-    [HttpGet("by-epc/details/{epc}")]
+    // 🇸🇮 Desni panel – "rich" zgodovina (reader + cona za izbran EPC)
+    [HttpGet("by-epc/details/{epc}"), Authorize]
     public async Task<IActionResult> ByEpcDetails([FromRoute] string epc, [FromQuery] int take = 200)
     {
+        if (!await HasPermAsync("tags.view")) return Forbidden("tags.view");
         if (string.IsNullOrWhiteSpace(epc))
             return BadRequest(new { error = "EPC je obvezen." });
 
