@@ -13,6 +13,32 @@ public class RoleController : ControllerBase
     private readonly AppDbContext _db;
     public RoleController(AppDbContext db) => _db = db;
 
+    // GET /api/Role/my-permissions
+    [HttpGet("my-permissions"), Authorize]
+    public async Task<IActionResult> GetMyPermissions()
+    {
+        int? rid = null;
+        var roleIdClaim = User.FindFirst("roleId")?.Value;
+        if (int.TryParse(roleIdClaim, out var r1)) rid = r1;
+        else
+        {
+            var sub = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                   ?? User.FindFirst("sub")?.Value;
+            if (int.TryParse(sub, out var uid))
+            {
+                var u = await _db.users.AsNoTracking().Select(x => new { x.id, x.RoleId }).FirstOrDefaultAsync(x => x.id == uid);
+                if (u != null) rid = u.RoleId;
+            }
+        }
+        if (rid == null) return Ok(Array.Empty<string>());
+        var codes = await _db.RolePermissions
+            .Where(rp => rp.RoleId == rid)
+            .Include(rp => rp.Permission)
+            .Select(rp => rp.Permission!.Code)
+            .ToListAsync();
+        return Ok(codes);
+    }
+
     // GET /api/Role/permissions
     [HttpGet("permissions")]
     public async Task<IActionResult> GetPermissions()

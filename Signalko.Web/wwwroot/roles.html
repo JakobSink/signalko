@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <link rel="stylesheet" href="/css/sk.css"/>
 <style>
-.roles-layout{display:grid;grid-template-columns:270px 1fr;gap:20px;align-items:start;}
+.roles-layout{display:grid;grid-template-columns:280px 1fr;gap:20px;align-items:start;}
 @media(max-width:820px){.roles-layout{grid-template-columns:1fr;}}
 
 .role-item{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:10px;cursor:pointer;transition:background .12s;border:1px solid transparent;margin-bottom:4px;}
@@ -14,15 +14,18 @@
 .role-item.active{background:var(--accD);border-color:var(--acc);}
 .role-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
 .role-name{font-size:13px;font-weight:600;flex:1;}
-.role-pct{font-size:10px;color:var(--mut);}
+.role-count{font-size:10px;color:var(--mut);font-family:'JetBrains Mono',monospace;}
 
-.perm-cat{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--mut);margin:18px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--border);}
+.perm-cat{font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--mut);margin:20px 0 6px;padding-bottom:6px;border-bottom:1px solid var(--border);}
 .perm-cat:first-child{margin-top:0;}
-.perm-row{display:flex;align-items:center;gap:14px;padding:9px 0;border-bottom:1px solid var(--border);}
-.perm-row:last-child{border-bottom:none;}
+.perm-row{display:flex;align-items:center;gap:14px;padding:8px 10px;border-radius:8px;transition:background .1s;}
+.perm-row.is-on{background:rgba(79,142,247,.07);}
 .perm-info{flex:1;}
 .perm-label{font-size:12px;color:var(--txt);line-height:1.4;}
 .perm-code{font-size:10px;color:var(--mut);font-family:'JetBrains Mono',monospace;margin-top:1px;}
+.perm-state{font-size:10px;font-weight:600;min-width:28px;text-align:right;}
+.perm-state.on{color:var(--acc);}
+.perm-state.off{color:var(--mut);}
 
 .tog{position:relative;width:38px;height:22px;flex-shrink:0;}
 .tog input{opacity:0;width:0;height:0;position:absolute;}
@@ -32,10 +35,17 @@
 .tog input:checked~.tog-track::before{transform:translateX(16px);background:#fff;}
 .tog input:disabled~.tog-track{opacity:.45;cursor:not-allowed;}
 
-.lock-notice{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--mut);background:var(--up);border-radius:8px;padding:10px 14px;margin-bottom:16px;}
+/* Admin read-only view */
+.admin-banner{display:flex;align-items:center;gap:12px;padding:14px 16px;background:rgba(52,211,153,.06);border:1px solid rgba(52,211,153,.2);border-radius:10px;margin-bottom:20px;}
+.admin-banner-ico{font-size:20px;flex-shrink:0;}
+.admin-banner-title{font-size:13px;font-weight:700;color:var(--grn);}
+.admin-banner-sub{font-size:11px;color:var(--mut);margin-top:1px;}
+.perm-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(79,142,247,.1);border:1px solid rgba(79,142,247,.2);border-radius:6px;padding:4px 9px;font-size:11px;font-weight:600;color:var(--acc);margin:3px;}
+.perm-badge-cat{font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--mut);margin:14px 0 6px;padding-bottom:4px;border-bottom:1px solid var(--border);}
+.perm-badge-cat:first-child{margin-top:0;}
 
 .editor-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:64px 20px;color:var(--mut);font-size:12px;text-align:center;}
-.editor-empty .ico{font-size:36px;opacity:.3;}
+.editor-empty .ico{font-size:32px;opacity:.25;line-height:1;}
 </style>
 </head>
 <body>
@@ -63,7 +73,7 @@
       <!-- RIGHT -->
       <div class="sk-card" id="editor">
         <div class="editor-empty">
-          <span class="ico">🔐</span>
+          <span class="ico">⊗</span>
           <div>Izberi vlogo na levi za urejanje pravic</div>
         </div>
       </div>
@@ -93,15 +103,15 @@ function renderList() {
   if (!ALL_ROLES.length) { el.innerHTML = '<div style="color:var(--mut);font-size:12px;padding:8px 0;">Ni vlog.</div>'; return; }
   el.innerHTML = ALL_ROLES.map(r => {
     const perms = r.permissions || r.Permissions || [];
-    const pct   = ALL_PERMS.length ? Math.round(perms.length / ALL_PERMS.length * 100) : 0;
+    const total = ALL_PERMS.length;
     const color = r.isAdmin ? 'var(--grn)' : r.isSystem ? 'var(--acc)' : 'var(--org)';
     const sel   = SEL?.id === r.id;
-    return `<div class="role-item${sel?' active':''}" onclick="select(${r.id})" style="cursor:${r.isAdmin?'default':'pointer'}">
+    return `<div class="role-item${sel?' active':''}" onclick="select(${r.id})">
       <div class="role-dot" style="background:${color};${r.isAdmin?'box-shadow:0 0 6px var(--grn);':''}"></div>
       <div class="role-name">${h(r.name||r.Name)}</div>
       ${r.isAdmin
-        ? '<span style="font-size:10px;color:var(--grn);">🔒 Admin</span>'
-        : `<span class="role-pct">${pct}%</span>`}
+        ? '<span style="font-size:10px;color:var(--grn);font-weight:700;">VSE PRAVICE</span>'
+        : `<span class="role-count">${perms.length}${total?'/'+total:''}</span>`}
     </div>`;
   }).join('');
 }
@@ -116,11 +126,37 @@ function select(id) {
 /* ── Editor ────────────────────────────────────────────────── */
 function renderEditor() {
   const el = document.getElementById('editor');
-  if (!SEL) { el.innerHTML = '<div class="editor-empty"><span class="ico">🔐</span><div>Izberi vlogo na levi za urejanje pravic</div></div>'; return; }
+  if (!SEL) { el.innerHTML = '<div class="editor-empty"><span class="ico">⊗</span><div>Izberi vlogo na levi za urejanje pravic</div></div>'; return; }
 
-  const r      = SEL;
-  const locked = r.isAdmin;
-  const mySet  = new Set((r.permissions || r.Permissions || []).map(String));
+  const r = SEL;
+
+  // Admin: read-only view
+  if (r.isAdmin) {
+    const cats = {};
+    ALL_PERMS.forEach(p => {
+      const c = p.category || p.Category || 'Ostalo';
+      (cats[c] = cats[c] || []).push(p);
+    });
+    const badges = Object.entries(cats).map(([cat, perms]) =>
+      `<div class="perm-badge-cat">${h(cat)}</div>` +
+      perms.map(p => `<span class="perm-badge">✓ ${h(p.label||p.Label||p.code||p.Code)}</span>`).join('')
+    ).join('');
+    el.innerHTML = `<div class="sk-card-pad">
+      <div class="admin-banner">
+        <span class="admin-banner-ico">⊗</span>
+        <div>
+          <div class="admin-banner-title">Admin — vse pravice</div>
+          <div class="admin-banner-sub">Ta vloga ima popoln dostop. Pravic ni mogoče urejati.</div>
+        </div>
+      </div>
+      ${badges}
+    </div>`;
+    return;
+  }
+
+  // Editable role
+  const mySet = new Set((r.permissions || r.Permissions || []).map(String));
+  const enabledCount = mySet.size;
 
   const cats = {};
   ALL_PERMS.forEach(p => {
@@ -132,31 +168,40 @@ function renderEditor() {
     <div class="perm-cat">${h(cat)}</div>
     ${perms.map(p => {
       const code = p.code || p.Code;
-      const on   = locked || mySet.has(code);
-      return `<div class="perm-row">
+      const on   = mySet.has(code);
+      return `<div class="perm-row${on?' is-on':''}">
         <div class="perm-info">
           <div class="perm-label">${h(p.label||p.Label||code)}</div>
           <div class="perm-code">${h(code)}</div>
         </div>
+        <span class="perm-state${on?' on':' off'}">${on?'DA':'NE'}</span>
         <label class="tog">
-          <input type="checkbox" data-code="${h(code)}" ${on?'checked':''} ${locked?'disabled':''}
+          <input type="checkbox" data-code="${h(code)}" ${on?'checked':''}
             onchange="toggle(this)"/>
           <span class="tog-track"></span>
         </label>
       </div>`;
     }).join('')}`).join('');
 
+  const isSystem = r.isSystem;
   el.innerHTML = `<div class="sk-card-pad">
-    ${locked ? `<div class="lock-notice">🔒 Vloga Admin ima vse pravice in jih ni mogoče urejati.</div>` : ''}
-    ${!r.isSystem ? `<div class="sk-field" style="margin-bottom:18px;">
-      <label>Ime vloge</label>
-      <input class="sk-input" id="eName" value="${h(r.name||r.Name)}"/>
-    </div>` : `<div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:800;margin-bottom:18px;">${h(r.name||r.Name)}</div>`}
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+      ${!isSystem
+        ? `<div class="sk-field" style="margin:0;flex:1;margin-right:12px;">
+             <label style="font-size:10px;">IME VLOGE</label>
+             <input class="sk-input" id="eName" value="${h(r.name||r.Name)}" style="margin-top:4px;"/>
+           </div>`
+        : `<div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:800;">${h(r.name||r.Name)}</div>`}
+      <div style="text-align:right;flex-shrink:0;">
+        <div style="font-size:22px;font-weight:800;color:var(--acc);font-family:'JetBrains Mono',monospace;">${enabledCount}</div>
+        <div style="font-size:10px;color:var(--mut);">/ ${ALL_PERMS.length} pravic</div>
+      </div>
+    </div>
     ${matrix}
-    ${!locked ? `<div style="display:flex;gap:10px;margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
+    <div style="display:flex;gap:10px;margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
       <button class="sk-btn sk-btn-acc sk-btn-full" id="saveBtn" onclick="save()">✓ Shrani</button>
-      ${!r.isSystem ? `<button class="sk-btn sk-btn-red" onclick="del(${r.id})" title="Izbriši vlogo">🗑</button>` : ''}
-    </div>` : ''}
+      ${!isSystem ? `<button class="sk-btn sk-btn-red" onclick="del(${r.id})" title="Izbriši vlogo">🗑</button>` : ''}
+    </div>
   </div>`;
 }
 
@@ -166,7 +211,17 @@ function toggle(cb) {
   cb.checked ? perms.add(cb.dataset.code) : perms.delete(cb.dataset.code);
   SEL.permissions = [...perms];
   SEL.Permissions = SEL.permissions;
-  renderList(); // update pct
+  // update row highlight + state label + counter
+  const row = cb.closest('.perm-row');
+  if (row) {
+    row.classList.toggle('is-on', cb.checked);
+    const st = row.querySelector('.perm-state');
+    if (st) { st.textContent = cb.checked ? 'DA' : 'NE'; st.className = 'perm-state ' + (cb.checked?'on':'off'); }
+  }
+  renderList();
+  // update count badge
+  const cnt = document.querySelector('.sk-card-pad [style*="font-size:22px"]');
+  if (cnt) cnt.textContent = perms.size;
 }
 
 /* ── Create ────────────────────────────────────────────────── */

@@ -114,15 +114,15 @@
       <span class="sb-item-icon">◈</span>
       <span class="sb-label">Pregled</span>
     </a>
-    <a class="sb-item" href="/loans.html">
+    <a class="sb-item" id="sbLoansLink" href="/loans.html">
       <span class="sb-item-icon">⇌</span>
       <span class="sb-label">Izposoja</span>
     </a>
-    <a class="sb-item" href="/assets.html">
+    <a class="sb-item" id="sbAssetsLink" href="/assets.html">
       <span class="sb-item-icon">▣</span>
       <span class="sb-label">Sredstva</span>
     </a>
-    <a class="sb-item" href="/tags.html">
+    <a class="sb-item" id="sbTagsLink" href="/tags.html">
       <span class="sb-item-icon">◉</span>
       <span class="sb-label">RFID Tagi</span>
     </a>
@@ -143,7 +143,7 @@
       <span class="sb-label">Prisotnost — nadzor</span>
     </a>
     <a class="sb-item admin-link" id="sbRolesLink" href="/roles.html" style="display:none;">
-      <span class="sb-item-icon">🔐</span>
+      <span class="sb-item-icon">⊗</span>
       <span class="sb-label">Vloge</span>
     </a>
 
@@ -207,15 +207,15 @@
       '</div>' +
       '<div class="smm-nav-wrap">' +
         '<a class="smm-item" href="/index.html"><span class="smm-item-icon">◈</span> Pregled</a>' +
-        '<a class="smm-item" href="/loans.html"><span class="smm-item-icon">⇌</span> Izposoja</a>' +
-        '<a class="smm-item" href="/assets.html"><span class="smm-item-icon">▣</span> Sredstva</a>' +
-        '<a class="smm-item" href="/tags.html"><span class="smm-item-icon">◉</span> RFID Tagi</a>' +
+        '<a class="smm-item" id="smmLoansLink" href="/loans.html"><span class="smm-item-icon">⇌</span> Izposoja</a>' +
+        '<a class="smm-item" id="smmAssetsLink" href="/assets.html"><span class="smm-item-icon">▣</span> Sredstva</a>' +
+        '<a class="smm-item" id="smmTagsLink" href="/tags.html"><span class="smm-item-icon">◉</span> RFID Tagi</a>' +
         '<div class="smm-section" id="smmUserSection" style="display:none">Uporabnik</div>' +
         '<a class="smm-item smm-pres" href="/presence.html" id="smmPresLink" style="display:none"><span class="smm-item-icon">◎</span> Prisotnost</a>' +
         '<div class="smm-section" id="smmAdminSection" style="display:none">Admin</div>' +
         '<a class="smm-item smm-admin" href="/admin.html" id="smmAdminLink" style="display:none"><span class="smm-item-icon">⚙</span> Uporabniki</a>' +
         '<a class="smm-item smm-admin" href="/presenceadmin.html" id="smmPresAdminLink" style="display:none"><span class="smm-item-icon">◎</span> Prisotnost — nadzor</a>' +
-        '<a class="smm-item smm-admin" href="/roles.html" id="smmRolesLink" style="display:none"><span class="smm-item-icon">🔐</span> Vloge</a>' +
+        '<a class="smm-item smm-admin" href="/roles.html" id="smmRolesLink" style="display:none"><span class="smm-item-icon">⊗</span> Vloge</a>' +
         '<div class="smm-section" id="smmConfigSection" style="display:none">Konfiguracija</div>' +
         '<a class="smm-item" href="/readers.html" id="smmReadersLink" style="display:none"><span class="smm-item-icon">⊡</span> Čitalci</a>' +
         '<a class="smm-item" href="/antennas.html" id="smmAntennasLink" style="display:none"><span class="smm-item-icon">⊛</span> Antene</a>' +
@@ -256,20 +256,47 @@
   var token = localStorage.getItem('token') || localStorage.getItem('sk_token');
   var cached = null;
   try { cached = JSON.parse(localStorage.getItem('sk_user') || 'null'); } catch {}
+  var cachedPerms = null;
+  try { cachedPerms = JSON.parse(localStorage.getItem('sk_user_perms') || 'null'); } catch {}
 
   // ── Render both desktop sidebar + mobile menu ──
-  function render(user) {
+  function render(user, userPerms) {
     var loggedIn = !!(token && user);
     var isAdmin  = loggedIn && (
       user.roleId == 1 || user.RoleId == 1 ||
       user.role === 'Admin' || user.roleName === 'Admin' || user.RoleName === 'Admin'
     );
+    var permSet = new Set(Array.isArray(userPerms) ? userPerms : []);
 
-    // Desktop: user section
-    ['sbUserSection','sbPresLink'].forEach(function(id) {
-      var el = document.getElementById(id);
-      if (el) el.style.display = loggedIn ? '' : 'none';
+    // Page links: for non-admin logged-in users, filter by page.* permissions
+    // For admins and guests: show all public pages
+    var pageIds = {
+      loans:    { d: 'sbLoansLink',    m: 'smmLoansLink'    },
+      assets:   { d: 'sbAssetsLink',   m: 'smmAssetsLink'   },
+      tags:     { d: 'sbTagsLink',     m: 'smmTagsLink'     },
+      presence: { d: 'sbPresLink',     m: 'smmPresLink'     },
+    };
+    var pagePerms = { loans: 'page.loans', assets: 'page.assets', tags: 'page.tags', presence: 'page.presence' };
+
+    Object.keys(pageIds).forEach(function(page) {
+      var ids = pageIds[page];
+      var show;
+      if (page === 'presence') {
+        // presence always needs login; for non-admins also needs page.presence
+        show = loggedIn && (isAdmin || !userPerms || permSet.has(pagePerms[page]));
+      } else {
+        // public pages: always show for guests/admins; for logged-in non-admins check perm
+        show = !loggedIn || isAdmin || !userPerms || permSet.has(pagePerms[page]);
+      }
+      var d = document.getElementById(ids.d);
+      var m = document.getElementById(ids.m);
+      if (d) d.style.display = show ? '' : 'none';
+      if (m) m.style.display = show ? '' : 'none';
     });
+
+    // Desktop: user section header (only presence, now handled above)
+    var uSec = document.getElementById('sbUserSection');
+    if (uSec) uSec.style.display = loggedIn ? '' : 'none';
     // Desktop: admin section
     ['sbAdminSection','sbAdminLink','sbPresAdminLink','sbRolesLink','sbConfigSection',
      'sbReadersLink','sbAntennasLink','sbZonesLink'].forEach(function(id) {
@@ -277,11 +304,9 @@
       if (el) el.style.display = isAdmin ? '' : 'none';
     });
 
-    // Mobile menu: user section
-    ['smmUserSection','smmPresLink'].forEach(function(id) {
-      var el = document.getElementById(id);
-      if (el) el.style.display = loggedIn ? '' : 'none';
-    });
+    // Mobile menu: user section header
+    var mSec = document.getElementById('smmUserSection');
+    if (mSec) mSec.style.display = loggedIn ? '' : 'none';
     // Mobile menu: admin section
     ['smmAdminSection','smmAdminLink','smmPresAdminLink','smmRolesLink','smmConfigSection',
      'smmReadersLink','smmAntennasLink','smmZonesLink'].forEach(function(id) {
@@ -358,15 +383,21 @@
     }
   }
 
-  render(cached);
+  render(cached, cachedPerms);
 
   // Refresh from server
   if (token && cached && cached.id) {
-    fetch('/api/User/' + cached.id, {
+    var userFetch = fetch('/api/User/' + cached.id, {
       headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' }
-    })
-    .then(function(r) { return r.ok ? r.json() : null; })
-    .then(function(fresh) {
+    }).then(function(r) { return r.ok ? r.json() : null; });
+
+    var permFetch = fetch('/api/Role/my-permissions', {
+      headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' }
+    }).then(function(r) { return r.ok ? r.json() : null; });
+
+    Promise.all([userFetch, permFetch]).then(function(results) {
+      var fresh = results[0];
+      var perms = results[1];
       if (!fresh) return;
       var updated = {
         id:       fresh.id       || fresh.Id       || cached.id,
@@ -379,9 +410,9 @@
         role:     fresh.role     || fresh.Role     || null,
       };
       localStorage.setItem('sk_user', JSON.stringify(updated));
-      render(updated);
-    })
-    .catch(function() {});
+      if (Array.isArray(perms)) localStorage.setItem('sk_user_perms', JSON.stringify(perms));
+      render(updated, perms);
+    }).catch(function() {});
   }
 })();
 </script>

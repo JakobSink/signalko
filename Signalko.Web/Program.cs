@@ -176,6 +176,13 @@ static async Task MigrateAndSeedCoreAsync(WebApplication app)
             ("presence.manage", "Admin prisotnost",         "Prisotnost"),
             ("tags.view",       "Ogled RFID tagov",         "RFID"),
             ("roles.manage",    "Upravljanje pravic",       "Sistem"),
+            ("page.assets",     "Stran: Sredstva",          "Strani (dostop)"),
+            ("page.loans",      "Stran: Izposoja",          "Strani (dostop)"),
+            ("page.tags",       "Stran: RFID Tagi",         "Strani (dostop)"),
+            ("page.presence",   "Stran: Prisotnost",        "Strani (dostop)"),
+            ("page.readers",    "Stran: Čitalci",           "Strani (dostop)"),
+            ("page.antennas",   "Stran: Antene",            "Strani (dostop)"),
+            ("page.zones",      "Stran: Cone",              "Strani (dostop)"),
         };
         foreach (var p in allPerms)
         {
@@ -199,6 +206,24 @@ static async Task MigrateAndSeedCoreAsync(WebApplication app)
                     db.RolePermissions.Add(new RolePermission { RoleId = adminRoleP.id, PermissionId = perm.id });
             await db.SaveChangesAsync();
             Console.WriteLine("[Seed] Admin permissions assigned.");
+        }
+
+        // Seed default User role permissions (only if none assigned yet)
+        var userRoleP = await db.Roles.FirstOrDefaultAsync(r => r.Name == "User");
+        if (userRoleP != null && !await db.RolePermissions.AnyAsync(rp => rp.RoleId == userRoleP.id))
+        {
+            var defaultCodes = new[] {
+                "assets.view", "loans.view", "loans.create", "loans.return", "tags.view",
+                "page.assets", "page.loans", "page.tags", "page.presence"
+            };
+            var defaultPermIds = await db.Permissions
+                .Where(p => defaultCodes.Contains(p.Code))
+                .Select(p => p.id)
+                .ToListAsync();
+            foreach (var pid in defaultPermIds)
+                db.RolePermissions.Add(new RolePermission { RoleId = userRoleP.id, PermissionId = pid });
+            await db.SaveChangesAsync();
+            Console.WriteLine("[Seed] User role default permissions assigned.");
         }
     }
     catch (Exception ex)
