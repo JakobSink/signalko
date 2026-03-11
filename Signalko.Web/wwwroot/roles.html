@@ -73,7 +73,7 @@
       <!-- RIGHT -->
       <div class="sk-card" id="editor">
         <div class="editor-empty">
-          <span class="ico">⊗</span>
+          <span class="ico" style="font-size:28px;letter-spacing:-2px;">◉⚙</span>
           <div>Izberi vlogo na levi za urejanje pravic</div>
         </div>
       </div>
@@ -133,7 +133,7 @@ function select(id) {
 /* ── Editor ────────────────────────────────────────────────── */
 function renderEditor() {
   const el = document.getElementById('editor');
-  if (!SEL) { el.innerHTML = '<div class="editor-empty"><span class="ico">⊗</span><div>Izberi vlogo na levi za urejanje pravic</div></div>'; return; }
+  if (!SEL) { el.innerHTML = '<div class="editor-empty"><span class="ico" style="font-size:28px;letter-spacing:-2px;">◉⚙</span><div>Izberi vlogo na levi za urejanje pravic</div></div>'; return; }
 
   const r = SEL;
 
@@ -150,7 +150,7 @@ function renderEditor() {
     ).join('');
     el.innerHTML = `<div class="sk-card-pad">
       <div class="admin-banner">
-        <span class="admin-banner-ico">⊗</span>
+        <span class="admin-banner-ico" style="font-size:16px;letter-spacing:-2px;">◉⚙</span>
         <div>
           <div class="admin-banner-title">Admin — vse pravice</div>
           <div class="admin-banner-sub">Ta vloga ima popoln dostop. Pravic ni mogoče urejati.</div>
