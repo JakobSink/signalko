@@ -306,18 +306,17 @@ function buildGroup(g, mySet) {
   const pageOn = g.pageCode ? mySet.has(g.pageCode) : true;
   const cardOn = pageOn;
 
-  // Info data for group header
-  const groupInfoData = JSON.stringify({
-    title: g.label,
-    desc:  g.desc || '',
+  // Register info in JS registry (avoids HTML quote escaping issues)
+  const groupKey = regInfo({
+    title:          g.label,
+    desc:           g.desc || '',
     sidebarLabel:   g.sidebarLabel   || null,
     sidebarSection: g.sidebarSection || null,
-    isPage: true,
-  }).replace(/'/g, '&#39;');
+  });
 
   // header toggle (page visibility)
   const headerToggle = g.pageCode ? `
-    <button class="info-btn" onclick="showInfo(event,'${groupInfoData}')" title="Info">ⓘ</button>
+    <button class="info-btn" onclick="showInfo(event,'${groupKey}')" title="Info o tej strani">ⓘ</button>
     <span class="perm-state ${pageOn?'on':'off'}" id="pgst_${CSS.escape(g.pageCode)}">${pageOn?'DA':'NE'}</span>
     <label class="tog">
       <input type="checkbox" data-pagecode="${h(g.pageCode)}" ${pageOn?'checked':''}
@@ -329,14 +328,13 @@ function buildGroup(g, mySet) {
   const rows = g.perms.map(code => {
     const on  = mySet.has(code);
     const lbl = LABEL[code] || code;
-    const desc = PERM_DESC[code] || '';
-    const permInfoData = JSON.stringify({ title: lbl, desc, code }).replace(/'/g,'&#39;');
+    const permKey = regInfo({ title: lbl, desc: PERM_DESC[code] || '', code });
     return `<div class="perm-row">
       <div class="perm-info">
         <div class="perm-label">${h(lbl)}</div>
         <div class="perm-code">${h(code)}</div>
       </div>
-      <button class="info-btn" onclick="showInfo(event,'${permInfoData}')" title="Info">ⓘ</button>
+      <button class="info-btn" onclick="showInfo(event,'${permKey}')" title="Info o pravici">ⓘ</button>
       <span class="perm-state ${on?'on':'off'}">${on?'DA':'NE'}</span>
       <label class="tog">
         <input type="checkbox" data-code="${h(code)}" ${on?'checked':''}
@@ -476,17 +474,29 @@ function h(s) {
   return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+/* ── Info registry — avoids JSON/quote escaping in onclick attrs ── */
+const INFO_REG = {};
+let _infoSeq = 0;
+function regInfo(data) {
+  const key = 'i' + (_infoSeq++);
+  INFO_REG[key] = data;
+  return key;
+}
+
 /* ── Info popover ──────────────────────────────────────────── */
 let _pop = null;
-function showInfo(e, jsonStr) {
+function showInfo(e, key) {
   e.stopPropagation();
   closeInfo();
-  let data;
-  try { data = JSON.parse(jsonStr); } catch { return; }
+  const data = INFO_REG[key];
+  if (!data) return;
 
   const pop = document.createElement('div');
   pop.className = 'info-pop';
-  pop.style.pointerEvents = 'none';
+
+  const codeHtml = data.code
+    ? `<div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--mut);margin-top:4px;">${h(data.code)}</div>`
+    : '';
 
   let sidebarHtml = '';
   if (data.sidebarLabel) {
@@ -495,19 +505,12 @@ function showInfo(e, jsonStr) {
       <strong>${h(data.sidebarLabel)}</strong>
       <span class="ip-section">${h(data.sidebarSection||'')}</span>
     </div>`;
-  } else if (data.isPage) {
-    sidebarHtml = `<div class="ip-sidebar"><span style="font-style:italic;">Brez sidebar povezave</span></div>`;
   }
 
-  const codeHtml = data.code
-    ? `<div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--mut);margin-top:4px;">${h(data.code)}</div>`
-    : '';
-
-  pop.innerHTML = `<div class="ip-title">${h(data.title)}</div>${codeHtml}<div>${h(data.desc)}</div>${sidebarHtml}`;
+  pop.innerHTML = `<div class="ip-title">${h(data.title)}</div>${codeHtml}<div style="color:var(--sub)">${h(data.desc)}</div>${sidebarHtml}`;
   document.body.appendChild(pop);
   _pop = pop;
 
-  // Position: below the button, left-aligned
   const r = e.currentTarget.getBoundingClientRect();
   const pw = 280;
   let left = r.left;
