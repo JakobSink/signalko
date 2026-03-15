@@ -113,7 +113,18 @@ public class UserController : PermissionedController
         if (!string.IsNullOrWhiteSpace(dto.Name))    entity.Name    = dto.Name;
         if (dto.Surname != null)                      entity.Surname = dto.Surname;
         if (!string.IsNullOrWhiteSpace(dto.Password)) entity.Password = PasswordHasher.Hash(dto.Password);
-        if (dto.RoleId.HasValue)                      entity.RoleId  = dto.RoleId;
+        if (dto.RoleId.HasValue && dto.RoleId != entity.RoleId)
+        {
+            // Guard: at least one Admin must always exist
+            var adminRole = await _db.Roles.AsNoTracking().FirstOrDefaultAsync(r => r.Name == "Admin");
+            if (adminRole != null && entity.RoleId == adminRole.id)
+            {
+                var otherAdmins = await _db.users.CountAsync(u => u.RoleId == adminRole.id && u.id != id);
+                if (otherAdmins == 0)
+                    return Conflict(new { message = "Vsaj en uporabnik mora imeti vlogo Admin. Najprej dodeli Admin vlogo drugemu uporabniku." });
+            }
+            entity.RoleId = dto.RoleId;
+        }
         if (dto.CardEpc != null)                      entity.CardEpc = string.IsNullOrWhiteSpace(dto.CardEpc) ? null : dto.CardEpc.Trim();
 
         await _db.SaveChangesAsync();
@@ -127,8 +138,17 @@ public class UserController : PermissionedController
     public async Task<IActionResult> DeleteUser(int id)
     {
         if (!await HasPermAsync("users.manage")) return Forbidden("users.manage");
-        var entity = await _db.users.FirstOrDefaultAsync(u => u.id == id);
+        var entity = await _db.users.Include(u => u.Role).FirstOrDefaultAsync(u => u.id == id);
         if (entity == null) return NotFound();
+
+        // Guard: at least one Admin must always exist
+        if (entity.Role?.Name == "Admin")
+        {
+            var otherAdmins = await _db.users.CountAsync(u => u.RoleId == entity.RoleId && u.id != id);
+            if (otherAdmins == 0)
+                return Conflict(new { message = "Vsaj en uporabnik mora imeti vlogo Admin. Najprej dodeli Admin vlogo drugemu uporabniku." });
+        }
+
         _db.users.Remove(entity);
         await _db.SaveChangesAsync();
         return NoContent();
