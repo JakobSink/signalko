@@ -137,12 +137,16 @@ table.user-table tbody tr:hover td{background:var(--up);}
     </div>
     <div class="modal-field">
       <label>Email *</label>
-      <input id="u-email" type="email" placeholder="jakob@primer.si"/>
+      <input id="u-email" type="email" placeholder="admin@signalko.si"/>
     </div>
     <div class="modal-field">
       <label>Geslo <span id="passLabel">(obvezno za novega)</span></label>
       <input id="u-password" type="password" placeholder="••••••••"/>
       <div class="modal-hint" id="passHint"></div>
+    </div>
+    <div class="modal-field" id="u-password2-wrap">
+      <label>Ponovi geslo</label>
+      <input id="u-password2" type="password" placeholder="••••••••"/>
     </div>
     <div class="modal-grid-2">
       <div class="modal-field">
@@ -278,10 +282,11 @@ function openAdd() {
   document.getElementById('u-name').value     = '';
   document.getElementById('u-surname').value  = '';
   document.getElementById('u-email').value    = '';
-  document.getElementById('u-password').value = '';
-  document.getElementById('u-card').value     = '';
-  document.getElementById('u-cardepc').value  = '';
-  document.getElementById('u-role').value     = '';
+  document.getElementById('u-password').value  = '';
+  document.getElementById('u-password2').value = '';
+  document.getElementById('u-card').value      = '';
+  document.getElementById('u-cardepc').value   = '';
+  document.getElementById('u-role').value      = '';
   document.getElementById('userModalTitle').textContent = 'Dodaj uporabnika';
   document.getElementById('passLabel').textContent      = '(obvezno za novega)';
   document.getElementById('passHint').textContent       = '';
@@ -295,9 +300,10 @@ function openEdit(id) {
   document.getElementById('u-name').value     = u.Name    || u.name    || '';
   document.getElementById('u-surname').value  = u.Surname || u.surname || '';
   document.getElementById('u-email').value    = u.Email   || u.email   || '';
-  document.getElementById('u-password').value = '';
-  document.getElementById('u-card').value     = u.CardID   || u.cardID   || '';
-  document.getElementById('u-cardepc').value  = u.CardEpc  || u.cardEpc  || '';
+  document.getElementById('u-password').value  = '';
+  document.getElementById('u-password2').value = '';
+  document.getElementById('u-card').value      = u.CardID   || u.cardID   || '';
+  document.getElementById('u-cardepc').value   = u.CardEpc  || u.cardEpc  || '';
   document.getElementById('u-role').value     = u.RoleId   || u.roleId   || '';
   document.getElementById('userModalTitle').textContent = 'Uredi uporabnika';
   document.getElementById('passLabel').textContent      = '(pusti prazno = ne spremeni)';
@@ -311,7 +317,8 @@ async function saveUser() {
   const Name    = document.getElementById('u-name').value.trim();
   const Surname = document.getElementById('u-surname').value.trim() || null;
   const Email   = document.getElementById('u-email').value.trim();
-  const Password = document.getElementById('u-password').value || null;
+  const Password  = document.getElementById('u-password').value  || null;
+  const Password2 = document.getElementById('u-password2').value || null;
   const CardID   = document.getElementById('u-card').value.trim()    || null;
   const CardEpc  = document.getElementById('u-cardepc').value.trim() || null;
   const RoleId   = document.getElementById('u-role').value ? +document.getElementById('u-role').value : null;
@@ -319,6 +326,7 @@ async function saveUser() {
   if (!Name)  { skToast('Ime je obvezno.', 'error'); return; }
   if (!Email) { skToast('Email je obvezen.', 'error'); return; }
   if (!id && !Password) { skToast('Geslo je obvezno za novega uporabnika.', 'error'); return; }
+  if (Password && Password !== Password2) { skToast('Gesli se ne ujemata.', 'error'); return; }
 
   skBtnLoading(btn, true, 'Shrani');
 

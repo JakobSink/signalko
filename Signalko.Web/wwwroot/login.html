@@ -111,7 +111,8 @@
             <div class="field"><label>Priimek</label><input id="regSurname" placeholder="Šink"/></div>
           </div>
           <div class="field"><label>Email</label><input id="regEmail" type="email" placeholder="admin@signalko.si"/></div>
-          <div class="field"><label>Geslo</label> <input id="regPass"  type="password" placeholder="••••••••"/></div>
+          <div class="field"><label>Geslo</label>        <input id="regPass"  type="password" placeholder="••••••••"/></div>
+          <div class="field"><label>Ponovi geslo</label> <input id="regPass2" type="password" placeholder="••••••••"/></div>
           <div class="err" id="regErr"></div>
           <button class="btn-acc" id="regBtn" onclick="doRegister()">Registriraj se</button>
         </div>
@@ -196,7 +197,9 @@ async function doRegister() {
   const surname = document.getElementById('regSurname').value.trim();
   const email   = document.getElementById('regEmail').value.trim();
   const pass    = document.getElementById('regPass').value;
+  const pass2   = document.getElementById('regPass2').value;
   if (!name || !email || !pass) { showErr('regErr', 'Izpolni vsa polja.'); return; }
+  if (pass !== pass2) { showErr('regErr', 'Gesli se ne ujemata.'); return; }
 
   setLoading('regBtn', true);
   try {
