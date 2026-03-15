@@ -7,20 +7,30 @@
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="/css/sk.css"/>
 <style>
-.login-center {
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#090b0f;--surface:#10131a;--up:#161b25;--high:#1c2230;
+  --border:#1e2535;--acc:#4f8ef7;--accD:rgba(79,142,247,.09);
+  --grn:#34d399;--org:#fb923c;--red:#f87171;
+  --txt:#e8edf5;--sub:#8897b0;--mut:#4a5568;
+}
+html,body{background:var(--bg);color:var(--txt);font-family:'JetBrains Mono',monospace;font-size:13px;min-height:100vh;}
+::-webkit-scrollbar{width:4px;height:4px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── Login layout ── */
+.login-main {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 100vh;
-  padding: 40px 20px;
-  box-sizing: border-box;
+  padding: 40px 24px;
 }
 .login-wrap {
   width: 100%;
-  max-width: 400px;
+  max-width: 480px;
   animation: fadeUp .25s ease;
 }
-@keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
 
 .brand { text-align: center; margin-bottom: 32px; }
 .brand-name {
@@ -53,11 +63,18 @@
   background: var(--up); border: 1px solid var(--border); border-radius: 8px;
   padding: 11px 13px; font-size: 12px; color: var(--txt); outline: none;
   font-family: 'JetBrains Mono', monospace; transition: border .13s;
+  width: 100%;
 }
 .field input:focus { border-color: var(--acc); }
 .field input::placeholder { color: var(--mut); }
+
 .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-@media(max-width:460px){.two-col{grid-template-columns:1fr;}.tab-pane{padding:20px 16px;}}
+@media(max-width:520px){
+  .two-col { grid-template-columns: 1fr; }
+  .tab-pane { padding: 20px 16px; }
+  .login-wrap { max-width: 100%; }
+}
+
 .btn-acc {
   width: 100%; padding: 12px; background: var(--acc); border: none; border-radius: 8px;
   color: #fff; font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600;
@@ -70,12 +87,13 @@
   background: rgba(248,113,113,.09); border: 1px solid rgba(248,113,113,.3); border-radius: 8px;
   padding: 10px 13px; font-size: 11px; color: var(--red); display: none;
 }
-@keyframes spin { to { transform: rotate(360deg) } }
 .spin { width: 14px; height: 14px; border: 2px solid rgba(255,255,255,.3); border-top-color: #fff; border-radius: 50%; animation: spin .5s linear infinite; }
 </style>
 </head>
 <body>
-<div class="login-center">
+<div class="sk-layout">
+  <div class="sk-sidebar-col" id="sidebarHost"></div>
+  <main class="sk-main login-main">
     <div class="login-wrap">
       <div class="brand">
         <div class="brand-name">signal<span>ko</span></div>
@@ -116,6 +134,7 @@
         </div>
       </div>
     </div>
+  </main>
 </div>
 
 <script src="/css/sk.js"></script>
@@ -133,7 +152,7 @@ document.querySelectorAll('.tab').forEach(t => {
 ['loginEmail','loginPass'].forEach(id => {
   document.getElementById(id).addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
 });
-['regEmail','regPass'].forEach(id => {
+['regEmail','regPass','regPass2'].forEach(id => {
   document.getElementById(id).addEventListener('keydown', e => { if(e.key==='Enter') doRegister(); });
 });
 

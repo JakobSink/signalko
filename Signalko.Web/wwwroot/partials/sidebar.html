@@ -394,20 +394,23 @@
     Promise.all([userFetch, permFetch]).then(function(results) {
       var fresh = results[0];
       var perms = results[1];
-      if (!fresh) return;
-      var updated = {
-        id:       fresh.id       || fresh.Id       || cached.id,
-        name:     fresh.name     || fresh.Name     || cached.name,
-        surname:  fresh.surname  || fresh.Surname  || cached.surname,
-        email:    fresh.email    || fresh.Email    || cached.email,
-        cardID:   fresh.cardID   || fresh.CardID   || cached.cardID,
-        roleId:   fresh.roleId   || fresh.RoleId   || null,
-        roleName: fresh.roleName || fresh.RoleName || null,
-        role:     fresh.role     || fresh.Role     || null,
-      };
-      localStorage.setItem('sk_user', JSON.stringify(updated));
+      // Always update permissions even if user fetch failed
       if (Array.isArray(perms)) localStorage.setItem('sk_user_perms', JSON.stringify(perms));
-      render(updated, perms);
+      var updatedUser = cached;
+      if (fresh) {
+        updatedUser = {
+          id:       fresh.id       || fresh.Id       || cached.id,
+          name:     fresh.name     || fresh.Name     || cached.name,
+          surname:  fresh.surname  || fresh.Surname  || cached.surname,
+          email:    fresh.email    || fresh.Email    || cached.email,
+          cardID:   fresh.cardID   || fresh.CardID   || cached.cardID,
+          roleId:   fresh.roleId   || fresh.RoleId   || null,
+          roleName: fresh.roleName || fresh.RoleName || null,
+          role:     fresh.role     || fresh.Role     || null,
+        };
+        localStorage.setItem('sk_user', JSON.stringify(updatedUser));
+      }
+      render(updatedUser, Array.isArray(perms) ? perms : cachedPerms);
     }).catch(function() {});
   }
 })();
