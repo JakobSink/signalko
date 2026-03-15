@@ -189,6 +189,7 @@ async function doLogin() {
     const tok = data.token || data.accessToken;
     if (!tok) { showErr('loginErr', 'Token manjka v odgovoru.'); return; }
 
+    localStorage.removeItem('sk_user_perms');
     localStorage.setItem('token', tok);
     localStorage.setItem('sk_user', JSON.stringify({
       id:      data.id      || 0,
@@ -229,6 +230,7 @@ async function doRegister() {
 
     const tok = data.token || data.accessToken;
     if (tok) {
+      localStorage.removeItem('sk_user_perms');
       localStorage.setItem('token', tok);
       localStorage.setItem('sk_user', JSON.stringify({
         id: data.id || 0, name, surname, email,

@@ -367,7 +367,7 @@
               '<div style="font-size:10px;color:var(--sub);">' + (mCard ? '🪪 ' + mCard : '') + (mRole ? ' · ' + mRole : '') + '</div>' +
             '</div>' +
           '</a>' +
-          '<a class="smm-item" href="/login.html" onclick="localStorage.removeItem(\'token\');localStorage.removeItem(\'sk_token\');localStorage.removeItem(\'sk_user\');" style="color:var(--sb-red);margin-top:4px;">' +
+          '<a class="smm-item" href="/login.html" onclick="localStorage.removeItem(\'token\');localStorage.removeItem(\'sk_token\');localStorage.removeItem(\'sk_user\');localStorage.removeItem(\'sk_user_perms\');" style="color:var(--sb-red);margin-top:4px;">' +
             '<span class="smm-item-icon">⟵</span> Odjava' +
           '</a>';
       } else {
@@ -379,7 +379,10 @@
     }
   }
 
-  render(cached, cachedPerms);
+  // Initial render: use null perms for non-admins so no stale cached permission
+  // ever shows a gated link. Admins are unaffected — isAdmin=true bypasses perms.
+  var initialIsAdmin = !!(cached && (cached.role === 'Admin' || cached.roleName === 'Admin'));
+  render(cached, initialIsAdmin ? cachedPerms : null);
 
   // Refresh from server
   if (token && cached && cached.id) {
