@@ -138,13 +138,14 @@ public class UserController : PermissionedController
     public async Task<IActionResult> DeleteUser(int id)
     {
         if (!await HasPermAsync("users.manage")) return Forbidden("users.manage");
-        var entity = await _db.users.Include(u => u.Role).FirstOrDefaultAsync(u => u.id == id);
+        var entity = await _db.users.FirstOrDefaultAsync(u => u.id == id);
         if (entity == null) return NotFound();
 
         // Guard: at least one Admin must always exist
-        if (entity.Role?.Name == "Admin")
+        var adminRole = await _db.Roles.AsNoTracking().FirstOrDefaultAsync(r => r.Name == "Admin");
+        if (adminRole != null && entity.RoleId == adminRole.id)
         {
-            var otherAdmins = await _db.users.CountAsync(u => u.RoleId == entity.RoleId && u.id != id);
+            var otherAdmins = await _db.users.CountAsync(u => u.RoleId == adminRole.id && u.id != id);
             if (otherAdmins == 0)
                 return Conflict(new { message = "Vsaj en uporabnik mora imeti vlogo Admin. Najprej dodeli Admin vlogo drugemu uporabniku." });
         }

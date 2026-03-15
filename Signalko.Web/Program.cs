@@ -158,7 +158,22 @@ static async Task MigrateAndSeedCoreAsync(WebApplication app)
             Console.WriteLine("[Seed] Roles created.");
         }
 
-        // No hardcoded admin user — first user to register via signup gets Admin role automatically
+        // Recovery: if no user has Admin role, assign Admin to the first registered user
+        var adminRoleCheck = await db.Roles.FirstOrDefaultAsync(r => r.Name == "Admin");
+        if (adminRoleCheck != null)
+        {
+            var hasAdmin = await db.users.AnyAsync(u => u.RoleId == adminRoleCheck.id);
+            if (!hasAdmin)
+            {
+                var firstUser = await db.users.OrderBy(u => u.id).FirstOrDefaultAsync();
+                if (firstUser != null)
+                {
+                    firstUser.RoleId = adminRoleCheck.id;
+                    await db.SaveChangesAsync();
+                    Console.WriteLine($"[Seed] Recovery: no admin found — assigned Admin role to user '{firstUser.Email}' (id={firstUser.id}).");
+                }
+            }
+        }
 
         // Seed permissions
         var allPerms = new (string Code, string Label, string Category)[]
