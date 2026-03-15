@@ -65,17 +65,14 @@ function skRequireAdmin() {
 }
 
 // Require a specific permission — redirect if missing.
-// Sync if cache exists, async (with page hidden) if not yet cached.
+// Always does a fresh server check (cache may be stale after role changes).
 function skRequirePerm(code) {
   if (!skIsLoggedIn()) { location.href = '/login.html'; return; }
   if (skIsAdmin()) return; // admin has all permissions
+  // Fast-reject from cache immediately (no flash), then always verify with server
   const cached = skGetPerms();
-  if (cached !== null) {
-    // Perms already cached — instant check
-    if (!cached.includes(code)) location.href = '/index.html';
-    return;
-  }
-  // No cache yet — hide page, fetch, then decide
+  if (cached !== null && !cached.includes(code)) { location.href = '/index.html'; return; }
+  // Hide page and confirm with a fresh server call
   document.documentElement.style.visibility = 'hidden';
   skRefreshPerms().then(perms => {
     if (!skIsAdmin() && !perms.includes(code)) {
