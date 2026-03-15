@@ -188,7 +188,8 @@ static async Task MigrateAndSeedCoreAsync(WebApplication app)
             ("page.readers",    "Stran: Čitalci",           "Strani (dostop)"),
             ("page.antennas",   "Stran: Antene",            "Strani (dostop)"),
             ("page.zones",      "Stran: Cone",              "Strani (dostop)"),
-            ("page.roles",      "Stran: Vloge",             "Strani (dostop)"),
+            ("page.roles",           "Stran: Vloge",                  "Strani (dostop)"),
+            ("page.presenceadmin",  "Stran: Prisotnost — nadzor",    "Strani (dostop)"),
         };
         foreach (var p in allPerms)
         {

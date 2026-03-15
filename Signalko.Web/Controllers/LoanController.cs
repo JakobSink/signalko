@@ -15,10 +15,12 @@ public class LoanController : PermissionedController
 
     public LoanController(AppDbContext db) : base(db) {}
 
-    [HttpGet, Authorize]
+    [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] bool? active)
     {
-        if (!await HasPermAsync("loans.view")) return Forbidden("loans.view");
+        // Authenticated users need loans.view; guests may browse freely
+        var uid = GetUserId();
+        if (uid != null && !await HasPermAsync("loans.view")) return Forbidden("loans.view");
         var q = _db.assets_loans
             .Include(l => l.Asset)
             .Include(l => l.User)

@@ -240,14 +240,27 @@ function setState(updates, skipRender) {
    Init
 ════════════════════════════════════════════════════════════ */
 async function init() {
-  const [antR, zoneR] = await Promise.all([skGet('/api/Antenna'), skGet('/api/Zone')]);
-  if (antR.ok)  ST.stations = (antR.data || []).filter(a => (a.RoleID||a.roleID) === 1 || (a.RoleName||a.roleName||'').toLowerCase() === 'loan');
-  if (zoneR.ok) (zoneR.data||[]).forEach(z => { ST.zones[z.id||z.Id] = z.Name||z.name||`Cona ${z.id}`; });
+  const loggedIn = skIsLoggedIn();
+
+  if (loggedIn) {
+    const [antR, zoneR] = await Promise.all([skGet('/api/Antenna'), skGet('/api/Zone')]);
+    if (antR.ok)  ST.stations = (antR.data || []).filter(a => (a.RoleID||a.roleID) === 1 || (a.RoleName||a.roleName||'').toLowerCase() === 'loan');
+    if (zoneR.ok) (zoneR.data||[]).forEach(z => { ST.zones[z.id||z.Id] = z.Name||z.name||`Cona ${z.id}`; });
+    renderWizard();
+    checkIncomingNotifs();
+    setInterval(checkIncomingNotifs, 5000);
+  } else {
+    // Guest: hide wizard, show login prompt instead
+    const wrap = document.getElementById('wizardWrap');
+    if (wrap) wrap.innerHTML =
+      '<div class="sk-card sk-card-pad" style="color:var(--sub);font-size:13px;text-align:center;padding:32px 20px;">' +
+        '<div style="font-size:28px;margin-bottom:10px;">⇌</div>' +
+        '<div style="margin-bottom:8px;font-weight:600;color:var(--txt);">Nova izposoja</div>' +
+        '<div style="margin-bottom:16px;">Za ustvarjanje izposoj se <a href="/login.html" style="color:var(--acc);">prijavi</a>.</div>' +
+      '</div>';
+  }
 
   await loadLoans();
-  renderWizard();
-  checkIncomingNotifs();
-  setInterval(checkIncomingNotifs, 5000);
 }
 
 /* ════════════════════════════════════════════════════════════
