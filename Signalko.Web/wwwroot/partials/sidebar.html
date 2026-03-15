@@ -383,19 +383,31 @@
 
   // Refresh from server
   if (token && cached && cached.id) {
+    // Each fetch catches its own errors so a single failure never kills the whole chain.
+    // permFetch returns [] (not null) on server-error so stale cached perms are evicted.
     var userFetch = fetch('/api/User/' + cached.id, {
+      cache: 'no-store',
       headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' }
-    }).then(function(r) { return r.ok ? r.json() : null; });
+    }).then(function(r) { return r.ok ? r.json() : null; })
+      .catch(function() { return null; });
 
     var permFetch = fetch('/api/Role/my-permissions', {
+      cache: 'no-store',
       headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' }
-    }).then(function(r) { return r.ok ? r.json() : null; });
+    }).then(function(r) { return r.ok ? r.json() : []; })
+      .catch(function() { return null; }); // null = network error; keep cachedPerms
 
     Promise.all([userFetch, permFetch]).then(function(results) {
       var fresh = results[0];
       var perms = results[1];
-      // Always update permissions even if user fetch failed
-      if (Array.isArray(perms)) localStorage.setItem('sk_user_perms', JSON.stringify(perms));
+
+      // perms is an Array when server responded (even empty [] on auth failure),
+      // or null when a network/parse error occurred (keep cached in that case).
+      if (Array.isArray(perms)) {
+        localStorage.setItem('sk_user_perms', JSON.stringify(perms));
+        cachedPerms = perms;
+      }
+
       var updatedUser = cached;
       if (fresh) {
         updatedUser = {
@@ -411,7 +423,7 @@
         localStorage.setItem('sk_user', JSON.stringify(updatedUser));
       }
       render(updatedUser, Array.isArray(perms) ? perms : cachedPerms);
-    }).catch(function() {});
+    });
   }
 })();
 </script>
