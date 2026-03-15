@@ -168,7 +168,7 @@ function skUserName(u) {
 function skLoadSidebar() {
   const host = document.getElementById('sidebarHost');
   if (!host) return;
-  fetch('/partials/sidebar.html')
+  fetch('/partials/sidebar.html', { cache: 'no-store' })
     .then(r => r.text())
     .then(html => {
       host.innerHTML = '';
