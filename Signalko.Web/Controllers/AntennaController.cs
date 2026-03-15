@@ -19,10 +19,11 @@ public class AntennaController : PermissionedController
         return new AntennaDto(a.id, a.ReaderId, a.Port, a.ZoneId, a.RoleID, role?.Name);
     }
 
-    [HttpGet, Authorize]
+    [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] int? readerId)
     {
-        if (!await HasPermAsync("antennas.view")) return Forbidden("antennas.view");
+        var uid = GetUserId();
+        if (uid != null && !await HasPermAsync("antennas.view")) return Forbidden("antennas.view");
         IQueryable<Antenna> q = _db.antennas.AsNoTracking();
         if (readerId.HasValue) q = q.Where(a => a.ReaderId == readerId.Value);
         var list = await q.OrderBy(a => a.ReaderId).ThenBy(a => a.Port).ToListAsync();
