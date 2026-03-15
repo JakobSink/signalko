@@ -165,10 +165,11 @@ function skUserName(u) {
 }
 
 /* ── Sidebar loader ─────────────────────────────────────────── */
+const SK_VERSION = '1.0.1';
 function skLoadSidebar() {
   const host = document.getElementById('sidebarHost');
   if (!host) return;
-  fetch('/partials/sidebar.html', { cache: 'no-store' })
+  fetch('/partials/sidebar.html?v=' + SK_VERSION, { cache: 'no-store' })
     .then(r => r.text())
     .then(html => {
       host.innerHTML = '';
