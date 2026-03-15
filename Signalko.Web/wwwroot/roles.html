@@ -19,7 +19,7 @@
 /* Page group card */
 .pg-card{border:1px solid var(--border);border-radius:12px;margin-bottom:10px;overflow:hidden;transition:border-color .15s;}
 .pg-card.pg-on{border-color:rgba(79,142,247,.35);}
-.pg-header{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--up);cursor:default;user-select:none;}
+.pg-header{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--up);cursor:default;user-select:none;}
 .pg-icon{font-size:16px;width:24px;text-align:center;flex-shrink:0;}
 .pg-title{font-size:12px;font-weight:700;flex:1;text-transform:uppercase;letter-spacing:.06em;}
 .pg-state{font-size:10px;font-weight:700;min-width:24px;text-align:right;transition:color .15s;}
@@ -29,7 +29,7 @@
 /* Sub-perms */
 .pg-body{padding:6px 16px 10px;}
 .pg-body.pg-disabled{opacity:.45;pointer-events:none;}
-.perm-row{display:flex;align-items:center;gap:14px;padding:7px 0;border-bottom:1px solid var(--border);}
+.perm-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);}
 .perm-row:last-child{border-bottom:none;}
 .perm-info{flex:1;}
 .perm-label{font-size:12px;color:var(--txt);line-height:1.4;}
@@ -64,8 +64,15 @@
 .cnt-total{font-size:11px;color:var(--mut);}
 
 /* Info button + popover */
-.info-btn{background:none;border:none;cursor:pointer;color:var(--mut);font-size:13px;line-height:1;padding:2px 4px;border-radius:4px;transition:color .12s,background .12s;flex-shrink:0;}
-.info-btn:hover{color:var(--acc);background:var(--accD);}
+.info-btn{
+  background:rgba(79,142,247,.1);border:1px solid rgba(79,142,247,.25);
+  cursor:pointer;color:var(--acc);font-size:10px;font-weight:800;font-family:'JetBrains Mono',monospace;
+  line-height:1;width:18px;height:18px;border-radius:3px;
+  display:inline-flex;align-items:center;justify-content:center;
+  flex-shrink:0;transition:background .12s,border-color .12s,color .12s;
+  padding:0;
+}
+.info-btn:hover{background:var(--acc);border-color:var(--acc);color:#fff;}
 .info-pop{position:fixed;z-index:9999;background:var(--up);border:1px solid var(--border);border-radius:10px;padding:12px 14px;max-width:280px;box-shadow:0 8px 24px rgba(0,0,0,.35);font-size:12px;line-height:1.55;color:var(--txt);pointer-events:none;}
 .info-pop .ip-title{font-weight:700;margin-bottom:5px;color:var(--acc);font-size:11px;text-transform:uppercase;letter-spacing:.06em;}
 .info-pop .ip-sidebar{display:flex;align-items:center;gap:6px;margin-top:7px;padding-top:7px;border-top:1px solid var(--border);font-size:10px;color:var(--mut);}
@@ -116,7 +123,7 @@ skRequirePerm('roles.manage');
 const PAGE_GROUPS = [
   // ── Glavni meni ──────────────────────────────────────────
   {
-    label:'Izposoja', icon:'📋', pageCode:'page.loans',
+    label:'Izposoja', icon:'🔄', pageCode:'page.loans',
     sidebarLabel:'Izposoja', sidebarSection:'Glavni meni',
     desc:'Stran za izposojo, vrnitev in menjavo sredstev prek RFID wizarda. Deluje kot kiosk — osnovna funkcija je dostopna brez prijave.',
     perms:['loans.view','loans.create','loans.return']
@@ -173,7 +180,7 @@ const PAGE_GROUPS = [
     perms:['antennas.view','antennas.manage']
   },
   {
-    label:'Cone', icon:'🗺️', pageCode:'page.zones',
+    label:'Cone', icon:'📍', pageCode:'page.zones',
     sidebarLabel:'Cone', sidebarSection:'Razdelek: Konfiguracija',
     desc:'Upravljanje con — fizičnih lokacij (sob, prostorov), ki jim so dodeljene antene.',
     perms:['zones.view','zones.manage']
@@ -321,7 +328,7 @@ function buildGroup(g, mySet) {
 
   // header toggle (page visibility)
   const headerToggle = g.pageCode ? `
-    <button class="info-btn" onclick="showInfo(event,'${groupKey}')" title="Info o tej strani">ⓘ</button>
+    <button class="info-btn" onclick="showInfo(event,'${groupKey}')" title="Info o tej strani">i</button>
     <span class="perm-state ${pageOn?'on':'off'}" id="pgst_${CSS.escape(g.pageCode)}">${pageOn?'DA':'NE'}</span>
     <label class="tog">
       <input type="checkbox" data-pagecode="${h(g.pageCode)}" ${pageOn?'checked':''}
@@ -339,7 +346,7 @@ function buildGroup(g, mySet) {
         <div class="perm-label">${h(lbl)}</div>
         <div class="perm-code">${h(code)}</div>
       </div>
-      <button class="info-btn" onclick="showInfo(event,'${permKey}')" title="Info o pravici">ⓘ</button>
+      <button class="info-btn" onclick="showInfo(event,'${permKey}')" title="Info o pravici">i</button>
       <span class="perm-state ${on?'on':'off'}">${on?'DA':'NE'}</span>
       <label class="tog">
         <input type="checkbox" data-code="${h(code)}" ${on?'checked':''}
