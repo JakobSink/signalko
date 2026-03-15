@@ -112,10 +112,12 @@ public class LoanController : PermissionedController
         ));
     }
 
-    [HttpPost, Authorize]
+    [HttpPost]
     public async Task<IActionResult> Create([FromBody] LoanCreateRequestDto dto)
     {
-        if (!await HasPermAsync("loans.create")) return Forbidden("loans.create");
+        // Authenticated users need loans.create; kiosk (guest) use is allowed — user identified by card scan
+        var uid = GetUserId();
+        if (uid != null && !await HasPermAsync("loans.create")) return Forbidden("loans.create");
         var asset = await _db.ASSET.AsNoTracking().FirstOrDefaultAsync(a => a.id == dto.AssetId);
         if (asset == null)
             return NotFound($"Sredstvo z ID {dto.AssetId} ne obstaja.");
@@ -172,10 +174,11 @@ public class LoanController : PermissionedController
         ));
     }
 
-    [HttpPost("return"), Authorize]
+    [HttpPost("return")]
     public async Task<IActionResult> Return([FromBody] LoanReturnDto dto)
     {
-        if (!await HasPermAsync("loans.return")) return Forbidden("loans.return");
+        var uid = GetUserId();
+        if (uid != null && !await HasPermAsync("loans.return")) return Forbidden("loans.return");
         var loan = await _db.assets_loans.FirstOrDefaultAsync(l => l.id == dto.LoanId);
         if (loan == null)
             return NotFound($"Izposoja z ID {dto.LoanId} ne obstaja.");

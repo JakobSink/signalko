@@ -73,10 +73,9 @@ public class AssetController : PermissionedController
     }
 
     // ── GET /api/Asset/by-epc/{epc} ───────────────────────────────────────────
-    [HttpGet("by-epc/{epc}"), Authorize]
+    [HttpGet("by-epc/{epc}")]
     public async Task<IActionResult> GetByEpc(string epc)
     {
-        if (!await HasPermAsync("assets.view")) return Forbidden("assets.view");
         var tag = await _db.TAG.AsNoTracking()
             .FirstOrDefaultAsync(t => t.Epc == epc || t.EpcAscii == epc);
         if (tag == null) return NotFound();
