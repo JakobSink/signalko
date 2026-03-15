@@ -394,7 +394,7 @@
     }).then(function(r) { return r.ok ? r.json() : null; })
       .catch(function() { return null; });
 
-    var permFetch = fetch('/api/Role/my-permissions', {
+    var permFetch = fetch('/api/Role/my-permissions?_=' + Date.now(), {
       cache: 'no-store',
       headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' }
     }).then(function(r) { return r.ok ? r.json() : []; })
@@ -403,6 +403,9 @@
     Promise.all([userFetch, permFetch]).then(function(results) {
       var fresh = results[0];
       var perms = results[1];
+
+      console.log('[SK sidebar] my-permissions from server:', perms);
+      console.log('[SK sidebar] has page.presenceadmin:', Array.isArray(perms) && perms.includes('page.presenceadmin'));
 
       // perms is an Array when server responded (even empty [] on auth failure),
       // or null when a network/parse error occurred (keep cached in that case).
