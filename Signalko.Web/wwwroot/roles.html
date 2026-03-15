@@ -112,9 +112,11 @@
 skRequirePerm('roles.manage');
 
 // ── Page groups ────────────────────────────────────────────────────────────
+// Vrstni red enak kot v stranskem meniju
 const PAGE_GROUPS = [
+  // ── Glavni meni ──────────────────────────────────────────
   {
-    label:'Izposoje', icon:'📋', pageCode:'page.loans',
+    label:'Izposoja', icon:'📋', pageCode:'page.loans',
     sidebarLabel:'Izposoja', sidebarSection:'Glavni meni',
     desc:'Stran za izposojo, vrnitev in menjavo sredstev prek RFID wizarda. Deluje kot kiosk — osnovna funkcija je dostopna brez prijave.',
     perms:['loans.view','loans.create','loans.return']
@@ -126,16 +128,24 @@ const PAGE_GROUPS = [
     perms:['assets.view','assets.edit']
   },
   {
-    label:'RFID tagi', icon:'🏷️', pageCode:'page.tags',
+    label:'RFID Tagi', icon:'🏷️', pageCode:'page.tags',
     sidebarLabel:'RFID Tagi', sidebarSection:'Glavni meni',
     desc:'Pregled vseh RFID tagov v sistemu in njihove dodelitve sredstvom.',
     perms:['tags.view']
   },
+  // ── Razdelek: Uporabnik ──────────────────────────────────
   {
     label:'Prisotnost', icon:'🟢', pageCode:'page.presence',
     sidebarLabel:'Prisotnost', sidebarSection:'Razdelek: Uporabnik',
     desc:'Osebna stran prisotnosti — uporabnik vidi kdaj in kje je bil prisoten (IN/OUT evidenca).',
     perms:['presence.view']
+  },
+  // ── Razdelek: Admin ──────────────────────────────────────
+  {
+    label:'Uporabniki', icon:'👥', pageCode:'page.users',
+    sidebarLabel:'Uporabniki', sidebarSection:'Razdelek: Admin',
+    desc:'Upravljanje uporabnikov — dodajanje, urejanje, brisanje in dodelitev vloge.',
+    perms:['users.view','users.manage']
   },
   {
     label:'Prisotnost — nadzor', icon:'🔎', pageCode:'page.presenceadmin',
@@ -144,13 +154,14 @@ const PAGE_GROUPS = [
     perms:['presence.manage']
   },
   {
-    label:'Uporabniki', icon:'👥', pageCode:'page.users',
-    sidebarLabel:'Uporabniki', sidebarSection:'Razdelek: Admin',
-    desc:'Upravljanje uporabnikov — dodajanje, urejanje, brisanje in dodelitev vloge.',
-    perms:['users.view','users.manage']
+    label:'Vloge', icon:'🔑', pageCode:'page.roles',
+    sidebarLabel:'Vloge', sidebarSection:'Razdelek: Admin',
+    desc:'Ta stran — upravljanje vlog in pravic. Kdo ima dostop do katerih strani in funkcij.',
+    perms:['roles.manage']
   },
+  // ── Razdelek: Konfiguracija ──────────────────────────────
   {
-    label:'Bralniki', icon:'📡', pageCode:'page.readers',
+    label:'Čitalci', icon:'📡', pageCode:'page.readers',
     sidebarLabel:'Čitalci', sidebarSection:'Razdelek: Konfiguracija',
     desc:'Konfiguracija RFID čitalcev (IP naslov, port) in nadzor njihovega statusa (online/offline).',
     perms:['readers.view','readers.manage']
@@ -166,12 +177,6 @@ const PAGE_GROUPS = [
     sidebarLabel:'Cone', sidebarSection:'Razdelek: Konfiguracija',
     desc:'Upravljanje con — fizičnih lokacij (sob, prostorov), ki jim so dodeljene antene.',
     perms:['zones.view','zones.manage']
-  },
-  {
-    label:'Vloge', icon:'🔑', pageCode:'page.roles',
-    sidebarLabel:'Vloge', sidebarSection:'Razdelek: Admin',
-    desc:'Ta stran — upravljanje vlog in pravic. Kdo ima dostop do katerih strani in funkcij.',
-    perms:['roles.manage']
   },
 ];
 
