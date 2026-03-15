@@ -22,8 +22,6 @@ public class AntennaController : PermissionedController
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] int? readerId)
     {
-        var uid = GetUserId();
-        if (uid != null && !await HasPermAsync("antennas.view")) return Forbidden("antennas.view");
         IQueryable<Antenna> q = _db.antennas.AsNoTracking();
         if (readerId.HasValue) q = q.Where(a => a.ReaderId == readerId.Value);
         var list = await q.OrderBy(a => a.ReaderId).ThenBy(a => a.Port).ToListAsync();

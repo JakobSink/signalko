@@ -42,8 +42,6 @@ public class ZoneController : PermissionedController
     [HttpGet]
     public async Task<IActionResult> GetZones()
     {
-        var uid = GetUserId();
-        if (uid != null && !await HasPermAsync("zones.view")) return Forbidden("zones.view");
         return Ok(await _db.zones.ToListAsync());
     }
 
