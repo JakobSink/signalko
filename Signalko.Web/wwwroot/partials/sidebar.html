@@ -280,15 +280,16 @@
 
     // Map: { desktopId: [mobileId, permCode, guestOk] }
     var linkMap = {
-      sbLoansLink:     ['smmLoansLink',     'page.loans',    true ],
-      sbAssetsLink:    ['smmAssetsLink',     'page.assets',   true ],
-      sbTagsLink:      ['smmTagsLink',       'page.tags',     true ],
-      sbPresLink:      ['smmPresLink',       'page.presence', false],
-      sbAdminLink:     ['smmAdminLink',      'page.users',    false],
-      sbRolesLink:     ['smmRolesLink',      'page.roles',    false],
-      sbReadersLink:   ['smmReadersLink',    'page.readers',  false],
-      sbAntennasLink:  ['smmAntennasLink',   'page.antennas', false],
-      sbZonesLink:     ['smmZonesLink',      'page.zones',    false],
+      sbLoansLink:     ['smmLoansLink',    'page.loans',        true ],
+      sbAssetsLink:    ['smmAssetsLink',   'page.assets',       true ],
+      sbTagsLink:      ['smmTagsLink',     'page.tags',         true ],
+      sbPresLink:      ['smmPresLink',     'page.presence',     false],
+      sbAdminLink:     ['smmAdminLink',    'page.users',        false],
+      sbPresAdminLink: ['smmPresAdminLink','page.presenceadmin',false],
+      sbRolesLink:     ['smmRolesLink',    'page.roles',        false],
+      sbReadersLink:   ['smmReadersLink',  'page.readers',      false],
+      sbAntennasLink:  ['smmAntennasLink', 'page.antennas',     false],
+      sbZonesLink:     ['smmZonesLink',    'page.zones',        false],
     };
 
     Object.keys(linkMap).forEach(function(dId) {
@@ -300,16 +301,10 @@
       if (m) m.style.display = show ? '' : 'none';
     });
 
-    // Prisotnost — nadzor: admin-only, never shown via permission system
-    var dPa = document.getElementById('sbPresAdminLink');
-    var mPa = document.getElementById('smmPresAdminLink');
-    if (dPa) dPa.style.display = isAdmin ? '' : 'none';
-    if (mPa) mPa.style.display = isAdmin ? '' : 'none';
-
     // Section headers — show only if at least one link in that section is visible
-    var hasUserSec   = canShow('page.presence', false);
-    var hasAdminSec  = isAdmin || canShow('page.users', false) || canShow('page.roles', false);
-    var hasConfigSec = canShow('page.readers',  false) || canShow('page.antennas', false) || canShow('page.zones', false);
+    var hasUserSec   = canShow('page.presence',     false);
+    var hasAdminSec  = canShow('page.users',        false) || canShow('page.presenceadmin', false) || canShow('page.roles', false);
+    var hasConfigSec = canShow('page.readers',      false) || canShow('page.antennas',      false) || canShow('page.zones', false);
 
     ['sbUserSection',  'smmUserSection' ].forEach(function(id) { var el=document.getElementById(id);   if(el) el.style.display = hasUserSec   ? '' : 'none'; });
     ['sbAdminSection', 'smmAdminSection'].forEach(function(id) { var el=document.getElementById(id);   if(el) el.style.display = hasAdminSec  ? '' : 'none'; });
