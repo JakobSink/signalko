@@ -97,6 +97,15 @@ async function skApi(method, path, body) {
     const text = await res.text();
     let data = null;
     try { data = text ? JSON.parse(text) : null; } catch {}
+    // Auto-logout if server says our session is no longer valid
+    if (res.status === 401 && token) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('sk_token');
+      localStorage.removeItem('sk_user');
+      localStorage.removeItem('sk_user_perms');
+      location.href = '/login.html';
+      return { ok: false, status: 401, data };
+    }
     return { ok: res.ok, status: res.status, data };
   } catch (e) {
     return { ok: false, status: 0, data: { message: e.message } };

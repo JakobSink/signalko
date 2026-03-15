@@ -57,6 +57,31 @@ app.UseSwaggerUI();
 app.UseCors("AllowAll");
 app.UseAuthentication();
 app.UseAuthorization();
+
+// ── Deleted-user guard: return 401 if authenticated user no longer exists in DB ──
+app.Use(async (context, next) =>
+{
+    if (context.User.Identity?.IsAuthenticated == true)
+    {
+        var userIdStr = context.User.Claims
+            .FirstOrDefault(c => c.Type == "sub" ||
+                                 c.Type == System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (int.TryParse(userIdStr, out var userId))
+        {
+            var db = context.RequestServices.GetRequiredService<AppDbContext>();
+            var exists = await db.users.AsNoTracking().AnyAsync(u => u.id == userId);
+            if (!exists)
+            {
+                context.Response.StatusCode = 401;
+                context.Response.ContentType = "application/json";
+                await context.Response.WriteAsync("{\"message\":\"Seja ni več veljavna.\"}");
+                return;
+            }
+        }
+    }
+    await next();
+});
+
 app.UseStaticFiles();
 
 app.MapControllers();
