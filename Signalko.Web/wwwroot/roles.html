@@ -62,6 +62,15 @@
 .cnt-badge{display:flex;align-items:baseline;gap:4px;font-family:'JetBrains Mono',monospace;}
 .cnt-num{font-size:24px;font-weight:800;color:var(--acc);}
 .cnt-total{font-size:11px;color:var(--mut);}
+
+/* Info button + popover */
+.info-btn{background:none;border:none;cursor:pointer;color:var(--mut);font-size:13px;line-height:1;padding:2px 4px;border-radius:4px;transition:color .12s,background .12s;flex-shrink:0;}
+.info-btn:hover{color:var(--acc);background:var(--accD);}
+.info-pop{position:fixed;z-index:9999;background:var(--up);border:1px solid var(--border);border-radius:10px;padding:12px 14px;max-width:280px;box-shadow:0 8px 24px rgba(0,0,0,.35);font-size:12px;line-height:1.55;color:var(--txt);pointer-events:none;}
+.info-pop .ip-title{font-weight:700;margin-bottom:5px;color:var(--acc);font-size:11px;text-transform:uppercase;letter-spacing:.06em;}
+.info-pop .ip-sidebar{display:flex;align-items:center;gap:6px;margin-top:7px;padding-top:7px;border-top:1px solid var(--border);font-size:10px;color:var(--mut);}
+.info-pop .ip-sidebar strong{color:var(--txt);font-weight:600;}
+.info-pop .ip-section{font-size:9px;padding:2px 6px;border-radius:4px;background:rgba(79,142,247,.1);border:1px solid rgba(79,142,247,.2);color:var(--acc);font-weight:700;margin-left:auto;white-space:nowrap;}
 </style>
 </head>
 <body>
@@ -102,20 +111,90 @@
 <script>
 skRequirePerm('roles.manage');
 
-// ── Page groups: vsaka stran ima pageCode (master toggle) + podpravice ────
-// pageCode: null = ni vidnostnega togglea (admin/system strani)
+// ── Page groups ────────────────────────────────────────────────────────────
 const PAGE_GROUPS = [
-  { label:'Izposoje',      icon:'📋', pageCode:'page.loans',    perms:['loans.view','loans.create','loans.return'] },
-  { label:'Sredstva',      icon:'📦', pageCode:'page.assets',   perms:['assets.view','assets.edit'] },
-  { label:'RFID tagi',     icon:'🏷️',  pageCode:'page.tags',     perms:['tags.view'] },
-  { label:'Prisotnost',          icon:'🟢', pageCode:'page.presence',      perms:['presence.view'] },
-  { label:'Prisotnost — nadzor', icon:'🔎', pageCode:'page.presenceadmin', perms:['presence.manage'] },
-  { label:'Uporabniki',    icon:'👥', pageCode:'page.users',    perms:['users.view','users.manage'] },
-  { label:'Bralniki',      icon:'📡', pageCode:'page.readers',  perms:['readers.view','readers.manage'] },
-  { label:'Antene',        icon:'📶', pageCode:'page.antennas', perms:['antennas.view','antennas.manage'] },
-  { label:'Cone',          icon:'🗺️',  pageCode:'page.zones',    perms:['zones.view','zones.manage'] },
-  { label:'Vloge',         icon:'🔑', pageCode:'page.roles',    perms:['roles.manage'] },
+  {
+    label:'Izposoje', icon:'📋', pageCode:'page.loans',
+    sidebarLabel:'Izposoja', sidebarSection:'Glavni meni',
+    desc:'Stran za izposojo, vrnitev in menjavo sredstev prek RFID wizarda. Deluje kot kiosk — osnovna funkcija je dostopna brez prijave.',
+    perms:['loans.view','loans.create','loans.return']
+  },
+  {
+    label:'Sredstva', icon:'📦', pageCode:'page.assets',
+    sidebarLabel:'Sredstva', sidebarSection:'Glavni meni',
+    desc:'Pregled inventarja — seznam vseh sredstev (naprav, opreme) z detajli, ikono in dodeljenim RFID tagom.',
+    perms:['assets.view','assets.edit']
+  },
+  {
+    label:'RFID tagi', icon:'🏷️', pageCode:'page.tags',
+    sidebarLabel:'RFID Tagi', sidebarSection:'Glavni meni',
+    desc:'Pregled vseh RFID tagov v sistemu in njihove dodelitve sredstvom.',
+    perms:['tags.view']
+  },
+  {
+    label:'Prisotnost', icon:'🟢', pageCode:'page.presence',
+    sidebarLabel:'Prisotnost', sidebarSection:'Razdelek: Uporabnik',
+    desc:'Osebna stran prisotnosti — uporabnik vidi kdaj in kje je bil prisoten (IN/OUT evidenca).',
+    perms:['presence.view']
+  },
+  {
+    label:'Prisotnost — nadzor', icon:'🔎', pageCode:'page.presenceadmin',
+    sidebarLabel:'Prisotnost — nadzor', sidebarSection:'Razdelek: Admin',
+    desc:'Admin pogled prisotnosti — kdo je trenutno znotraj, celotna evidenca vseh uporabnikov z filtri in izvozom.',
+    perms:['presence.manage']
+  },
+  {
+    label:'Uporabniki', icon:'👥', pageCode:'page.users',
+    sidebarLabel:'Uporabniki', sidebarSection:'Razdelek: Admin',
+    desc:'Upravljanje uporabnikov — dodajanje, urejanje, brisanje in dodelitev vloge.',
+    perms:['users.view','users.manage']
+  },
+  {
+    label:'Bralniki', icon:'📡', pageCode:'page.readers',
+    sidebarLabel:'Čitalci', sidebarSection:'Razdelek: Konfiguracija',
+    desc:'Konfiguracija RFID čitalcev (IP naslov, port) in nadzor njihovega statusa (online/offline).',
+    perms:['readers.view','readers.manage']
+  },
+  {
+    label:'Antene', icon:'📶', pageCode:'page.antennas',
+    sidebarLabel:'Antene', sidebarSection:'Razdelek: Konfiguracija',
+    desc:'Konfiguracija anten — dodelitev coni, vlogi (LOAN = izposojevalnica, PRESENCE = prisotnost) in portu čitalca.',
+    perms:['antennas.view','antennas.manage']
+  },
+  {
+    label:'Cone', icon:'🗺️', pageCode:'page.zones',
+    sidebarLabel:'Cone', sidebarSection:'Razdelek: Konfiguracija',
+    desc:'Upravljanje con — fizičnih lokacij (sob, prostorov), ki jim so dodeljene antene.',
+    perms:['zones.view','zones.manage']
+  },
+  {
+    label:'Vloge', icon:'🔑', pageCode:'page.roles',
+    sidebarLabel:'Vloge', sidebarSection:'Razdelek: Admin',
+    desc:'Ta stran — upravljanje vlog in pravic. Kdo ima dostop do katerih strani in funkcij.',
+    perms:['roles.manage']
+  },
 ];
+
+// ── Opisi posameznih pravic ─────────────────────────────────────────────────
+const PERM_DESC = {
+  'loans.view':        'Ogled tabele vseh izposoj in zgodovine vračil v sistemu.',
+  'loans.create':      'Ustvarjanje novih izposoj prek wizarda (skeniranje kartice + sredstva).',
+  'loans.return':      'Vrnitev izposojenega sredstva — zaključitev izposoje.',
+  'assets.view':       'Ogled seznama vseh sredstev s podrobnostmi (serijska, EPC, ikona…).',
+  'assets.edit':       'Dodajanje, urejanje in brisanje sredstev; uvoz/izvoz Excel.',
+  'tags.view':         'Ogled vseh RFID tagov in njihove dodelitve sredstvom.',
+  'presence.view':     'Ogled lastne prisotnosti — kdaj in kje je bil uporabnik prisoten.',
+  'presence.manage':   'Admin pregled prisotnosti: kdo je trenutno znotraj, filter po uporabniku/datumu, celotna evidenca.',
+  'users.view':        'Ogled seznama vseh uporabnikov in njihovih profilov.',
+  'users.manage':      'Dodajanje novih uporabnikov, urejanje podatkov in brisanje računov.',
+  'readers.view':      'Ogled RFID čitalcev, njihovega IP naslova in statusa (online/offline).',
+  'readers.manage':    'Dodajanje, urejanje in brisanje RFID čitalcev.',
+  'antennas.view':     'Ogled anten, dodeljenih con in vlog (LOAN / PRESENCE).',
+  'antennas.manage':   'Dodajanje, urejanje in brisanje anten ter dodelitev vlog in con.',
+  'zones.view':        'Ogled con — fizičnih lokacij v sistemu.',
+  'zones.manage':      'Dodajanje, urejanje in brisanje con.',
+  'roles.manage':      'Upravljanje vlog: ustvarjanje, urejanje pravic, brisanje vlog.',
+};
 
 let ALL_PERMS = [];
 let ALL_ROLES = [];
@@ -224,11 +303,21 @@ function renderEditor() {
 }
 
 function buildGroup(g, mySet) {
-  const pageOn = g.pageCode ? mySet.has(g.pageCode) : true;  // no pageCode = always "accessible"
+  const pageOn = g.pageCode ? mySet.has(g.pageCode) : true;
   const cardOn = pageOn;
+
+  // Info data for group header
+  const groupInfoData = JSON.stringify({
+    title: g.label,
+    desc:  g.desc || '',
+    sidebarLabel:   g.sidebarLabel   || null,
+    sidebarSection: g.sidebarSection || null,
+    isPage: true,
+  }).replace(/'/g, '&#39;');
 
   // header toggle (page visibility)
   const headerToggle = g.pageCode ? `
+    <button class="info-btn" onclick="showInfo(event,'${groupInfoData}')" title="Info">ⓘ</button>
     <span class="perm-state ${pageOn?'on':'off'}" id="pgst_${CSS.escape(g.pageCode)}">${pageOn?'DA':'NE'}</span>
     <label class="tog">
       <input type="checkbox" data-pagecode="${h(g.pageCode)}" ${pageOn?'checked':''}
@@ -240,11 +329,14 @@ function buildGroup(g, mySet) {
   const rows = g.perms.map(code => {
     const on  = mySet.has(code);
     const lbl = LABEL[code] || code;
+    const desc = PERM_DESC[code] || '';
+    const permInfoData = JSON.stringify({ title: lbl, desc, code }).replace(/'/g,'&#39;');
     return `<div class="perm-row">
       <div class="perm-info">
         <div class="perm-label">${h(lbl)}</div>
         <div class="perm-code">${h(code)}</div>
       </div>
+      <button class="info-btn" onclick="showInfo(event,'${permInfoData}')" title="Info">ⓘ</button>
       <span class="perm-state ${on?'on':'off'}">${on?'DA':'NE'}</span>
       <label class="tog">
         <input type="checkbox" data-code="${h(code)}" ${on?'checked':''}
@@ -383,6 +475,53 @@ async function del(id) {
 function h(s) {
   return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
+
+/* ── Info popover ──────────────────────────────────────────── */
+let _pop = null;
+function showInfo(e, jsonStr) {
+  e.stopPropagation();
+  closeInfo();
+  let data;
+  try { data = JSON.parse(jsonStr); } catch { return; }
+
+  const pop = document.createElement('div');
+  pop.className = 'info-pop';
+  pop.style.pointerEvents = 'none';
+
+  let sidebarHtml = '';
+  if (data.sidebarLabel) {
+    sidebarHtml = `<div class="ip-sidebar">
+      <span>Stranski meni:</span>
+      <strong>${h(data.sidebarLabel)}</strong>
+      <span class="ip-section">${h(data.sidebarSection||'')}</span>
+    </div>`;
+  } else if (data.isPage) {
+    sidebarHtml = `<div class="ip-sidebar"><span style="font-style:italic;">Brez sidebar povezave</span></div>`;
+  }
+
+  const codeHtml = data.code
+    ? `<div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--mut);margin-top:4px;">${h(data.code)}</div>`
+    : '';
+
+  pop.innerHTML = `<div class="ip-title">${h(data.title)}</div>${codeHtml}<div>${h(data.desc)}</div>${sidebarHtml}`;
+  document.body.appendChild(pop);
+  _pop = pop;
+
+  // Position: below the button, left-aligned
+  const r = e.currentTarget.getBoundingClientRect();
+  const pw = 280;
+  let left = r.left;
+  if (left + pw > window.innerWidth - 12) left = window.innerWidth - pw - 12;
+  pop.style.left = left + 'px';
+  pop.style.top  = (r.bottom + 6) + 'px';
+}
+
+function closeInfo() {
+  if (_pop) { _pop.remove(); _pop = null; }
+}
+
+document.addEventListener('click', closeInfo);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeInfo(); });
 
 load();
 </script>
