@@ -302,9 +302,9 @@
     });
 
     // Section headers — show only if at least one link in that section is visible
-    var hasUserSec   = loggedIn;
-    var hasAdminSec  = canShow('users.manage',false) || canShow('presence.manage',false) || canShow('roles.manage',false);
-    var hasConfigSec = canShow('readers.view',false)  || canShow('antennas.view',false)   || canShow('zones.view',false);
+    var hasUserSec   = canShow('page.presence',     false);
+    var hasAdminSec  = canShow('page.users',        false) || canShow('page.presenceadmin', false) || canShow('page.roles', false);
+    var hasConfigSec = canShow('page.readers',      false) || canShow('page.antennas',      false) || canShow('page.zones', false);
 
     ['sbUserSection',  'smmUserSection' ].forEach(function(id) { var el=document.getElementById(id);   if(el) el.style.display = hasUserSec   ? '' : 'none'; });
     ['sbAdminSection', 'smmAdminSection'].forEach(function(id) { var el=document.getElementById(id);   if(el) el.style.display = hasAdminSec  ? '' : 'none'; });
