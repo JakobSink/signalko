@@ -80,7 +80,7 @@ html,body{background:var(--bg);color:var(--txt);font-family:'JetBrains Mono',mon
   <aside class="sb-col" id="sidebarHost"></aside>
 
   <main class="main">
-    <div class="page-title">Pregled</div>
+    <div class="page-title" data-i18n="index.title">Pregled</div>
     <div class="page-sub" id="dateSub"></div>
 
     <!-- Stats -->
@@ -91,7 +91,7 @@ html,body{background:var(--bg);color:var(--txt);font-family:'JetBrains Mono',mon
           <div class="stat-dot pulse" style="background:var(--acc);"></div>
         </div>
         <div class="stat-val" id="statAssets" style="color:var(--acc);">—</div>
-        <div class="stat-lbl">Skupaj sredstev</div>
+        <div class="stat-lbl" data-i18n="index.stat.assets">Skupaj sredstev</div>
       </div>
       <div class="stat-card">
         <div class="stat-head">
@@ -99,7 +99,7 @@ html,body{background:var(--bg);color:var(--txt);font-family:'JetBrains Mono',mon
           <div class="stat-dot pulse" style="background:var(--org);"></div>
         </div>
         <div class="stat-val" id="statLoans" style="color:var(--org);">—</div>
-        <div class="stat-lbl">Aktivne izposoje</div>
+        <div class="stat-lbl" data-i18n="index.stat.loans">Aktivne izposoje</div>
       </div>
       <div class="stat-card">
         <div class="stat-head">
@@ -107,7 +107,7 @@ html,body{background:var(--bg);color:var(--txt);font-family:'JetBrains Mono',mon
           <div class="stat-dot pulse" style="background:var(--grn);"></div>
         </div>
         <div class="stat-val" id="statReaders" style="color:var(--grn);">—</div>
-        <div class="stat-lbl">RFID čitalci</div>
+        <div class="stat-lbl" data-i18n="index.stat.readers">RFID čitalci</div>
       </div>
     </div>
 
@@ -115,11 +115,11 @@ html,body{background:var(--bg);color:var(--txt);font-family:'JetBrains Mono',mon
     <div class="panel">
       <div class="panel-head">
         <div class="panel-dot pulse"></div>
-        <div class="panel-title">Zadnji RFID dogodki</div>
+        <div class="panel-title" data-i18n="index.panel.title">Zadnji RFID dogodki</div>
         <div id="tagsLoading" class="spin" style="margin-left:6px;display:none;"></div>
       </div>
       <div id="tagsBody">
-        <div class="state-loading"><div class="spin"></div>Nalaganje…</div>
+        <div class="state-loading"><div class="spin"></div><span data-i18n="lbl.loading">Nalaganje…</span></div>
       </div>
     </div>
 
@@ -127,33 +127,33 @@ html,body{background:var(--bg);color:var(--txt);font-family:'JetBrains Mono',mon
     <div class="modules">
       <a class="mod-card" href="/loans.html">
         <div class="mod-icon">⇌</div>
-        <div class="mod-title">Izposoja</div>
-        <div class="mod-desc">Izposoja in vrnitev sredstev</div>
+        <div class="mod-title" data-i18n="index.mod.loans">Izposoja</div>
+        <div class="mod-desc" data-i18n="index.mod.loans_desc">Izposoja in vrnitev sredstev</div>
       </a>
       <a class="mod-card" href="/assets.html">
         <div class="mod-icon">▣</div>
-        <div class="mod-title">Sredstva</div>
-        <div class="mod-desc">Katalog in RFID tagi</div>
+        <div class="mod-title" data-i18n="index.mod.assets">Sredstva</div>
+        <div class="mod-desc" data-i18n="index.mod.assets_desc">Katalog in RFID tagi</div>
       </a>
       <a class="mod-card" href="/tags.html">
         <div class="mod-icon">◉</div>
-        <div class="mod-title">RFID Tagi</div>
-        <div class="mod-desc">Vsa branja in zgodovina</div>
+        <div class="mod-title" data-i18n="index.mod.tags">RFID Tagi</div>
+        <div class="mod-desc" data-i18n="index.mod.tags_desc">Vsa branja in zgodovina</div>
       </a>
       <a class="mod-card" href="/readers.html">
         <div class="mod-icon">⊡</div>
-        <div class="mod-title">Čitalci</div>
-        <div class="mod-desc">RFID bralniki in stanje</div>
+        <div class="mod-title" data-i18n="index.mod.readers">Čitalci</div>
+        <div class="mod-desc" data-i18n="index.mod.readers_desc">RFID bralniki in stanje</div>
       </a>
       <a class="mod-card" href="/antennas.html">
         <div class="mod-icon">⊛</div>
-        <div class="mod-title">Antene</div>
-        <div class="mod-desc">Porti, cone in vloge</div>
+        <div class="mod-title" data-i18n="index.mod.antennas">Antene</div>
+        <div class="mod-desc" data-i18n="index.mod.antennas_desc">Porti, cone in vloge</div>
       </a>
       <a class="mod-card" href="/zones.html">
         <div class="mod-icon">⊞</div>
-        <div class="mod-title">Cone</div>
-        <div class="mod-desc">Fizične lokacije</div>
+        <div class="mod-title" data-i18n="index.mod.zones">Cone</div>
+        <div class="mod-desc" data-i18n="index.mod.zones_desc">Fizične lokacije</div>
       </a>
     </div>
   </main>
@@ -191,7 +191,7 @@ async function loadTags() {
   const r = await skGet('/api/Tag/latest?take=15');
   const body = document.getElementById('tagsBody');
   if (!r.ok || !r.data?.length) {
-    body.innerHTML = `<div class="state-loading" style="color:var(--mut);">Čakam RFID branja…</div>`;
+    body.innerHTML = `<div class="state-loading" style="color:var(--mut);">${skT('index.waiting_rfid')}</div>`;
     return;
   }
   body.innerHTML = r.data.map(t => {

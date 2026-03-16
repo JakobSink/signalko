@@ -80,24 +80,20 @@
     <div class="sk-page-title" data-i18n="page.antennas">Antene</div>
     <div class="sk-page-sub" data-i18n="page.antennas.sub">Porti, cone in vloge</div>
 
-    <div class="hint-bar">
-      Antena je fizični port na čitalcu. Vsaka antena je dodeljena <strong>coni</strong> (lokaciji) in ima <strong>vlogo</strong>
-      (npr. <code>LOAN</code> = izposojevalna točka, <code>EXIT</code> = izhodna). Za delovanje izposoje mora vsaj ena antena imeti vlogo <strong>LOAN</strong>.
-      Klikni <strong>✎ Uredi</strong> za spremembo ali <strong>+ Dodaj anteno</strong> za novo.
-    </div>
+    <div class="hint-bar" data-i18n="antennas.hint"></div>
 
     <div class="toolbar">
-      <input class="search-box" id="searchInput" placeholder="Išči (reader, cona, vloga, port)…" oninput="applyFilters()"/>
+      <input class="search-box" id="searchInput" data-i18n-placeholder="antennas.search_ph" placeholder="Išči (reader, cona, vloga, port)…" oninput="applyFilters()"/>
       <select class="filter-sel" id="filterReader" onchange="applyFilters()">
-        <option value="">Vsi čitalci</option>
+        <option value="" data-i18n="antennas.filter.all_readers">Vsi čitalci</option>
       </select>
-      <button class="sk-btn sk-btn-acc" onclick="openEditor(null)">+ Dodaj anteno</button>
-      <button class="sk-btn" id="rolesBtn">⚙ Vloge</button>
-      <button class="sk-btn" id="refreshBtn" onclick="init()">↺ Osveži</button>
+      <button class="sk-btn sk-btn-acc" onclick="openEditor(null)">+ <span data-i18n="antennas.btn.add">Dodaj anteno</span></button>
+      <button class="sk-btn" id="rolesBtn">⚙ <span data-i18n="antennas.btn.roles">Vloge</span></button>
+      <button class="sk-btn" id="refreshBtn" onclick="init()">↺ <span data-i18n="tags.btn.refresh">Osveži</span></button>
     </div>
 
     <div id="gridHost">
-      <div class="state-loading"><div class="sk-spin"></div>Nalaganje…</div>
+      <div class="state-loading"><div class="sk-spin"></div><span data-i18n="lbl.loading">Nalaganje…</span></div>
     </div>
 
   </main>
@@ -112,13 +108,13 @@
     </div>
     <div class="sk-modal-content">
     <input type="hidden" id="e-id"/>
-    <div class="modal-field"><label>Čitalec *</label><select id="e-readerId"></select></div>
-    <div class="modal-field"><label>Port *</label><input id="e-port" type="number" min="1" max="32" placeholder="npr. 1"/></div>
-    <div class="modal-field"><label>Cona *</label><select id="e-zoneId"></select></div>
-    <div class="modal-field"><label>Vloga *</label><select id="e-roleId"></select></div>
+    <div class="modal-field"><label data-i18n="antennas.modal.lbl.reader">Čitalec *</label><select id="e-readerId"></select></div>
+    <div class="modal-field"><label data-i18n="antennas.modal.lbl.port">Port *</label><input id="e-port" type="number" min="1" max="32" data-i18n-placeholder="antennas.modal.ph.port" placeholder="npr. 1"/></div>
+    <div class="modal-field"><label data-i18n="antennas.modal.lbl.zone">Cona *</label><select id="e-zoneId"></select></div>
+    <div class="modal-field"><label data-i18n="antennas.modal.lbl.role">Vloga *</label><select id="e-roleId"></select></div>
     <div class="modal-actions">
-      <button class="sk-btn" onclick="skModalClose('editorModal')">Prekliči</button>
-      <button class="sk-btn sk-btn-acc" id="editorSaveBtn" onclick="saveEditor()">Shrani</button>
+      <button class="sk-btn" onclick="skModalClose('editorModal')" data-i18n="btn.cancel">Prekliči</button>
+      <button class="sk-btn sk-btn-acc" id="editorSaveBtn" onclick="saveEditor()" data-i18n="btn.save">Shrani</button>
     </div>
     </div>
   </div>
@@ -128,16 +124,16 @@
 <div class="sk-modal-bg" id="rolesModal" onclick="if(event.target===this)skModalClose('rolesModal')">
   <div class="sk-modal" style="max-width:480px;">
     <div class="sk-modal-head">
-      <div class="sk-modal-title">Vloge za antene</div>
+      <div class="sk-modal-title" data-i18n="antennas.roles_modal.title">Vloge za antene</div>
       <button class="sk-modal-close" onclick="skModalClose('rolesModal')">✕</button>
     </div>
     <div class="sk-modal-content">
     <div id="rolesListHost" style="margin-bottom:18px;min-height:40px;"></div>
     <div style="border-top:1px solid var(--border);padding-top:16px;">
-      <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:10px;">Dodaj novo vlogo</div>
-      <div class="modal-field"><label>Ime vloge</label><input id="newRoleName" placeholder="npr. LOAN, EXIT, ENTRY"/></div>
+      <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:10px;" data-i18n="antennas.roles_modal.add_title">Dodaj novo vlogo</div>
+      <div class="modal-field"><label data-i18n="antennas.roles_modal.lbl.name">Ime vloge</label><input id="newRoleName" data-i18n-placeholder="antennas.roles_modal.ph.name" placeholder="npr. LOAN, EXIT, ENTRY"/></div>
       <div class="modal-actions">
-        <button class="sk-btn sk-btn-acc" id="addRoleBtn" onclick="addRole()">Dodaj</button>
+        <button class="sk-btn sk-btn-acc" id="addRoleBtn" onclick="addRole()" data-i18n="btn.add">Dodaj</button>
       </div>
     </div>
     </div>
@@ -148,16 +144,16 @@
 <div class="sk-modal-bg" id="deleteModal" onclick="if(event.target===this)skModalClose('deleteModal')">
   <div class="sk-modal" style="max-width:380px;">
     <div class="sk-modal-head">
-      <div class="sk-modal-title">Izbriši anteno</div>
+      <div class="sk-modal-title" data-i18n="antennas.modal.delete_title">Izbriši anteno</div>
       <button class="sk-modal-close" onclick="skModalClose('deleteModal')">✕</button>
     </div>
     <div class="sk-modal-content">
     <p style="color:var(--sub);font-size:12px;margin-bottom:20px;line-height:1.6;">
-      Ali res želiš izbrisati anteno <strong id="deleteAntLabel" style="color:var(--txt);"></strong>?
+      <span data-i18n="antennas.modal.delete_confirm">Ali res želiš izbrisati anteno</span> <strong id="deleteAntLabel" style="color:var(--txt);"></strong>?
     </p>
     <div class="modal-actions">
-      <button class="sk-btn" onclick="skModalClose('deleteModal')">Prekliči</button>
-      <button class="sk-btn sk-btn-red" id="deleteConfirmBtn" onclick="executeDelete()">Izbriši</button>
+      <button class="sk-btn" onclick="skModalClose('deleteModal')" data-i18n="btn.cancel">Prekliči</button>
+      <button class="sk-btn sk-btn-red" id="deleteConfirmBtn" onclick="executeDelete()" data-i18n="btn.delete">Izbriši</button>
     </div>
     </div>
   </div>
@@ -171,7 +167,7 @@ let antennas = [], readers = [], zones = [], roles = [], filtered = [];
 let pendingDelete = null;
 
 async function init() {
-  document.getElementById('gridHost').innerHTML = '<div class="state-loading"><div class="sk-spin"></div>Nalaganje…</div>';
+  document.getElementById('gridHost').innerHTML = `<div class="state-loading"><div class="sk-spin"></div>${skT('lbl.loading')}</div>`;
   const [ra, rr, rz, rl] = await Promise.all([
     skGet('/api/Antenna'), skGet('/api/Reader'), skGet('/api/Zone'), skGet('/api/AntennaRole')
   ]);
@@ -185,15 +181,15 @@ async function init() {
 
 function populateDropdowns() {
   const fsel = document.getElementById('filterReader');
-  fsel.innerHTML = '<option value="">Vsi čitalci</option>';
+  fsel.innerHTML = `<option value="">${skT('antennas.filter.all_readers')}</option>`;
   readers.forEach(r => { const o=document.createElement('option'); o.value=r.id; o.textContent=r.name||r.ip||`#${r.id}`; fsel.appendChild(o); });
 
   const rsel = document.getElementById('e-readerId');
-  rsel.innerHTML = '<option value="">Izberi čitalec…</option>';
+  rsel.innerHTML = `<option value="">${skT('antennas.select.reader')}</option>`;
   readers.forEach(r => { const o=document.createElement('option'); o.value=r.id; o.textContent=r.name||r.ip||`#${r.id}`; rsel.appendChild(o); });
 
   const zsel = document.getElementById('e-zoneId');
-  zsel.innerHTML = '<option value="">Izberi cono…</option>';
+  zsel.innerHTML = `<option value="">${skT('antennas.select.zone')}</option>`;
   zones.forEach(z => { const o=document.createElement('option'); o.value=z.id; o.textContent=z.name||`#${z.id}`; zsel.appendChild(o); });
 
   renderRolesDropdown();
@@ -202,14 +198,14 @@ function populateDropdowns() {
 function renderRolesDropdown() {
   const rsel = document.getElementById('e-roleId');
   const cur = rsel.value;
-  rsel.innerHTML = '<option value="">Izberi vlogo…</option>';
+  rsel.innerHTML = `<option value="">${skT('antennas.select.role')}</option>`;
   roles.forEach(r => { const o=document.createElement('option'); o.value=r.id; o.textContent=`${r.name} (ID ${r.id})`; rsel.appendChild(o); });
   if (cur) rsel.value = cur;
 }
 
 function renderRolesList() {
   const host = document.getElementById('rolesListHost');
-  if (!roles.length) { host.innerHTML = '<div style="color:var(--mut);font-size:12px;">Ni definiranih vlog.</div>'; return; }
+  if (!roles.length) { host.innerHTML = `<div style="color:var(--mut);font-size:12px;">${skT('antennas.roles_modal.no_roles')}</div>`; return; }
   host.innerHTML = roles.map(r => `
     <div class="role-item">
       <div>
@@ -239,7 +235,7 @@ function applyFilters() {
 
 function renderGrid() {
   const host = document.getElementById('gridHost');
-  if (!filtered.length) { host.innerHTML = '<div class="state-empty">Ni anten.</div>'; return; }
+  if (!filtered.length) { host.innerHTML = `<div class="state-empty">${skT('antennas.no_data')}</div>`; return; }
   host.innerHTML = '<div class="ic-grid"></div>';
   const grid = host.querySelector('.ic-grid');
   filtered.forEach(a => {
@@ -259,13 +255,13 @@ function renderGrid() {
         <span class="sk-badge sk-badge-acc">${escHtml(roleName)}</span>
       </div>
       <div class="ic-kv">
-        <div class="ic-row"><span class="ic-key">Cona</span><span class="ic-val">${escHtml(zn?.name||a.zoneName||`#${a.zoneId||'?'}`)}</span></div>
-        <div class="ic-row"><span class="ic-key">Čitalec ID</span><span class="ic-val">${a.readerId}</span></div>
-        <div class="ic-row"><span class="ic-key">Antena ID</span><span class="ic-val">${a.id}</span></div>
+        <div class="ic-row"><span class="ic-key">${skT('tags.col.zone')}</span><span class="ic-val">${escHtml(zn?.name||a.zoneName||`#${a.zoneId||'?'}`)}</span></div>
+        <div class="ic-row"><span class="ic-key">${skT('antennas.lbl.reader_id')}</span><span class="ic-val">${a.readerId}</span></div>
+        <div class="ic-row"><span class="ic-key">${skT('antennas.lbl.antenna_id')}</span><span class="ic-val">${a.id}</span></div>
       </div>
       <div class="ic-foot">
-        <button class="sk-btn sk-btn-sm" data-act="edit">✎ Uredi</button>
-        <button class="sk-btn sk-btn-sm sk-btn-red" data-act="delete">✕ Izbriši</button>
+        <button class="sk-btn sk-btn-sm" data-act="edit">✎ ${skT('btn.edit')}</button>
+        <button class="sk-btn sk-btn-sm sk-btn-red" data-act="delete">✕ ${skT('btn.delete')}</button>
       </div>`;
     card.querySelector('[data-act="edit"]').addEventListener('click', e => { e.stopPropagation(); openEditor(a); });
     card.querySelector('[data-act="delete"]').addEventListener('click', e => { e.stopPropagation(); confirmDelete(a); });
@@ -280,7 +276,7 @@ function openEditor(a) {
   document.getElementById('e-port').value     = a?.port ?? '';
   document.getElementById('e-zoneId').value   = a?.zoneId ?? '';
   document.getElementById('e-roleId').value   = a?.roleID ?? '';
-  document.getElementById('editorTitle').textContent = a ? 'Uredi anteno' : 'Dodaj anteno';
+  document.getElementById('editorTitle').textContent = a ? skT('antennas.modal.title.edit') : skT('antennas.modal.title.add');
   skModal('editorModal');
 }
 
@@ -291,17 +287,17 @@ async function saveEditor() {
   const Port     = +document.getElementById('e-port').value;
   const ZoneId   = +document.getElementById('e-zoneId').value;
   const RoleID   = +document.getElementById('e-roleId').value;
-  if (!ReaderId) { skToast('Čitalec je obvezen.', 'error'); return; }
-  if (!Port)     { skToast('Port je obvezen.', 'error'); return; }
-  if (!ZoneId)   { skToast('Cona je obvezna.', 'error'); return; }
-  if (!RoleID)   { skToast('Vloga je obvezna.', 'error'); return; }
-  skBtnLoading(btn, true, 'Shrani');
+  if (!ReaderId) { skToast(skT('antennas.validation.reader_required'), 'error'); return; }
+  if (!Port)     { skToast(skT('antennas.validation.port_required'), 'error'); return; }
+  if (!ZoneId)   { skToast(skT('antennas.validation.zone_required'), 'error'); return; }
+  if (!RoleID)   { skToast(skT('antennas.validation.role_required'), 'error'); return; }
+  skBtnLoading(btn, true, skT('btn.save'));
   const r = id
     ? await skPut(`/api/Antenna/${id}`, { ReaderId, Port, ZoneId, RoleID })
     : await skPost('/api/Antenna', { ReaderId, Port, ZoneId, RoleID });
-  skBtnLoading(btn, false, 'Shrani');
-  if (!r.ok) { skToast(r.data?.message || `Napaka ${r.status}`, 'error'); return; }
-  skToast(id ? 'Antena posodobljena.' : 'Antena dodana.', 'success');
+  skBtnLoading(btn, false, skT('btn.save'));
+  if (!r.ok) { skToast(r.data?.message || `${skT('tags.error.load')} ${r.status}`, 'error'); return; }
+  skToast(id ? skT('antennas.toast.updated') : skT('antennas.toast.added'), 'success');
   skModalClose('editorModal');
   await init();
 }
@@ -316,11 +312,11 @@ function confirmDelete(a) {
 async function executeDelete() {
   if (!pendingDelete) return;
   const btn = document.getElementById('deleteConfirmBtn');
-  skBtnLoading(btn, true, 'Izbriši');
+  skBtnLoading(btn, true, skT('btn.delete'));
   const r = await skDel(`/api/Antenna/${pendingDelete.id}`);
-  skBtnLoading(btn, false, 'Izbriši');
-  if (!r.ok) { skToast(r.data?.message || 'Napaka.', 'error'); return; }
-  skToast('Antena izbrisana.', 'success');
+  skBtnLoading(btn, false, skT('btn.delete'));
+  if (!r.ok) { skToast(r.data?.message || skT('tags.error.load'), 'error'); return; }
+  skToast(skT('antennas.toast.deleted'), 'success');
   skModalClose('deleteModal');
   pendingDelete = null;
   await init();
@@ -329,12 +325,12 @@ async function executeDelete() {
 async function addRole() {
   const btn  = document.getElementById('addRoleBtn');
   const name = document.getElementById('newRoleName').value.trim();
-  if (!name) { skToast('Ime vloge je obvezno.', 'error'); return; }
-  skBtnLoading(btn, true, 'Dodaj');
+  if (!name) { skToast(skT('antennas.validation.role_name_required'), 'error'); return; }
+  skBtnLoading(btn, true, skT('btn.add'));
   const r = await skPost('/api/AntennaRole', { name });
-  skBtnLoading(btn, false, 'Dodaj');
-  if (!r.ok) { skToast(r.data?.message || 'Napaka.', 'error'); return; }
-  skToast('Vloga dodana.', 'success');
+  skBtnLoading(btn, false, skT('btn.add'));
+  if (!r.ok) { skToast(r.data?.message || skT('tags.error.load'), 'error'); return; }
+  skToast(skT('antennas.toast.role_added'), 'success');
   document.getElementById('newRoleName').value = '';
   const rl = await skGet('/api/AntennaRole');
   roles = rl.ok && rl.data ? rl.data : roles;
@@ -342,10 +338,10 @@ async function addRole() {
 }
 
 async function deleteRole(id, name) {
-  if (!confirm(`Izbriši vlogo "${name}"?`)) return;
+  if (!confirm(`${skT('antennas.confirm.delete_role')} "${name}"?`)) return;
   const r = await skDel(`/api/AntennaRole/${id}`);
-  if (!r.ok) { skToast('Brisanje ni uspelo.', 'error'); return; }
-  skToast('Vloga izbrisana.', 'success');
+  if (!r.ok) { skToast(skT('admin.toast.delete_error'), 'error'); return; }
+  skToast(skT('antennas.toast.role_deleted'), 'success');
   const rl = await skGet('/api/AntennaRole');
   roles = rl.ok && rl.data ? rl.data : roles;
   renderRolesDropdown(); renderRolesList(); await init();

@@ -91,10 +91,10 @@
           <div class="avatar-email" id="profileEmail">—</div>
           <div class="avatar-badges" id="profileBadges"></div>
           <div class="card-id-box">
-            <div class="card-id-label">RFID Card ID</div>
+            <div class="card-id-label" data-i18n="profile.card_id_lbl">RFID Card ID</div>
             <div class="card-id-val" id="profileCard">—</div>
           </div>
-          <button class="logout-btn" onclick="doLogout()">⏻ Odjava</button>
+          <button class="logout-btn" onclick="doLogout()">⏻ <span data-i18n="profile.btn.logout">Odjava</span></button>
         </div>
 
         <!-- RIGHT -->
@@ -103,32 +103,32 @@
           <!-- Edit profile -->
           <div class="edit-card">
             <div class="edit-card-head">
-              <span class="sk-section-title">Uredi profil</span>
-              <span id="editStatus" style="font-size:11px;color:var(--grn);display:none;">✓ Shranjeno</span>
+              <span class="sk-section-title" data-i18n="profile.edit.title">Uredi profil</span>
+              <span id="editStatus" style="font-size:11px;color:var(--grn);display:none;" data-i18n="profile.edit.saved">✓ Shranjeno</span>
             </div>
             <div class="edit-card-body">
               <div class="two-col">
                 <div class="sk-field">
-                  <label>Ime</label>
-                  <input class="sk-input" id="editName" placeholder="Ime"/>
+                  <label data-i18n="lbl.name">Ime</label>
+                  <input class="sk-input" id="editName" data-i18n-placeholder="profile.edit.ph.name" placeholder="Ime"/>
                 </div>
                 <div class="sk-field">
-                  <label>Priimek</label>
-                  <input class="sk-input" id="editSurname" placeholder="Priimek"/>
+                  <label data-i18n="lbl.surname">Priimek</label>
+                  <input class="sk-input" id="editSurname" data-i18n-placeholder="profile.edit.ph.surname" placeholder="Priimek"/>
                 </div>
               </div>
               <div class="sk-field">
-                <label>Email</label>
+                <label data-i18n="lbl.email">Email</label>
                 <input class="sk-input" id="editEmail" type="email" placeholder="email@example.com"/>
               </div>
               <div class="two-col">
                 <div class="sk-field">
-                  <label>Novo geslo</label>
-                  <input class="sk-input" id="editPass" type="password" placeholder="Pusti prazno = brez spremembe"/>
+                  <label data-i18n="profile.edit.lbl.new_password">Novo geslo</label>
+                  <input class="sk-input" id="editPass" type="password" data-i18n-placeholder="profile.edit.ph.password" placeholder="Pusti prazno = brez spremembe"/>
                 </div>
                 <div class="sk-field">
-                  <label>Potrdi geslo</label>
-                  <input class="sk-input" id="editPassConfirm" type="password" placeholder="Ponovi geslo"/>
+                  <label data-i18n="profile.edit.lbl.confirm_password">Potrdi geslo</label>
+                  <input class="sk-input" id="editPassConfirm" type="password" data-i18n-placeholder="profile.edit.ph.password_confirm" placeholder="Ponovi geslo"/>
                 </div>
               </div>
               <div class="sk-field" style="margin-top:6px;">
@@ -142,7 +142,7 @@
               </div>
               <div id="editErr" class="sk-alert sk-alert-red" style="display:none;"></div>
               <div>
-                <button class="sk-btn sk-btn-acc" id="saveProfileBtn" onclick="saveProfile()">Shrani spremembe</button>
+                <button class="sk-btn sk-btn-acc" id="saveProfileBtn" onclick="saveProfile()" data-i18n="profile.edit.btn.save">Shrani spremembe</button>
               </div>
             </div>
           </div>
@@ -150,22 +150,22 @@
           <!-- Loan history -->
           <div class="edit-card">
             <div class="edit-card-head">
-              <span class="sk-section-title">Moje izposoje</span>
+              <span class="sk-section-title" data-i18n="profile.loans.title">Moje izposoje</span>
               <span class="sk-badge sk-badge-mut" id="loansCount">—</span>
             </div>
             <div class="loans-table-wrap" id="loansBody">
-              <div class="sk-state-loading"><div class="sk-spin"></div>Nalaganje…</div>
+              <div class="sk-state-loading"><div class="sk-spin"></div><span data-i18n="lbl.loading">Nalaganje…</span></div>
             </div>
           </div>
 
           <!-- Exchange requests -->
           <div class="edit-card" id="exchangeCard">
             <div class="edit-card-head">
-              <span class="sk-section-title">Zahteve za menjavo</span>
+              <span class="sk-section-title" data-i18n="profile.exchange.title">Zahteve za menjavo</span>
               <span class="sk-badge sk-badge-mut" id="exCount">—</span>
             </div>
             <div id="exBody">
-              <div class="sk-state-loading"><div class="sk-spin"></div>Nalaganje…</div>
+              <div class="sk-state-loading"><div class="sk-spin"></div><span data-i18n="lbl.loading">Nalaganje…</span></div>
             </div>
           </div>
 
@@ -226,7 +226,7 @@ async function loadLoans() {
 
   if (!r.ok || !r.data?.length) {
     document.getElementById('loansCount').textContent = '0';
-    body.innerHTML = '<div class="sk-state-empty"><span>⇌</span><span>Ni izposoj.</span></div>';
+    body.innerHTML = `<div class="sk-state-empty"><span>⇌</span><span>${skT('profile.loans.no_data')}</span></div>`;
     return;
   }
 
@@ -236,7 +236,7 @@ async function loadLoans() {
   body.innerHTML = `
     <table class="sk-table">
       <thead><tr>
-        <th></th><th>Sredstvo</th><th>Cona</th><th>Od</th><th>Do</th><th>Status</th>
+        <th></th><th>${skT('assets.modal.lbl.name')}</th><th>${skT('tags.col.zone')}</th><th>${skT('assets.col.loaned_at')}</th><th>${skT('assets.col.returned_at')}</th><th>${skT('lbl.status')}</th>
       </tr></thead>
       <tbody>
         ${loans.map(l => {
@@ -247,7 +247,7 @@ async function loadLoans() {
             <td style="color:var(--sub);">${l.ZoneName || l.zoneName || '—'}</td>
             <td style="font-size:11px;">${skFmtDate(l.LoanedAt || l.loanedAt)}</td>
             <td style="font-size:11px;">${l.ReturnedAt || l.returnedAt ? skFmtDate(l.ReturnedAt || l.returnedAt) : '—'}</td>
-            <td><span class="sk-badge ${active ? 'sk-badge-org' : 'sk-badge-grn'}">${active ? 'Aktivno' : 'Vrnjeno'}</span></td>
+            <td><span class="sk-badge ${active ? 'sk-badge-org' : 'sk-badge-grn'}">${active ? skT('assets.badge.active') : skT('assets.badge.returned')}</span></td>
           </tr>`;
         }).join('')}
       </tbody>
@@ -269,23 +269,23 @@ async function loadExchanges() {
 
   const body = document.getElementById('exBody');
   if (!total) {
-    body.innerHTML = '<div class="sk-state-empty"><span>⇌</span><span>Ni zahtev za menjavo.</span></div>';
+    body.innerHTML = `<div class="sk-state-empty"><span>⇌</span><span>${skT('profile.exchange.no_data')}</span></div>`;
     return;
   }
 
   const statusBadge = s => {
     const map = { pending: 'sk-badge-org', accepted: 'sk-badge-grn', rejected: 'sk-badge-red', cancelled: 'sk-badge-mut' };
-    const lbl = { pending: 'Čaka', accepted: 'Sprejeto', rejected: 'Zavrnjeno', cancelled: 'Preklicano' };
+    const lbl = { pending: skT('profile.exchange.status.pending'), accepted: skT('profile.exchange.status.accepted'), rejected: skT('profile.exchange.status.rejected'), cancelled: skT('profile.exchange.status.cancelled') };
     return `<span class="sk-badge ${map[s]||'sk-badge-mut'}">${lbl[s]||s}</span>`;
   };
 
   let html = `<table class="sk-table"><thead><tr>
-    <th>Tip</th><th>Sredstvo</th><th>Od / Do</th><th>Status</th><th>Datum</th><th></th>
+    <th>${skT('profile.exchange.col.type')}</th><th>${skT('assets.modal.lbl.name')}</th><th>${skT('profile.exchange.col.from_to')}</th><th>${skT('lbl.status')}</th><th>${skT('lbl.date')}</th><th></th>
   </tr></thead><tbody>`;
 
   sent.forEach(e => {
     html += `<tr>
-      <td><span class="sk-badge sk-badge-acc">Poslano</span></td>
+      <td><span class="sk-badge sk-badge-acc">${skT('profile.exchange.badge.sent')}</span></td>
       <td><strong>${e.assetName || e.AssetName || '—'}</strong></td>
       <td style="color:var(--sub);">${e.toUserName || e.ToUserName || '—'}</td>
       <td>${statusBadge(e.status || e.Status || '')}</td>
@@ -297,14 +297,14 @@ async function loadExchanges() {
   pending.forEach(e => {
     const eid = e.id || e.Id;
     html += `<tr>
-      <td><span class="sk-badge sk-badge-org">Prejeto</span></td>
+      <td><span class="sk-badge sk-badge-org">${skT('profile.exchange.badge.received')}</span></td>
       <td><strong>${e.assetName || e.AssetName || '—'}</strong></td>
       <td style="color:var(--sub);">${e.fromUserName || e.FromUserName || '—'}</td>
       <td>${statusBadge('pending')}</td>
       <td style="font-size:11px;">${skFmtDate(e.createdAt || e.CreatedAt)}</td>
       <td style="white-space:nowrap;">
-        <button class="sk-btn sk-btn-grn sk-btn-sm" onclick="respondExchange(${eid}, true)">✓ Sprejmi</button>
-        <button class="sk-btn sk-btn-red sk-btn-sm" style="margin-left:4px;" onclick="respondExchange(${eid}, false)">✗ Zavrni</button>
+        <button class="sk-btn sk-btn-grn sk-btn-sm" onclick="respondExchange(${eid}, true)">✓ ${skT('profile.exchange.btn.accept')}</button>
+        <button class="sk-btn sk-btn-red sk-btn-sm" style="margin-left:4px;" onclick="respondExchange(${eid}, false)">✗ ${skT('profile.exchange.btn.reject')}</button>
       </td>
     </tr>`;
   });
@@ -327,12 +327,12 @@ async function saveProfile() {
   errEl.style.display = 'none';
 
   if (!name || !email) {
-    errEl.textContent = 'Ime in email sta obvezna.';
+    errEl.textContent = skT('profile.edit.validation.name_email_required');
     errEl.style.display = 'block';
     return;
   }
   if (pass && pass !== passC) {
-    errEl.textContent = 'Gesli se ne ujemata.';
+    errEl.textContent = skT('admin.validation.passwords_mismatch');
     errEl.style.display = 'block';
     return;
   }
@@ -341,9 +341,9 @@ async function saveProfile() {
   const body = { name, surname, email, language: lang };
   if (pass) body.password = pass;
 
-  skBtnLoading(btn, true, 'Shrani spremembe');
+  skBtnLoading(btn, true, skT('profile.edit.btn.save'));
   const r = await skPut(`/api/User/${uid}`, body);
-  skBtnLoading(btn, false, 'Shrani spremembe');
+  skBtnLoading(btn, false, skT('profile.edit.btn.save'));
 
   if (!r.ok) {
     errEl.textContent = r.data?.message || `Napaka ${r.status}`;
@@ -375,7 +375,7 @@ async function saveProfile() {
   st.style.display = 'inline';
   setTimeout(() => { st.style.display = 'none'; }, 3000);
 
-  skToast('Profil posodobljen.', 'success');
+  skToast(skT('profile.toast.saved'), 'success');
 }
 
 /* ── Respond to incoming exchange request ── */
@@ -385,7 +385,7 @@ async function respondExchange(id, accept) {
     skToast(`Napaka: ${r.data?.message || ''}`, 'error');
     return;
   }
-  skToast(accept ? 'Menjava sprejeta!' : 'Zahteva zavrnjena.', accept ? 'success' : 'warning');
+  skToast(accept ? skT('profile.toast.exchange_accepted') : skT('profile.toast.exchange_rejected'), accept ? 'success' : 'warning');
   loadExchanges();
   loadLoans();
 }

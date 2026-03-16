@@ -180,6 +180,14 @@
   // Version — defined once in sk.js
   const vEl = document.getElementById('sbVersion');
   if (vEl && typeof SK_VERSION !== 'undefined') vEl.textContent = 'v' + SK_VERSION;
+
+  // Translate all data-i18n elements inside sidebar (sidebar is injected AFTER DOMContentLoaded,
+  // so the global skApplyI18n() already ran and missed these elements)
+  document.querySelectorAll('#sbNav [data-i18n], .sb [data-i18n]').forEach(function(el) {
+    var val = skT(el.getAttribute('data-i18n'));
+    if (val) el.textContent = val;
+  });
+
   var path = location.pathname.toLowerCase();
 
   // ── Mark active — desktop sidebar ──

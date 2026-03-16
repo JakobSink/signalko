@@ -92,21 +92,21 @@
       <!-- LEFT: role list -->
       <div>
         <div class="sk-card sk-card-pad" style="margin-bottom:14px;">
-          <div style="font-size:11px;color:var(--mut);margin-bottom:8px;font-weight:600;">NOVA VLOGA</div>
+          <div style="font-size:11px;color:var(--mut);margin-bottom:8px;font-weight:600;" data-i18n="roles.new_role_lbl">NOVA VLOGA</div>
           <div style="display:flex;gap:8px;">
-            <input class="sk-input" id="newName" placeholder="Ime vloge…" style="flex:1;"
+            <input class="sk-input" id="newName" data-i18n-placeholder="roles.new_role_ph" placeholder="Ime vloge…" style="flex:1;"
               onkeydown="if(event.key==='Enter')createRole()"/>
             <button class="sk-btn sk-btn-acc" onclick="createRole()" id="createBtn">+</button>
           </div>
         </div>
-        <div id="roleList"><div class="sk-state-loading"><div class="sk-spin"></div>Nalaganje…</div></div>
+        <div id="roleList"><div class="sk-state-loading"><div class="sk-spin"></div><span data-i18n="lbl.loading">Nalaganje…</span></div></div>
       </div>
 
       <!-- RIGHT: editor -->
       <div class="sk-card" id="editor">
         <div class="editor-empty">
           <span class="ico">⊚</span>
-          <div>Izberi vlogo na levi za urejanje pravic</div>
+          <div data-i18n="roles.select_hint">Izberi vlogo na levi za urejanje pravic</div>
         </div>
       </div>
 
@@ -240,7 +240,7 @@ function isSystemRole(r) { return !!(r.isSystem||r.IsSystem||isAdminRole(r)||(r.
 /* ── Role list ─────────────────────────────────────────────── */
 function renderList() {
   const el = document.getElementById('roleList');
-  if (!ALL_ROLES.length) { el.innerHTML = '<div style="color:var(--mut);font-size:12px;padding:8px 0;">Ni vlog.</div>'; return; }
+  if (!ALL_ROLES.length) { el.innerHTML = `<div style="color:var(--mut);font-size:12px;padding:8px 0;">${skT('roles.no_roles')}</div>`; return; }
   el.innerHTML = ALL_ROLES.map(r => {
     const perms = r.permissions||r.Permissions||[];
     const total = ALL_PERMS.length;
@@ -250,7 +250,7 @@ function renderList() {
       return `<div class="role-item" style="cursor:default;opacity:.75;border-color:rgba(52,211,153,.2);background:rgba(52,211,153,.04);">
         <div class="role-dot" style="background:var(--grn);box-shadow:0 0 6px var(--grn);"></div>
         <div class="role-name" style="color:var(--grn);">${h(r.name||r.Name)}</div>
-        <span style="font-size:10px;color:var(--grn);font-weight:700;">⊗ zaklenjeno</span>
+        <span style="font-size:10px;color:var(--grn);font-weight:700;">⊗ ${skT('roles.locked')}</span>
       </div>`;
     }
     return `<div class="role-item${sel?' active':''}" onclick="selectRole(${r.id})">
@@ -274,7 +274,7 @@ function selectRole(id) {
 function renderEditor() {
   const el = document.getElementById('editor');
   if (!SEL) {
-    el.innerHTML = '<div class="editor-empty"><span class="ico">⊚</span><div>Izberi vlogo na levi za urejanje pravic</div></div>';
+    el.innerHTML = `<div class="editor-empty"><span class="ico">⊚</span><div>${skT('roles.select_hint')}</div></div>`;
     return;
   }
   const r = SEL;
@@ -290,8 +290,8 @@ function renderEditor() {
     el.innerHTML = `<div class="sk-card-pad">
       <div class="admin-banner">
         <span style="font-size:20px;">⊚</span>
-        <div><div class="admin-banner-title">Admin — vse pravice</div>
-        <div class="admin-banner-sub">Ta vloga ima popoln dostop. Pravic ni mogoče urejati.</div></div>
+        <div><div class="admin-banner-title">${skT('roles.admin_banner_title')}</div>
+        <div class="admin-banner-sub">${skT('roles.admin_banner_sub')}</div></div>
       </div>${badges}</div>`;
     return;
   }
@@ -306,7 +306,7 @@ function renderEditor() {
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;gap:12px;">
       ${!isSystem
         ? `<div class="sk-field" style="margin:0;flex:1;">
-             <label style="font-size:10px;">IME VLOGE</label>
+             <label style="font-size:10px;">${skT('roles.role_name_lbl')}</label>
              <input class="sk-input" id="eName" value="${h(r.name||r.Name)}" style="margin-top:4px;"/>
            </div>`
         : `<div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:800;">${h(r.name||r.Name)}</div>`}
@@ -317,8 +317,8 @@ function renderEditor() {
     </div>
     ${groups}
     <div style="display:flex;gap:10px;margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
-      <button class="sk-btn sk-btn-acc sk-btn-full" id="saveBtn" onclick="save()">✓ Shrani</button>
-      ${!isSystem ? `<button class="sk-btn sk-btn-red" onclick="del(${r.id})" title="Izbriši vlogo">🗑</button>` : ''}
+      <button class="sk-btn sk-btn-acc sk-btn-full" id="saveBtn" onclick="save()">✓ ${skT('btn.save')}</button>
+      ${!isSystem ? `<button class="sk-btn sk-btn-red" onclick="del(${r.id})" title="${skT('roles.delete_role_title')}">🗑</button>` : ''}
     </div>
   </div>`;
 }
@@ -338,7 +338,7 @@ function buildGroup(g, mySet) {
   // header toggle (page visibility)
   const headerToggle = g.pageCode ? `
     <button class="info-btn" onclick="showInfo(event,'${groupKey}')" title="Info o tej strani">i</button>
-    <span class="perm-state ${pageOn?'on':'off'}" id="pgst_${CSS.escape(g.pageCode)}">${pageOn?'DA':'NE'}</span>
+    <span class="perm-state ${pageOn?'on':'off'}" id="pgst_${CSS.escape(g.pageCode)}">${pageOn?skT('lbl.yes'):skT('lbl.no')}</span>
     <label class="tog">
       <input type="checkbox" data-pagecode="${h(g.pageCode)}" ${pageOn?'checked':''}
         onchange="togglePage(this)"/>
@@ -356,7 +356,7 @@ function buildGroup(g, mySet) {
         <div class="perm-code">${h(code)}</div>
       </div>
       <button class="info-btn" onclick="showInfo(event,'${permKey}')" title="Info o pravici">i</button>
-      <span class="perm-state ${on?'on':'off'}">${on?'DA':'NE'}</span>
+      <span class="perm-state ${on?'on':'off'}">${on?skT('lbl.yes'):skT('lbl.no')}</span>
       <label class="tog">
         <input type="checkbox" data-code="${h(code)}" ${on?'checked':''}
           ${!pageOn?'disabled':''}
@@ -402,7 +402,7 @@ function togglePage(cb) {
 
   if (card)  card.classList.toggle('pg-on', cb.checked);
   if (body)  body.classList.toggle('pg-disabled', !cb.checked);
-  if (stEl)  { stEl.textContent = cb.checked?'DA':'NE'; stEl.className = 'perm-state '+(cb.checked?'on':'off'); }
+  if (stEl)  { stEl.textContent = cb.checked?skT('lbl.yes'):skT('lbl.no'); stEl.className = 'perm-state '+(cb.checked?'on':'off'); }
 
   // Disable/enable sub-perm toggles and uncheck them if page goes off
   if (body) {
@@ -413,7 +413,7 @@ function togglePage(cb) {
         const row = inp.closest('.perm-row');
         if (row) {
           const st = row.querySelector('.perm-state');
-          if (st) { st.textContent = 'NE'; st.className = 'perm-state off'; }
+          if (st) { st.textContent = skT('lbl.no'); st.className = 'perm-state off'; }
         }
       }
     });
@@ -434,7 +434,7 @@ function togglePerm(cb) {
   const row = cb.closest('.perm-row');
   if (row) {
     const st = row.querySelector('.perm-state');
-    if (st) { st.textContent = cb.checked?'DA':'NE'; st.className = 'perm-state '+(cb.checked?'on':'off'); }
+    if (st) { st.textContent = cb.checked?skT('lbl.yes'):skT('lbl.no'); st.className = 'perm-state '+(cb.checked?'on':'off'); }
   }
 
   updateCounter(perms.size);
@@ -449,18 +449,18 @@ function updateCounter(n) {
 /* ── Create ────────────────────────────────────────────────── */
 async function createRole() {
   const name = document.getElementById('newName').value.trim();
-  if (!name) { skToast('Vnesi ime vloge.', 'error'); return; }
+  if (!name) { skToast(skT('roles.validation.name_required'), 'error'); return; }
   const btn = document.getElementById('createBtn');
   skBtnLoading(btn, true, '+');
   const r = await skPost('/api/Role', { name, permissions: [] });
   skBtnLoading(btn, false, '+');
-  if (!r.ok) { skToast(`Napaka ${r.status}: ${r.data?.message||'Neznana napaka'}`, 'error'); return; }
+  if (!r.ok) { skToast(`${skT('tags.error.load')} ${r.status}: ${r.data?.message||skT('lbl.unknown_error')}`, 'error'); return; }
   document.getElementById('newName').value = '';
   ALL_ROLES.push(r.data);
   SEL = r.data;
   renderList();
   renderEditor();
-  skToast('Vloga ustvarjena!');
+  skToast(skT('roles.toast.created'));
 }
 
 /* ── Save ──────────────────────────────────────────────────── */
@@ -469,26 +469,26 @@ async function save() {
   const btn  = document.getElementById('saveBtn');
   const name = document.getElementById('eName')?.value.trim() || SEL.name||SEL.Name;
   const perms = SEL.permissions||SEL.Permissions||[];
-  skBtnLoading(btn, true, '✓ Shrani');
+  skBtnLoading(btn, true, skT('btn.save'));
   const r = await skPut(`/api/Role/${SEL.id}`, { name, permissions: perms });
-  skBtnLoading(btn, false, '✓ Shrani');
-  if (!r.ok) { skToast(`Napaka ${r.status}: ${r.data?.message||'Neznana napaka'}`, 'error'); return; }
+  skBtnLoading(btn, false, skT('btn.save'));
+  if (!r.ok) { skToast(`${skT('tags.error.load')} ${r.status}: ${r.data?.message||skT('lbl.unknown_error')}`, 'error'); return; }
   const idx = ALL_ROLES.findIndex(x => x.id === SEL.id);
   if (idx >= 0) { ALL_ROLES[idx] = { ...ALL_ROLES[idx], ...r.data, permissions: perms }; SEL = ALL_ROLES[idx]; }
   renderList();
-  skToast('Shranjeno!');
+  skToast(skT('roles.toast.saved'));
 }
 
 /* ── Delete ────────────────────────────────────────────────── */
 async function del(id) {
-  if (!confirm('Izbriši to vlogo? Tega ni mogoče razveljaviti.')) return;
+  if (!confirm(skT('roles.confirm.delete'))) return;
   const r = await skDel(`/api/Role/${id}`);
-  if (!r.ok) { skToast(`Napaka ${r.status}: ${r.data?.message||'Neznana napaka'}`, 'error'); return; }
+  if (!r.ok) { skToast(`${skT('tags.error.load')} ${r.status}: ${r.data?.message||skT('lbl.unknown_error')}`, 'error'); return; }
   ALL_ROLES = ALL_ROLES.filter(x => x.id !== id);
   SEL = null;
   renderList();
   renderEditor();
-  skToast('Vloga izbrisana.', 'warning');
+  skToast(skT('roles.toast.deleted'), 'warning');
 }
 
 function h(s) {
@@ -522,7 +522,7 @@ function showInfo(e, key) {
   let sidebarHtml = '';
   if (data.sidebarLabel) {
     sidebarHtml = `<div class="ip-sidebar">
-      <span>Stranski meni:</span>
+      <span>${skT('roles.info.sidebar_menu')}</span>
       <strong>${h(data.sidebarLabel)}</strong>
       <span class="ip-section">${h(data.sidebarSection||'')}</span>
     </div>`;

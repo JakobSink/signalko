@@ -88,20 +88,16 @@
     <div class="sk-page-title" data-i18n="page.zones">Cone</div>
     <div class="sk-page-sub" data-i18n="page.zones.sub">Fizične lokacije in dodeljevanje anten</div>
 
-    <div class="hint-bar">
-      <strong>Cona</strong> je fizična lokacija (prostor, vrata, oder…). Vsaka antena je dodeljena eni coni.
-      Klikni <strong>⊕ Antene</strong> na karti cone, da vidiš njene antene in jim spreminjaš cono s spustnim menijem.
-      Z <strong>+ Dodaj cono</strong> dodaš novo lokacijo, z <strong>✎ Uredi</strong> pa preimenuj obstoječo.
-    </div>
+    <div class="hint-bar" data-i18n="zones.hint"></div>
 
     <div class="toolbar">
-      <input class="search-box" id="searchInput" placeholder="Išči (ime, tip)…" oninput="applyFilters()"/>
-      <button class="sk-btn sk-btn-acc" onclick="openAddModal()">+ Dodaj cono</button>
-      <button class="sk-btn" id="refreshBtn" onclick="loadData()">↺ Osveži</button>
+      <input class="search-box" id="searchInput" data-i18n-placeholder="zones.search_ph" placeholder="Išči (ime, tip)…" oninput="applyFilters()"/>
+      <button class="sk-btn sk-btn-acc" onclick="openAddModal()">+ <span data-i18n="zones.btn.add">Dodaj cono</span></button>
+      <button class="sk-btn" id="refreshBtn" onclick="loadData()">↺ <span data-i18n="tags.btn.refresh">Osveži</span></button>
     </div>
 
     <div id="gridHost">
-      <div class="state-loading"><div class="sk-spin"></div>Nalaganje…</div>
+      <div class="state-loading"><div class="sk-spin"></div><span data-i18n="lbl.loading">Nalaganje…</span></div>
     </div>
 
   </main>
@@ -116,19 +112,19 @@
     </div>
     <div class="sk-modal-content">
     <input type="hidden" id="z-id"/>
-    <div class="modal-field"><label>Ime cone *</label><input id="z-name" placeholder="npr. Vhod, Izhod"/></div>
+    <div class="modal-field"><label data-i18n="zones.modal.lbl.name">Ime cone *</label><input id="z-name" data-i18n-placeholder="zones.modal.ph.name" placeholder="npr. Vhod, Izhod"/></div>
     <div class="modal-field">
-      <label>Tip cone <span style="font-weight:400;color:var(--muted);font-size:.82em;">— vpliva na sledenje prisotnosti</span></label>
+      <label><span data-i18n="zones.modal.lbl.type">Tip cone</span> <span style="font-weight:400;color:var(--muted);font-size:.82em;" data-i18n="zones.modal.lbl.type_sub">— vpliva na sledenje prisotnosti</span></label>
       <select id="z-type" style="width:100%;padding:8px 10px;border:1px solid var(--brd);border-radius:6px;background:var(--srf);color:var(--txt);font-size:.93em;">
-        <option value="">— Brez / splošna cona —</option>
-        <option value="Entrance">Entrance — zazna prihod (IN)</option>
-        <option value="Exit">Exit — zazna odhod (OUT)</option>
-        <option value="EntranceExit">EntranceExit — preklopi IN/OUT glede na zadnji event</option>
+        <option value="" data-i18n="zones.type.none">— Brez / splošna cona —</option>
+        <option value="Entrance" data-i18n="zones.type.entrance">Entrance — zazna prihod (IN)</option>
+        <option value="Exit" data-i18n="zones.type.exit">Exit — zazna odhod (OUT)</option>
+        <option value="EntranceExit" data-i18n="zones.type.entrance_exit">EntranceExit — preklopi IN/OUT glede na zadnji event</option>
       </select>
     </div>
     <div class="modal-actions">
-      <button class="sk-btn" onclick="skModalClose('zoneModal')">Prekliči</button>
-      <button class="sk-btn sk-btn-acc" id="zoneSaveBtn" onclick="saveZone()">Shrani</button>
+      <button class="sk-btn" onclick="skModalClose('zoneModal')" data-i18n="btn.cancel">Prekliči</button>
+      <button class="sk-btn sk-btn-acc" id="zoneSaveBtn" onclick="saveZone()" data-i18n="btn.save">Shrani</button>
     </div>
     </div>
   </div>
@@ -142,11 +138,11 @@
       <button class="sk-modal-close" onclick="skModalClose('antModal')">✕</button>
     </div>
     <div class="sk-modal-content">
-    <div style="font-size:11px;color:var(--sub);margin-bottom:14px;line-height:1.6;">
+    <div style="font-size:11px;color:var(--sub);margin-bottom:14px;line-height:1.6;" data-i18n="zones.ant_modal.hint">
       Spustni meni v stolpcu <strong>Cona</strong> premakne anteno v drugo cono takoj po izbiri.
     </div>
     <div style="overflow-x:auto;" id="antModalBody">
-      <div class="state-loading"><div class="sk-spin"></div>Nalaganje…</div>
+      <div class="state-loading"><div class="sk-spin"></div><span data-i18n="lbl.loading">Nalaganje…</span></div>
     </div>
     </div>
   </div>
@@ -156,17 +152,17 @@
 <div class="sk-modal-bg" id="deleteModal" onclick="if(event.target===this)skModalClose('deleteModal')">
   <div class="sk-modal" style="max-width:380px;">
     <div class="sk-modal-head">
-      <div class="sk-modal-title">Izbriši cono</div>
+      <div class="sk-modal-title" data-i18n="zones.modal.delete_title">Izbriši cono</div>
       <button class="sk-modal-close" onclick="skModalClose('deleteModal')">✕</button>
     </div>
     <div class="sk-modal-content">
     <p style="color:var(--sub);font-size:12px;margin-bottom:20px;line-height:1.6;">
-      Ali res želiš izbrisati cono <strong id="deleteLabel" style="color:var(--txt);"></strong>?
-      Antene v tej coni bodo ostale brez cone.
+      <span data-i18n="zones.modal.delete_confirm_pre">Ali res želiš izbrisati cono</span> <strong id="deleteLabel" style="color:var(--txt);"></strong>?
+      <span data-i18n="zones.modal.delete_confirm_post">Antene v tej coni bodo ostale brez cone.</span>
     </p>
     <div class="modal-actions">
-      <button class="sk-btn" onclick="skModalClose('deleteModal')">Prekliči</button>
-      <button class="sk-btn sk-btn-red" id="deleteConfirmBtn" onclick="executeDelete()">Izbriši</button>
+      <button class="sk-btn" onclick="skModalClose('deleteModal')" data-i18n="btn.cancel">Prekliči</button>
+      <button class="sk-btn sk-btn-red" id="deleteConfirmBtn" onclick="executeDelete()" data-i18n="btn.delete">Izbriši</button>
     </div>
     </div>
   </div>
@@ -181,14 +177,14 @@ let pendingDelete = null, currentAntZoneId = null;
 
 async function loadData() {
   const btn = document.getElementById('refreshBtn');
-  skBtnLoading(btn, true, '↺ Osveži');
-  document.getElementById('gridHost').innerHTML = '<div class="state-loading"><div class="sk-spin"></div>Nalaganje…</div>';
+  skBtnLoading(btn, true, skT('tags.btn.refresh'));
+  document.getElementById('gridHost').innerHTML = `<div class="state-loading"><div class="sk-spin"></div>${skT('lbl.loading')}</div>`;
   const [rz, ro, rr] = await Promise.all([
     skGet('/api/Zone'),
     skGet('/api/Zone/with-antennas'),
     skGet('/api/Reader'),
   ]);
-  skBtnLoading(btn, false, '↺ Osveži');
+  skBtnLoading(btn, false, skT('tags.btn.refresh'));
   zones         = rz.ok && rz.data ? rz.data : [];
   zonesOverview = ro.ok && ro.data ? ro.data : [];
   allZones      = zones;
@@ -206,7 +202,7 @@ function applyFilters() {
 
 function renderGrid() {
   const host = document.getElementById('gridHost');
-  if (!filtered.length) { host.innerHTML = '<div class="state-empty">Ni con.</div>'; return; }
+  if (!filtered.length) { host.innerHTML = `<div class="state-empty">${skT('zones.no_data')}</div>`; return; }
   host.innerHTML = '<div class="ic-grid"></div>';
   const grid = host.querySelector('.ic-grid');
 
@@ -219,18 +215,18 @@ function renderGrid() {
         <div class="ic-icon">⬡</div>
         <div class="ic-title-wrap">
           <div class="ic-title">${escHtml(z.name||'(brez imena)')}</div>
-          <div class="ic-sub">${z.type ? escHtml(z.type) : 'Brez tipa'} · ID ${z.id}</div>
+          <div class="ic-sub">${z.type ? escHtml(z.type) : skT('zones.no_type')} · ID ${z.id}</div>
         </div>
         <span class="sk-badge sk-badge-mut">${ants.length} ant.</span>
       </div>
       <div class="ic-kv">
-        <div class="ic-row"><span class="ic-key">Tip</span><span class="ic-val">${escHtml(z.type||'—')}</span></div>
-        <div class="ic-row"><span class="ic-key">Antene</span><span class="ic-val">${ants.length ? ants.map(a => `Port ${a.port}`).join(', ') : '—'}</span></div>
+        <div class="ic-row"><span class="ic-key">${skT('zones.lbl.type')}</span><span class="ic-val">${escHtml(z.type||'—')}</span></div>
+        <div class="ic-row"><span class="ic-key">${skT('zones.lbl.antennas')}</span><span class="ic-val">${ants.length ? ants.map(a => `Port ${a.port}`).join(', ') : '—'}</span></div>
         <div class="ic-row"><span class="ic-key">ID</span><span class="ic-val">${z.id}</span></div>
       </div>
       <div class="ic-foot">
-        <button class="sk-btn sk-btn-sm sk-btn-acc" data-act="ants">⊕ Antene</button>
-        <button class="sk-btn sk-btn-sm" data-act="edit">✎ Uredi</button>
+        <button class="sk-btn sk-btn-sm sk-btn-acc" data-act="ants">⊕ ${skT('zones.btn.antennas')}</button>
+        <button class="sk-btn sk-btn-sm" data-act="edit">✎ ${skT('btn.edit')}</button>
         <button class="sk-btn sk-btn-sm sk-btn-red" data-act="delete">✕</button>
       </div>`;
     card.querySelector('[data-act="ants"]').addEventListener('click',   e => { e.stopPropagation(); openAntModal(z); });
@@ -248,7 +244,7 @@ function renderGrid() {
     sec.style.cssText = 'margin-top:24px;';
     sec.innerHTML = `
       <div style="font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--mut);margin-bottom:10px;letter-spacing:.5px;">
-        ANTENE BREZ CONE (${uants.length})
+        ${skT('zones.unassigned_title')} (${uants.length})
       </div>
       <div class="ic-grid" id="unassignedGrid"></div>`;
     host.appendChild(sec);
@@ -265,15 +261,15 @@ function renderGrid() {
             <div class="ic-title">${escHtml(a.readerName||rdr?.name||`Reader #${a.readerId}`)} · Port ${a.port}</div>
             <div class="ic-sub">${escHtml(a.readerIP||rdr?.ip||'—')}</div>
           </div>
-          <span class="sk-badge sk-badge-org">Brez cone</span>
+          <span class="sk-badge sk-badge-org">${skT('zones.no_zone')}</span>
         </div>
         <div class="ic-kv">
-          <div class="ic-row"><span class="ic-key">Vloga</span><span class="ic-val">${escHtml(a.roleName||'—')}</span></div>
+          <div class="ic-row"><span class="ic-key">${skT('antennas.modal.lbl.role')}</span><span class="ic-val">${escHtml(a.roleName||'—')}</span></div>
         </div>
         <div class="ic-foot">
           <select style="flex:1;background:var(--up);border:1px solid var(--border);border-radius:6px;padding:5px 8px;font-size:11px;color:var(--txt);font-family:'JetBrains Mono',monospace;"
             onchange="assignZone(${a.antennaId}, this.value, this)">
-            <option value="">Dodeli cono…</option>
+            <option value="">${skT('zones.assign_zone')}</option>
             ${allZones.map(z => `<option value="${z.id}">${escHtml(z.name||`#${z.id}`)}</option>`).join('')}
           </select>
         </div>`;
@@ -285,15 +281,15 @@ function renderGrid() {
 async function assignZone(antennaId, zoneId, sel) {
   if (!zoneId) return;
   const r = await skPost('/api/Zone/assign-antenna', { antennaId: +antennaId, zoneId: +zoneId });
-  if (!r.ok) { skToast(r.data?.message || 'Napaka.', 'error'); sel.value = ''; return; }
-  skToast('Antena dodeljena.', 'success');
+  if (!r.ok) { skToast(r.data?.message || skT('tags.error.load'), 'error'); sel.value = ''; return; }
+  skToast(skT('zones.toast.antenna_assigned'), 'success');
   await loadData();
 }
 
 /* ── Antenna modal ── */
 function openAntModal(z) {
   currentAntZoneId = z.id;
-  document.getElementById('antModalTitle').textContent = `Antene v coni: ${z.name||''}`;
+  document.getElementById('antModalTitle').textContent = `${skT('zones.ant_modal.title')}: ${z.name||''}`;
   renderAntModal(z.antennas || []);
   skModal('antModal');
 }
@@ -301,12 +297,12 @@ function openAntModal(z) {
 function renderAntModal(ants) {
   const body = document.getElementById('antModalBody');
   if (!ants.length) {
-    body.innerHTML = '<div class="state-empty">Ta cona nima anten.</div>';
+    body.innerHTML = `<div class="state-empty">${skT('zones.ant_modal.no_antennas')}</div>`;
     return;
   }
   body.innerHTML = `
     <table class="ant-table">
-      <thead><tr><th>Reader</th><th>IP</th><th>Port</th><th>Vloga</th><th>Cona</th></tr></thead>
+      <thead><tr><th>${skT('tags.col.reader')}</th><th>IP</th><th>${skT('antennas.modal.lbl.port')}</th><th>${skT('antennas.modal.lbl.role')}</th><th>${skT('tags.col.zone')}</th></tr></thead>
       <tbody>
         ${ants.map(a => {
           const opts = allZones.map(z =>
@@ -326,8 +322,8 @@ function renderAntModal(ants) {
 
 async function reassignFromModal(antennaId, zoneId, sel) {
   const r = await skPost('/api/Zone/assign-antenna', { antennaId: +antennaId, zoneId: +zoneId });
-  if (!r.ok) { skToast(r.data?.message || 'Napaka.', 'error'); return; }
-  skToast('Antena prestavljena.', 'success');
+  if (!r.ok) { skToast(r.data?.message || skT('tags.error.load'), 'error'); return; }
+  skToast(skT('zones.toast.antenna_moved'), 'success');
   await loadData();
   skModalClose('antModal');
 }
@@ -337,7 +333,7 @@ function openAddModal() {
   document.getElementById('z-id').value   = '';
   document.getElementById('z-name').value = '';
   document.getElementById('z-type').value = '';
-  document.getElementById('zoneModalTitle').textContent = 'Dodaj cono';
+  document.getElementById('zoneModalTitle').textContent = skT('zones.modal.title.add');
   skModal('zoneModal');
 }
 
@@ -345,7 +341,7 @@ function openEditModal(z) {
   document.getElementById('z-id').value   = z.id;
   document.getElementById('z-name').value = z.name || '';
   document.getElementById('z-type').value = z.type || '';
-  document.getElementById('zoneModalTitle').textContent = 'Uredi cono';
+  document.getElementById('zoneModalTitle').textContent = skT('zones.modal.title.edit');
   skModal('zoneModal');
 }
 
@@ -354,14 +350,14 @@ async function saveZone() {
   const id   = document.getElementById('z-id').value ? +document.getElementById('z-id').value : null;
   const name = document.getElementById('z-name').value.trim();
   const type = document.getElementById('z-type').value.trim() || null;
-  if (!name) { skToast('Ime cone je obvezno.', 'error'); return; }
-  skBtnLoading(btn, true, 'Shrani');
+  if (!name) { skToast(skT('zones.validation.name_required'), 'error'); return; }
+  skBtnLoading(btn, true, skT('btn.save'));
   const r = id
     ? await skPut(`/api/Zone/${id}`, { id, name, type })
     : await skPost('/api/Zone', { id: 0, name, type });
-  skBtnLoading(btn, false, 'Shrani');
-  if (!r.ok) { skToast(r.data?.message || `Napaka ${r.status}`, 'error'); return; }
-  skToast(id ? 'Cona posodobljena.' : 'Cona dodana.', 'success');
+  skBtnLoading(btn, false, skT('btn.save'));
+  if (!r.ok) { skToast(r.data?.message || `${skT('tags.error.load')} ${r.status}`, 'error'); return; }
+  skToast(id ? skT('zones.toast.updated') : skT('zones.toast.added'), 'success');
   skModalClose('zoneModal');
   await loadData();
 }
@@ -376,11 +372,11 @@ function confirmDelete(z) {
 async function executeDelete() {
   if (!pendingDelete) return;
   const btn = document.getElementById('deleteConfirmBtn');
-  skBtnLoading(btn, true, 'Izbriši');
+  skBtnLoading(btn, true, skT('btn.delete'));
   const r = await skDel(`/api/Zone/${pendingDelete.id}`);
-  skBtnLoading(btn, false, 'Izbriši');
-  if (!r.ok) { skToast(r.data?.message || 'Napaka pri brisanju.', 'error'); return; }
-  skToast('Cona izbrisana.', 'success');
+  skBtnLoading(btn, false, skT('btn.delete'));
+  if (!r.ok) { skToast(r.data?.message || skT('admin.toast.delete_error'), 'error'); return; }
+  skToast(skT('zones.toast.deleted'), 'success');
   skModalClose('deleteModal');
   pendingDelete = null;
   await loadData();

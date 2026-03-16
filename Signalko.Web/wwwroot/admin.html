@@ -72,43 +72,43 @@ table.user-table tbody tr:hover td{background:var(--up);}
     <div class="sk-page-sub" id="adminSub" data-i18n="page.users.sub">Upravljanje uporabnikov</div>
 
     <div class="toolbar">
-      <input class="search-box" id="searchInput" placeholder="Išči (ime, email, kartica)…" oninput="applyFilter()"/>
+      <input class="search-box" id="searchInput" data-i18n-placeholder="admin.search_ph" placeholder="Išči (ime, email, kartica)…" oninput="applyFilter()"/>
       <select class="filter-sel" id="filterRole" onchange="applyFilter()">
-        <option value="">Vse vloge</option>
+        <option value="" data-i18n="admin.filter.all_roles">Vse vloge</option>
       </select>
-      <button class="sk-btn sk-btn-acc" onclick="openAdd()">+ Dodaj uporabnika</button>
-      <button class="sk-btn" id="refreshBtn" onclick="loadUsers()">↺ Osveži</button>
+      <button class="sk-btn sk-btn-acc" onclick="openAdd()">+ <span data-i18n="admin.btn.add_user">Dodaj uporabnika</span></button>
+      <button class="sk-btn" id="refreshBtn" onclick="loadUsers()">↺ <span data-i18n="tags.btn.refresh">Osveži</span></button>
     </div>
 
     <div class="table-wrap">
       <table class="user-table">
         <thead>
           <tr>
-            <th>Uporabnik</th>
-            <th>Kartica (CardID)</th>
-            <th>Email</th>
-            <th>Vloga</th>
-            <th>Akcije</th>
+            <th data-i18n="admin.col.user">Uporabnik</th>
+            <th data-i18n="admin.col.card">Kartica (CardID)</th>
+            <th data-i18n="lbl.email">Email</th>
+            <th data-i18n="lbl.role">Vloga</th>
+            <th data-i18n="lbl.actions">Akcije</th>
           </tr>
         </thead>
         <tbody id="userTableBody">
-          <tr><td colspan="5"><div class="state-loading"><div class="sk-spin"></div>Nalaganje…</div></td></tr>
+          <tr><td colspan="5"><div class="state-loading"><div class="sk-spin"></div><span data-i18n="lbl.loading">Nalaganje…</span></div></td></tr>
         </tbody>
       </table>
     </div>
 
     <!-- Exchange requests section -->
     <div style="margin-top:10px;">
-      <div class="sk-page-title" style="font-size:16px;margin-bottom:4px;">Zahteve za menjavo</div>
+      <div class="sk-page-title" style="font-size:16px;margin-bottom:4px;" data-i18n="admin.exchange.title">Zahteve za menjavo</div>
       <div class="table-wrap">
         <table class="user-table">
           <thead>
             <tr>
-              <th>Od</th><th>Za</th><th>Sredstvo</th><th>Status</th><th>Datum</th>
+              <th data-i18n="admin.exchange.col.from">Od</th><th data-i18n="admin.exchange.col.to">Za</th><th data-i18n="admin.exchange.col.asset">Sredstvo</th><th data-i18n="lbl.status">Status</th><th data-i18n="lbl.date">Datum</th>
             </tr>
           </thead>
           <tbody id="exchangeBody">
-            <tr><td colspan="5"><div class="state-loading"><div class="sk-spin"></div>Nalaganje…</div></td></tr>
+            <tr><td colspan="5"><div class="state-loading"><div class="sk-spin"></div><span data-i18n="lbl.loading">Nalaganje…</span></div></td></tr>
           </tbody>
         </table>
       </div>
@@ -127,48 +127,48 @@ table.user-table tbody tr:hover td{background:var(--up);}
     <input type="hidden" id="u-id"/>
     <div class="modal-grid-2">
       <div class="modal-field">
-        <label>Ime *</label>
-        <input id="u-name" placeholder="npr. Jakob"/>
+        <label data-i18n="admin.modal.lbl.name">Ime *</label>
+        <input id="u-name" data-i18n-placeholder="admin.modal.ph.name" placeholder="npr. Jakob"/>
       </div>
       <div class="modal-field">
-        <label>Priimek</label>
-        <input id="u-surname" placeholder="npr. Novak"/>
+        <label data-i18n="admin.modal.lbl.surname">Priimek</label>
+        <input id="u-surname" data-i18n-placeholder="admin.modal.ph.surname" placeholder="npr. Novak"/>
       </div>
     </div>
     <div class="modal-field">
-      <label>Email *</label>
+      <label data-i18n="admin.modal.lbl.email">Email *</label>
       <input id="u-email" type="email" placeholder="admin@signalko.si"/>
     </div>
     <div class="modal-field">
-      <label>Geslo <span id="passLabel">(obvezno za novega)</span></label>
+      <label><span data-i18n="admin.modal.lbl.password">Geslo</span> <span id="passLabel" data-i18n="admin.modal.lbl.password_new">(obvezno za novega)</span></label>
       <input id="u-password" type="password" placeholder="••••••••"/>
       <div class="modal-hint" id="passHint"></div>
     </div>
     <div class="modal-field" id="u-password2-wrap">
-      <label>Ponovi geslo</label>
+      <label data-i18n="admin.modal.lbl.password2">Ponovi geslo</label>
       <input id="u-password2" type="password" placeholder="••••••••"/>
     </div>
     <div class="modal-grid-2">
       <div class="modal-field">
-        <label>Kartica (CardID)</label>
-        <input id="u-card" placeholder="6-mestna številka" maxlength="6"/>
-        <div class="modal-hint">Pusti prazno = samodejno</div>
+        <label data-i18n="admin.col.card">Kartica (CardID)</label>
+        <input id="u-card" data-i18n-placeholder="admin.modal.ph.card" placeholder="6-mestna številka" maxlength="6"/>
+        <div class="modal-hint" data-i18n="admin.modal.hint.card_auto">Pusti prazno = samodejno</div>
       </div>
       <div class="modal-field">
-        <label>Vloga</label>
+        <label data-i18n="lbl.role">Vloga</label>
         <select id="u-role">
-          <option value="">Brez vloge</option>
+          <option value="" data-i18n="admin.modal.no_role">Brez vloge</option>
         </select>
       </div>
     </div>
     <div class="modal-field">
-      <label>Kartica EPC <span style="color:var(--mut);font-size:8px;letter-spacing:0;">— za prisotnostno sledenje</span></label>
-      <input id="u-cardepc" placeholder="npr. E2801160600002181922C3A8" style="font-family:'JetBrains Mono',monospace;font-size:11px;"/>
-      <div class="modal-hint">Hex EPC fizične RFID kartice uporabnika</div>
+      <label><span data-i18n="admin.modal.lbl.card_epc">Kartica EPC</span> <span style="color:var(--mut);font-size:8px;letter-spacing:0;" data-i18n="admin.modal.lbl.card_epc_sub">— za prisotnostno sledenje</span></label>
+      <input id="u-cardepc" data-i18n-placeholder="admin.modal.ph.card_epc" placeholder="npr. E2801160600002181922C3A8" style="font-family:'JetBrains Mono',monospace;font-size:11px;"/>
+      <div class="modal-hint" data-i18n="admin.modal.hint.card_epc">Hex EPC fizične RFID kartice uporabnika</div>
     </div>
     <div class="modal-actions">
-      <button class="sk-btn" onclick="skModalClose('userModal')">Prekliči</button>
-      <button class="sk-btn sk-btn-acc" id="userSaveBtn" onclick="saveUser()">Shrani</button>
+      <button class="sk-btn" onclick="skModalClose('userModal')" data-i18n="btn.cancel">Prekliči</button>
+      <button class="sk-btn sk-btn-acc" id="userSaveBtn" onclick="saveUser()" data-i18n="btn.save">Shrani</button>
     </div>
     </div>
   </div>
@@ -178,17 +178,17 @@ table.user-table tbody tr:hover td{background:var(--up);}
 <div class="sk-modal-bg" id="deleteModal" onclick="if(event.target===this)skModalClose('deleteModal')">
   <div class="sk-modal" style="max-width:380px;">
     <div class="sk-modal-head">
-      <div class="sk-modal-title">Izbriši uporabnika</div>
+      <div class="sk-modal-title" data-i18n="admin.modal.delete_title">Izbriši uporabnika</div>
       <button class="sk-modal-close" onclick="skModalClose('deleteModal')">✕</button>
     </div>
     <div class="sk-modal-content">
     <p style="color:var(--sub);font-size:12px;margin-bottom:20px;line-height:1.6;">
-      Ali res želiš izbrisati uporabnika <strong id="deleteUserName" style="color:var(--txt);"></strong>?
-      Vse izposoje tega uporabnika bodo prav tako izbrisane.
+      <span data-i18n="admin.modal.delete_confirm_pre">Ali res želiš izbrisati uporabnika</span> <strong id="deleteUserName" style="color:var(--txt);"></strong>?
+      <span data-i18n="admin.modal.delete_confirm_post">Vse izposoje tega uporabnika bodo prav tako izbrisane.</span>
     </p>
     <div class="modal-actions">
-      <button class="sk-btn" onclick="skModalClose('deleteModal')">Prekliči</button>
-      <button class="sk-btn sk-btn-red" id="deleteConfirmBtn" onclick="executeDelete()">Izbriši</button>
+      <button class="sk-btn" onclick="skModalClose('deleteModal')" data-i18n="btn.cancel">Prekliči</button>
+      <button class="sk-btn sk-btn-red" id="deleteConfirmBtn" onclick="executeDelete()" data-i18n="btn.delete">Izbriši</button>
     </div>
     </div>
   </div>
@@ -210,13 +210,13 @@ async function init() {
     users = ru.data;
     applyFilter();
   }
-  document.getElementById('adminSub').textContent = `${users.length} uporabnikov`;
+  document.getElementById('adminSub').textContent = `${users.length} ${skT('admin.users_count')}`;
   loadExchanges();
 }
 
 function populateRoleFilter() {
   const sel = document.getElementById('filterRole');
-  sel.innerHTML = '<option value="">Vse vloge</option>';
+  sel.innerHTML = `<option value="">${skT('admin.filter.all_roles')}</option>`;
   roles.forEach(r => {
     const o = document.createElement('option');
     o.value = r.name || r.Name;
@@ -227,7 +227,7 @@ function populateRoleFilter() {
 
 function populateRoleDropdown() {
   const sel = document.getElementById('u-role');
-  sel.innerHTML = '<option value="">Brez vloge</option>';
+  sel.innerHTML = `<option value="">${skT('admin.modal.no_role')}</option>`;
   roles.forEach(r => {
     const o = document.createElement('option');
     o.value = r.id;
@@ -251,7 +251,7 @@ function applyFilter() {
 function renderTable() {
   const tbody = document.getElementById('userTableBody');
   if (!filtered.length) {
-    tbody.innerHTML = '<tr><td colspan="5"><div class="state-empty">Ni uporabnikov.</div></td></tr>';
+    tbody.innerHTML = `<tr><td colspan="5"><div class="state-empty">${skT('admin.no_users')}</div></td></tr>`;
     return;
   }
   tbody.innerHTML = filtered.map(u => {
@@ -270,7 +270,7 @@ function renderTable() {
       <td><span class="${role !== '—' ? roleClass : 'sk-badge-mut'} sk-badge">${escHtml(role)}</span></td>
       <td>
         <div style="display:flex;gap:6px;">
-          <button class="sk-btn" style="font-size:10px;padding:4px 10px;" onclick="openEdit(${id})">✎ Uredi</button>
+          <button class="sk-btn" style="font-size:10px;padding:4px 10px;" onclick="openEdit(${id})">✎ ${skT('btn.edit')}</button>
           <button class="sk-btn sk-btn-red" style="font-size:10px;padding:4px 10px;" onclick="confirmDelete(${id},'${escAttr(name)}')">✕</button>
         </div>
       </td>
@@ -288,8 +288,8 @@ function openAdd() {
   document.getElementById('u-card').value      = '';
   document.getElementById('u-cardepc').value   = '';
   document.getElementById('u-role').value      = '';
-  document.getElementById('userModalTitle').textContent = 'Dodaj uporabnika';
-  document.getElementById('passLabel').textContent      = '(obvezno za novega)';
+  document.getElementById('userModalTitle').textContent = skT('admin.modal.title.add');
+  document.getElementById('passLabel').textContent      = skT('admin.modal.lbl.password_new');
   document.getElementById('passHint').textContent       = '';
   skModal('userModal');
 }
@@ -306,9 +306,9 @@ function openEdit(id) {
   document.getElementById('u-card').value      = u.CardID   || u.cardID   || '';
   document.getElementById('u-cardepc').value   = u.CardEpc  || u.cardEpc  || '';
   document.getElementById('u-role').value     = u.RoleId   || u.roleId   || '';
-  document.getElementById('userModalTitle').textContent = 'Uredi uporabnika';
-  document.getElementById('passLabel').textContent      = '(pusti prazno = ne spremeni)';
-  document.getElementById('passHint').textContent       = 'Geslo se posodobi samo če ga vneseš.';
+  document.getElementById('userModalTitle').textContent = skT('admin.modal.title.edit');
+  document.getElementById('passLabel').textContent      = skT('admin.modal.lbl.password_edit');
+  document.getElementById('passHint').textContent       = skT('admin.modal.hint.password');
   skModal('userModal');
 }
 
@@ -324,12 +324,12 @@ async function saveUser() {
   const CardEpc  = document.getElementById('u-cardepc').value.trim() || null;
   const RoleId   = document.getElementById('u-role').value ? +document.getElementById('u-role').value : null;
 
-  if (!Name)  { skToast('Ime je obvezno.', 'error'); return; }
-  if (!Email) { skToast('Email je obvezen.', 'error'); return; }
-  if (!id && !Password) { skToast('Geslo je obvezno za novega uporabnika.', 'error'); return; }
-  if (Password && Password !== Password2) { skToast('Gesli se ne ujemata.', 'error'); return; }
+  if (!Name)  { skToast(skT('admin.validation.name_required'), 'error'); return; }
+  if (!Email) { skToast(skT('admin.validation.email_required'), 'error'); return; }
+  if (!id && !Password) { skToast(skT('admin.validation.password_required'), 'error'); return; }
+  if (Password && Password !== Password2) { skToast(skT('admin.validation.passwords_mismatch'), 'error'); return; }
 
-  skBtnLoading(btn, true, 'Shrani');
+  skBtnLoading(btn, true, skT('btn.save'));
 
   let r;
   if (id) {
@@ -339,10 +339,10 @@ async function saveUser() {
     r = await skPost('/api/User', { CardID: card, Name, Surname, Email, Password, CardEpc, RoleId });
   }
 
-  skBtnLoading(btn, false, 'Shrani');
+  skBtnLoading(btn, false, skT('btn.save'));
 
-  if (!r.ok) { skToast(r.data?.message || `Napaka ${r.status}`, 'error'); return; }
-  skToast(id ? 'Uporabnik posodobljen.' : 'Uporabnik dodan.', 'success');
+  if (!r.ok) { skToast(r.data?.message || `${skT('tags.error.load')} ${r.status}`, 'error'); return; }
+  skToast(id ? skT('admin.toast.user_updated') : skT('admin.toast.user_added'), 'success');
   skModalClose('userModal');
   await loadUsers();
 }
@@ -356,11 +356,11 @@ function confirmDelete(id, name) {
 async function executeDelete() {
   if (!pendingDeleteId) return;
   const btn = document.getElementById('deleteConfirmBtn');
-  skBtnLoading(btn, true, 'Izbriši');
+  skBtnLoading(btn, true, skT('btn.delete'));
   const r = await skDel(`/api/User/${pendingDeleteId}`);
-  skBtnLoading(btn, false, 'Izbriši');
-  if (!r.ok) { skToast(r.data?.message || 'Napaka pri brisanju.', 'error'); return; }
-  skToast('Uporabnik izbrisan.', 'success');
+  skBtnLoading(btn, false, skT('btn.delete'));
+  if (!r.ok) { skToast(r.data?.message || skT('admin.toast.delete_error'), 'error'); return; }
+  skToast(skT('admin.toast.user_deleted'), 'success');
   skModalClose('deleteModal');
   pendingDeleteId = null;
   await loadUsers();
@@ -368,12 +368,12 @@ async function executeDelete() {
 
 async function loadUsers() {
   const btn = document.getElementById('refreshBtn');
-  skBtnLoading(btn, true, '↺ Osveži');
+  skBtnLoading(btn, true, skT('tags.btn.refresh'));
   const r = await skGet('/api/User');
-  skBtnLoading(btn, false, '↺ Osveži');
+  skBtnLoading(btn, false, skT('tags.btn.refresh'));
   if (r.ok && r.data) {
     users = r.data;
-    document.getElementById('adminSub').textContent = `${users.length} uporabnikov`;
+    document.getElementById('adminSub').textContent = `${users.length} ${skT('admin.users_count')}`;
     applyFilter();
   }
 }
@@ -382,7 +382,7 @@ async function loadExchanges() {
   const r = await skGet('/api/Exchange/all');
   const body = document.getElementById('exchangeBody');
   if (!r.ok || !r.data || !r.data.length) {
-    body.innerHTML = '<tr><td colspan="5"><div class="state-empty">Ni zahtev za menjavo.</div></td></tr>';
+    body.innerHTML = `<tr><td colspan="5"><div class="state-empty">${skT('admin.exchange.no_data')}</div></td></tr>`;
     return;
   }
   body.innerHTML = r.data.map(e => {

@@ -63,9 +63,9 @@
 
     <!-- Tabs -->
     <div class="sk-tabs">
-      <button class="sk-tab active" data-tab="nova">Nova izposoja</button>
-      <button class="sk-tab" data-tab="aktivne">Aktivne izposoje</button>
-      <button class="sk-tab" data-tab="zgodovina">Zgodovina</button>
+      <button class="sk-tab active" data-tab="nova" data-i18n="loans.tab.new">Nova izposoja</button>
+      <button class="sk-tab" data-tab="aktivne" data-i18n="loans.tab.active">Aktivne izposoje</button>
+      <button class="sk-tab" data-tab="zgodovina" data-i18n="loans.tab.history">Zgodovina</button>
     </div>
 
     <!-- ══ Tab: Nova ══════════════════════════════════════════ -->
@@ -78,15 +78,15 @@
         <!-- RIGHT: Live loans table -->
         <div class="sk-card" id="loansPanel">
           <div class="sk-card-head">
-            <span class="sk-section-title" id="loansPanelTitle">Izposoje</span>
+            <span class="sk-section-title" id="loansPanelTitle" data-i18n="loans.panel.title">Izposoje</span>
             <div style="display:flex;gap:8px;align-items:center;">
               <span class="sk-badge sk-badge-org" id="badgeActive">—</span>
               <span class="sk-badge sk-badge-mut" id="badgeAll">—</span>
-              <button class="sk-btn sk-btn-sm" onclick="loadLoans()">↺</button>
+              <button class="sk-btn sk-btn-sm" onclick="loadLoans()">↺ <span data-i18n="loans.btn.refresh">Osveži</span></button>
             </div>
           </div>
           <div class="loans-scroll" id="loansTbody">
-            <div class="sk-state-loading"><div class="sk-spin"></div>Nalaganje…</div>
+            <div class="sk-state-loading"><div class="sk-spin"></div><span data-i18n="lbl.loading">Nalaganje…</span></div>
           </div>
         </div>
       </div>
@@ -95,20 +95,20 @@
     <!-- ══ Tab: Aktivne ══════════════════════════════════════ -->
     <div class="sk-tab-pane" id="tab-aktivne">
       <div style="display:flex;justify-content:flex-end;margin-bottom:14px;">
-        <button class="sk-btn sk-btn-sm" onclick="loadTabActive()">↺ Osveži</button>
+        <button class="sk-btn sk-btn-sm" onclick="loadTabActive()">↺ <span data-i18n="loans.btn.refresh">Osveži</span></button>
       </div>
       <div class="sk-card" id="tabActiveCard">
-        <div class="sk-state-loading"><div class="sk-spin"></div>Nalaganje…</div>
+        <div class="sk-state-loading"><div class="sk-spin"></div><span data-i18n="lbl.loading">Nalaganje…</span></div>
       </div>
     </div>
 
     <!-- ══ Tab: Zgodovina ════════════════════════════════════ -->
     <div class="sk-tab-pane" id="tab-zgodovina">
       <div style="display:flex;justify-content:flex-end;margin-bottom:14px;">
-        <button class="sk-btn sk-btn-sm" onclick="loadTabHistory()">↺ Osveži</button>
+        <button class="sk-btn sk-btn-sm" onclick="loadTabHistory()">↺ <span data-i18n="loans.btn.refresh">Osveži</span></button>
       </div>
       <div class="sk-card" id="tabHistoryCard">
-        <div class="sk-state-loading"><div class="sk-spin"></div>Nalaganje…</div>
+        <div class="sk-state-loading"><div class="sk-spin"></div><span data-i18n="lbl.loading">Nalaganje…</span></div>
       </div>
     </div>
   </main>
@@ -118,23 +118,23 @@
 <div class="sk-modal-bg" id="userModal" style="display:none;" onclick="if(event.target===this)closeUserModal()">
   <div class="sk-modal anim-pop">
     <div class="sk-modal-head">
-      <span class="sk-section-title">Identificiraj uporabnika</span>
+      <span class="sk-section-title" data-i18n="loans.modal.identify_title">Identificiraj uporabnika</span>
       <button class="sk-modal-close" onclick="closeUserModal()">×</button>
     </div>
     <div class="sk-modal-body" style="display:flex;flex-direction:column;gap:14px;">
-      <div class="sk-alert sk-alert-acc" style="font-size:11px;">
+      <div class="sk-alert sk-alert-acc" style="font-size:11px;" data-i18n="loans.modal.identify_hint">
         Skeniraj RFID kartico ali ročno vnesi CardID uporabnika.
       </div>
       <div class="sk-field">
-        <label>CardID</label>
-        <input class="sk-input" id="userCardInput" placeholder="npr. 123456" autofocus
+        <label data-i18n="loans.lbl.card_id">CardID</label>
+        <input class="sk-input" id="userCardInput" data-i18n-placeholder="loans.lbl.card_ph" placeholder="npr. 123456" autofocus
           onkeydown="if(event.key==='Enter')confirmUserModal()"/>
       </div>
       <div id="userModalErr" class="sk-alert sk-alert-red" style="display:none;"></div>
     </div>
     <div class="sk-modal-foot">
-      <button class="sk-btn" onclick="closeUserModal()">Prekliči</button>
-      <button class="sk-btn sk-btn-acc" id="userModalBtn" onclick="confirmUserModal()">Potrdi</button>
+      <button class="sk-btn" onclick="closeUserModal()" data-i18n="btn.cancel">Prekliči</button>
+      <button class="sk-btn sk-btn-acc" id="userModalBtn" onclick="confirmUserModal()" data-i18n="loans.btn.confirm">Potrdi</button>
     </div>
   </div>
 </div>
@@ -143,24 +143,24 @@
 <div class="sk-modal-bg" id="assetModal" style="display:none;" onclick="if(event.target===this)closeAssetModal()">
   <div class="sk-modal anim-pop">
     <div class="sk-modal-head">
-      <span class="sk-section-title">Skeniraj sredstvo</span>
+      <span class="sk-section-title" data-i18n="loans.modal.scan_asset_title">Skeniraj sredstvo</span>
       <button class="sk-modal-close" onclick="closeAssetModal()">×</button>
     </div>
     <div class="sk-modal-body" style="display:flex;flex-direction:column;gap:14px;">
       <div id="assetModalUserChip"></div>
-      <div class="sk-alert sk-alert-acc" style="font-size:11px;">
+      <div class="sk-alert sk-alert-acc" style="font-size:11px;" data-i18n="loans.modal.scan_hint">
         Skeniraj RFID tag ali ročno vnesi EPC hex ali ASCII kodo sredstva.
       </div>
       <div class="sk-field">
-        <label>EPC (hex ali ASCII)</label>
-        <input class="sk-input" id="assetEpcInput" placeholder="npr. E2801160600002... ali ABC123" autofocus
+        <label data-i18n="loans.lbl.epc">EPC (hex ali ASCII)</label>
+        <input class="sk-input" id="assetEpcInput" data-i18n-placeholder="loans.lbl.epc_ph" placeholder="npr. E2801160600002... ali ABC123" autofocus
           onkeydown="if(event.key==='Enter')confirmAssetModal()"/>
       </div>
       <div id="assetModalErr" class="sk-alert sk-alert-red" style="display:none;"></div>
     </div>
     <div class="sk-modal-foot">
-      <button class="sk-btn" onclick="closeAssetModal()">Prekliči</button>
-      <button class="sk-btn sk-btn-acc" id="assetModalBtn" onclick="confirmAssetModal()">Preveri</button>
+      <button class="sk-btn" onclick="closeAssetModal()" data-i18n="btn.cancel">Prekliči</button>
+      <button class="sk-btn sk-btn-acc" id="assetModalBtn" onclick="confirmAssetModal()" data-i18n="loans.btn.check">Preveri</button>
     </div>
   </div>
 </div>
@@ -169,24 +169,24 @@
 <div class="sk-modal-bg" id="conflictModal" style="display:none;" onclick="if(event.target===this)closeConflictModal()">
   <div class="sk-modal anim-pop" style="max-width:500px;">
     <div class="sk-modal-head" style="border-left:3px solid var(--org);">
-      <span class="sk-section-title" style="color:var(--org);">⚠ Sredstvo pri drugi osebi</span>
+      <span class="sk-section-title" style="color:var(--org);" data-i18n="loans.modal.conflict_title">⚠ Sredstvo pri drugi osebi</span>
       <button class="sk-modal-close" onclick="closeConflictModal()">×</button>
     </div>
     <div class="sk-modal-body" style="display:flex;flex-direction:column;gap:14px;">
       <div id="conflictInfo"></div>
-      <div class="sk-alert sk-alert-org" style="font-size:11px;line-height:1.6;">
+      <div class="sk-alert sk-alert-org" style="font-size:11px;line-height:1.6;" data-i18n="loans.modal.conflict_hint">
         Za menjavo morata obe strani potrditi. Vnesi CardID imetnika — sistem mu bo poslal zahtevo.
       </div>
       <div class="sk-field">
-        <label>CardID imetnika</label>
-        <input class="sk-input" id="conflictCardInput" placeholder="CardID osebe, ki ima sredstvo"
+        <label data-i18n="loans.lbl.owner_card">CardID imetnika</label>
+        <input class="sk-input" id="conflictCardInput" data-i18n-placeholder="loans.lbl.owner_card_ph" placeholder="CardID osebe, ki ima sredstvo"
           onkeydown="if(event.key==='Enter')sendExchangeRequest()"/>
       </div>
       <div id="conflictErr" class="sk-alert sk-alert-red" style="display:none;"></div>
     </div>
     <div class="sk-modal-foot">
-      <button class="sk-btn" onclick="closeConflictModal()">Prekliči</button>
-      <button class="sk-btn sk-btn-org" id="conflictBtn" onclick="sendExchangeRequest()">Pošlji zahtevo →</button>
+      <button class="sk-btn" onclick="closeConflictModal()" data-i18n="btn.cancel">Prekliči</button>
+      <button class="sk-btn sk-btn-org" id="conflictBtn" onclick="sendExchangeRequest()" data-i18n="loans.btn.send_request">Pošlji zahtevo →</button>
     </div>
   </div>
 </div>
@@ -195,18 +195,18 @@
 <div class="sk-modal-bg" id="returnModal" style="display:none;" onclick="if(event.target===this)closeReturnModal()">
   <div class="sk-modal anim-pop">
     <div class="sk-modal-head">
-      <span class="sk-section-title">↩ Vrni sredstvo</span>
+      <span class="sk-section-title" data-i18n="loans.modal.return_title">↩ Vrni sredstvo</span>
       <button class="sk-modal-close" onclick="closeReturnModal()">×</button>
     </div>
     <div class="sk-modal-body">
       <div style="font-size:12px;color:var(--sub);line-height:1.65;margin-bottom:16px;">
-        Potrdi vrnitev <strong id="returnAssetName" style="color:var(--txt);"></strong>
-        od <strong id="returnUserName" style="color:var(--txt);"></strong>.
+        <span data-i18n="loans.modal.return_confirm">Potrdi vrnitev</span> <strong id="returnAssetName" style="color:var(--txt);"></strong>
+        <span data-i18n="loans.modal.return_from">od</span> <strong id="returnUserName" style="color:var(--txt);"></strong>.
       </div>
     </div>
     <div class="sk-modal-foot">
-      <button class="sk-btn" onclick="closeReturnModal()">Prekliči</button>
-      <button class="sk-btn sk-btn-org" id="returnBtn" onclick="executeReturn()">↩ Potrdi vrnitev</button>
+      <button class="sk-btn" onclick="closeReturnModal()" data-i18n="btn.cancel">Prekliči</button>
+      <button class="sk-btn sk-btn-org" id="returnBtn" onclick="executeReturn()" data-i18n="loans.btn.confirm_return">↩ Potrdi vrnitev</button>
     </div>
   </div>
 </div>
@@ -263,7 +263,7 @@ async function loadLoans() {
   const r = await skGet('/api/Loan');
   if (!r.ok) { renderLoansPanel(); return; }
 
-  if (titleEl) titleEl.textContent = 'Vse izposoje';
+  if (titleEl) titleEl.textContent = skT('loans.lbl.all_loans');
   ST.allLoans = Array.isArray(r.data) ? r.data : [];
   renderLoansPanel();
 }
@@ -291,15 +291,15 @@ async function checkIncomingNotifs() {
     div.innerHTML = `
       <div class="ico">🔔</div>
       <div class="body">
-        <div class="title">Zahteva za menjavo sredstva</div>
+        <div class="title">${skT('loans.exchange_request_title')}</div>
         <div class="desc">
-          <strong style="color:var(--txt)">${fromName}</strong> želi prevzeti sredstvo
-          <strong style="color:var(--txt)">${assetName}</strong>, ki ga trenutno imaš ti.
+          <strong style="color:var(--txt)">${fromName}</strong> ${skT('loans.exchange.notif_wants')}
+          <strong style="color:var(--txt)">${assetName}</strong>, ${skT('loans.exchange.notif_you_have')}
         </div>
       </div>
       <div class="actions">
-        <button class="sk-btn sk-btn-grn sk-btn-sm" onclick="respondNotif(${n.id||n.Id}, true)">✓ Potrdi</button>
-        <button class="sk-btn sk-btn-red sk-btn-sm" onclick="respondNotif(${n.id||n.Id}, false)">✗ Zavrni</button>
+        <button class="sk-btn sk-btn-grn sk-btn-sm" onclick="respondNotif(${n.id||n.Id}, true)">${skT('loans.btn.accept')}</button>
+        <button class="sk-btn sk-btn-red sk-btn-sm" onclick="respondNotif(${n.id||n.Id}, false)">${skT('loans.btn.reject')}</button>
       </div>`;
     container.appendChild(div);
   });
@@ -308,10 +308,10 @@ async function checkIncomingNotifs() {
 async function respondNotif(id, accept) {
   const r = await skPut(`/api/Exchange/${id}/respond`, { accept });
   if (!r.ok) {
-    skToast(`Napaka: ${r.data?.message||''}`, 'error');
+    skToast(`${skT('loans.err.generic')} ${r.data?.message||''}`, 'error');
     return;
   }
-  skToast(accept ? 'Menjava potrjena!' : 'Zahteva zavrnjena.', accept ? 'success' : 'warning');
+  skToast(accept ? skT('loans.toast.exchange_accepted') : skT('loans.toast.exchange_rejected'), accept ? 'success' : 'warning');
   await checkIncomingNotifs();
   await loadLoans();
 }
@@ -320,11 +320,11 @@ async function respondNotif(id, accept) {
    Wizard steps render
 ════════════════════════════════════════════════════════════ */
 const STEPS_DEF = [
-  { id:'station',     label:'Izposojevalnica' },
-  { id:'user',        label:'Uporabnik'       },
-  { id:'asset',       label:'Sredstvo'        },
-  { id:'confirm',     label:'Potrdi'          },
-  { id:'done',        label:'Opravljeno'      },
+  { id:'station',     get label(){ return skT('loans.step.station'); } },
+  { id:'user',        get label(){ return skT('loans.step.user');    } },
+  { id:'asset',       get label(){ return skT('loans.step.asset');   } },
+  { id:'confirm',     get label(){ return skT('loans.step.confirm'); } },
+  { id:'done',        get label(){ return skT('loans.step.done');    } },
 ];
 const STEP_IDX = { station:0, user:1, asset:2, conflict:2, waitConfirm:2, confirm:3, done:4 };
 
@@ -382,12 +382,12 @@ function renderStepStation() {
   const d = mk('div', 'sk-card anim-r');
   d.innerHTML = `
     <div class="sk-card-pad">
-      <div class="sk-section-title" style="margin-bottom:4px;">Izberi izposojevalnico</div>
-      <div style="font-size:11px;color:var(--mut);margin-bottom:16px;">Na kateri postaji si trenutno?</div>
+      <div class="sk-section-title" style="margin-bottom:4px;">${skT('loans.step.station_title')}</div>
+      <div style="font-size:11px;color:var(--mut);margin-bottom:16px;">${skT('loans.step.station_sub')}</div>
       ${ST.stations.length === 0
-        ? `<div class="sk-alert sk-alert-org" style="margin-bottom:14px;">Ni LOAN izposojevalnic. V nastavitvah dodaj antene z vlogo LOAN.</div>
+        ? `<div class="sk-alert sk-alert-org" style="margin-bottom:14px;">${skT('loans.step.station_no_loan')}</div>
            <button class="sk-btn sk-btn-acc sk-btn-full" onclick="setState({step:'user',selStation:null})">
-             ✎ Ročna izposoja (brez RFID postaje)
+             ${skT('loans.step.station_manual')}
            </button>`
         : ST.stations.map(a => {
             const zid  = a.ZoneId  || a.zoneId  || 0;
@@ -406,29 +406,29 @@ function renderStepStation() {
               </div>`;
           }).join('')
           + `<button class="sk-btn sk-btn-full" style="margin-top:12px;" onclick="setState({step:'user',selStation:null})">
-               ✎ Ročna izposoja (brez postaje)
+               ${skT('loans.step.station_manual2')}
              </button>`}
     </div>`;
   return d;
 }
 
 function renderStepUser() {
-  const zone = ST.zones[ST.selStation?.ZoneId||ST.selStation?.zoneId] || 'Izposojevalnica';
+  const zone = ST.zones[ST.selStation?.ZoneId||ST.selStation?.zoneId] || skT('loans.step.station');
   const d = mk('div', 'sk-card anim-r');
   d.innerHTML = `
     <div class="sk-card-pad">
       <div style="margin-bottom:12px;"><span class="sk-badge sk-badge-acc">${zone}</span></div>
-      <div class="sk-section-title" style="margin-bottom:4px;">Identificiraj uporabnika</div>
+      <div class="sk-section-title" style="margin-bottom:4px;">${skT('loans.step.user_title')}</div>
       <div style="font-size:11px;color:var(--mut);margin-bottom:16px;">
-        Skeniraj RFID kartico ali vnesi CardID
+        ${skT('loans.step.user_sub')}
       </div>
       <div class="sk-btn-row" style="margin-top:0;">
         <button class="sk-btn sk-btn-acc sk-btn-full" onclick="openUserModal()">
-          ◉ Skeniraj / vnesi kodo
+          ${skT('loans.step.user_btn')}
         </button>
       </div>
       <div class="sk-btn-row">
-        <button class="sk-btn" onclick="setState({step:'station',selStation:null})">← Nazaj</button>
+        <button class="sk-btn" onclick="setState({step:'station',selStation:null})">${skT('loans.btn.back')}</button>
       </div>
     </div>`;
   return d;
@@ -446,17 +446,17 @@ function renderStepAsset() {
         <span>${nm}</span>
         <span style="opacity:.5;font-size:10px;"> · ${u?.CardID||u?.cardID||''}</span>
       </div>
-      <div class="sk-section-title" style="margin-bottom:4px;">Skeniraj sredstvo</div>
+      <div class="sk-section-title" style="margin-bottom:4px;">${skT('loans.step.asset_title')}</div>
       <div style="font-size:11px;color:var(--mut);margin-bottom:16px;">
-        Skeniraj RFID tag ali vnesi EPC kodo
+        ${skT('loans.step.asset_sub')}
       </div>
       <div class="sk-btn-row" style="margin-top:0;">
         <button class="sk-btn sk-btn-acc sk-btn-full" onclick="openAssetModal()">
-          ▣ Skeniraj / vnesi EPC
+          ${skT('loans.step.asset_btn')}
         </button>
       </div>
       <div class="sk-btn-row">
-        <button class="sk-btn" onclick="setState({step:'user',currentUser:null})">← Nazaj</button>
+        <button class="sk-btn" onclick="setState({step:'user',currentUser:null})">${skT('loans.btn.back')}</button>
       </div>
     </div>`;
   return d;
@@ -473,31 +473,30 @@ function renderStepConflict() {
         <span style="font-size:28px;">⚠</span>
         <div>
           <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--org);">
-            Sredstvo je pri drugi osebi
+            ${skT('loans.step.conflict_title')}
           </div>
           <div style="font-size:12px;color:var(--sub);margin-top:3px;">
-            Trenutno ga ima: <strong style="color:var(--txt);">${who}</strong>
+            ${skT('loans.step.conflict_sub')} <strong style="color:var(--txt);">${who}</strong>
           </div>
         </div>
       </div>
       <div class="sk-info-box" style="margin-bottom:16px;">
-        <div class="sk-info-row"><span class="lbl">Sredstvo</span><span class="val">${assetName}</span></div>
-        <div class="sk-info-row"><span class="lbl">Imetnik</span><span class="val">${who}</span></div>
+        <div class="sk-info-row"><span class="lbl">${skT('loans.step.conflict_asset')}</span><span class="val">${assetName}</span></div>
+        <div class="sk-info-row"><span class="lbl">${skT('loans.step.conflict_owner')}</span><span class="val">${who}</span></div>
       </div>
       <div style="font-size:12px;color:var(--sub);line-height:1.65;margin-bottom:14px;">
-        Za menjavo vnesi <strong style="color:var(--txt);">CardID imetnika</strong>.
-        Imetnik bo moral zahtevo potrditi v svojem profilu.
+        ${skT('loans.step.conflict_hint')}
       </div>
       <div class="sk-field" style="margin-bottom:10px;">
-        <label style="font-size:9px;color:var(--mut);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:5px;display:block;">CardID imetnika</label>
-        <input class="sk-input" id="conflictCardInline" placeholder="npr. 123456"
+        <label style="font-size:9px;color:var(--mut);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:5px;display:block;">${skT('loans.lbl.owner_card')}</label>
+        <input class="sk-input" id="conflictCardInline" placeholder="${skT('loans.lbl.card_ph')}"
           onkeydown="if(event.key==='Enter')sendExchangeRequestInline()"/>
       </div>
       <div id="conflictInlineErr" class="sk-alert sk-alert-red" style="display:none;margin-bottom:10px;"></div>
       <div class="sk-btn-row" style="margin-top:0;">
-        <button class="sk-btn" onclick="setState({step:'asset',scannedAsset:null,scenario:null,conflictLoan:null})">← Nazaj</button>
+        <button class="sk-btn" onclick="setState({step:'asset',scannedAsset:null,scenario:null,conflictLoan:null})">${skT('loans.btn.back')}</button>
         <button class="sk-btn sk-btn-org sk-btn-full" id="conflictInlineBtn" onclick="sendExchangeRequestInline()">
-          Pošlji zahtevo →
+          ${skT('loans.btn.send_request')}
         </button>
       </div>
     </div>`;
@@ -514,26 +513,25 @@ function renderStepWaitConfirm() {
     <div class="sk-card-pad" style="text-align:center;">
       <div style="font-size:36px;margin-bottom:12px;">⏳</div>
       <div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:var(--acc);margin-bottom:8px;">
-        Čakam potrditev
+        ${skT('loans.step.wait_title')}
       </div>
       <div style="font-size:12px;color:var(--sub);line-height:1.6;margin-bottom:16px;">
-        Zahteva poslana <strong style="color:var(--txt);">${ST.conflictLoan?.UserName||ST.conflictLoan?.userName||'imetniku'}</strong>.
-        Imetnik mora zahtevo potrditi v svojem <strong style="color:var(--txt);">profilu</strong> (zavihek Izposoja ali stran Profil).
+        ${skT('loans.toast.request_sent')} — <strong style="color:var(--txt);">${ST.conflictLoan?.UserName||ST.conflictLoan?.userName||''}</strong>.
       </div>
       <div style="background:var(--up);border:1px solid var(--border);border-radius:8px;padding:10px 14px;
         font-size:11px;color:var(--sub);display:flex;align-items:center;gap:8px;margin-bottom:14px;">
         <div class="sk-dot sk-dot-acc pulse"></div>
-        Sredstvo: <strong style="color:var(--txt);">${ST.scannedAsset?.Name||ST.scannedAsset?.name||'—'}</strong>
+        ${skT('loans.step.wait_asset_lbl')} <strong style="color:var(--txt);">${ST.scannedAsset?.Name||ST.scannedAsset?.name||'—'}</strong>
       </div>
       ${accepted ? `
-        <div class="sk-alert sk-alert-grn" style="margin-bottom:12px;">✓ Menjava potrjena! Nadaljuj z izposojo.</div>
+        <div class="sk-alert sk-alert-grn" style="margin-bottom:12px;">${skT('loans.step.wait_accepted')}</div>
         <button class="sk-btn sk-btn-acc sk-btn-full" onclick="setState({step:'confirm',scenario:'borrow',conflictLoan:null})">
-          Nadaljuj z izposojo →
+          ${skT('loans.step.wait_continue')}
         </button>` : ''}
       ${rejected ? `
-        <div class="sk-alert sk-alert-red" style="margin-bottom:12px;">✗ Menjava zavrnjena.</div>
-        <button class="sk-btn sk-btn-full" onclick="resetWizard()">Začni znova</button>` : ''}
-      ${!accepted && !rejected ? `<button class="sk-btn" onclick="resetWizard()">Prekliči</button>` : ''}
+        <div class="sk-alert sk-alert-red" style="margin-bottom:12px;">${skT('loans.step.wait_rejected')}</div>
+        <button class="sk-btn sk-btn-full" onclick="resetWizard()">${skT('loans.step.wait_restart')}</button>` : ''}
+      ${!accepted && !rejected ? `<button class="sk-btn" onclick="resetWizard()">${skT('loans.step.wait_cancel')}</button>` : ''}
     </div>`;
   return d;
 }
@@ -546,8 +544,8 @@ function renderStepConfirm() {
   const zone = ST.zones[ST.selStation?.ZoneId||ST.selStation?.zoneId] || '—';
 
   const rows = isReturn
-    ? [['Sredstvo', a?.Name||a?.name||'—'], ['Izposojeno', skFmt(ST.conflictLoan?.LoanedAt||ST.conflictLoan?.loanedAt)], ['Postaja', zone]]
-    : [['Postaja', zone], ['Uporabnik', `${nm} (${u?.CardID||u?.cardID||''})`], ['Sredstvo', a?.Name||a?.name||'—'], ['EPC', a?.Tag?.Epc||a?.Tag?.epc||a?.tag?.Epc||a?.tag?.epc||'—'], ['Čas', skFmt(new Date())]];
+    ? [[skT('loans.col.asset'), a?.Name||a?.name||'—'], [skT('loans.lbl.loaned_since'), skFmt(ST.conflictLoan?.LoanedAt||ST.conflictLoan?.loanedAt)], [skT('loans.lbl.station'), zone]]
+    : [[skT('loans.lbl.station'), zone], [skT('loans.col.user'), `${nm} (${u?.CardID||u?.cardID||''})`], [skT('loans.col.asset'), a?.Name||a?.name||'—'], [skT('loans.lbl.epc_tag'), a?.Tag?.Epc||a?.Tag?.epc||a?.tag?.Epc||a?.tag?.epc||'—'], [skT('loans.lbl.time'), skFmt(new Date())]];
 
   const d = mk('div', 'sk-card anim-r');
   d.innerHTML = `
@@ -557,19 +555,19 @@ function renderStepConfirm() {
         <div>
           <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;
             color:${isReturn ? 'var(--org)' : 'var(--acc)'};">
-            ${isReturn ? 'Vrni sredstvo' : 'Potrdi izposojo'}
+            ${isReturn ? skT('loans.step.confirm_return_title') : skT('loans.step.confirm_borrow_title')}
           </div>
-          <div style="font-size:11px;color:var(--mut);">${isReturn ? 'Že imaš to sredstvo.' : 'Preveri podatke.'}</div>
+          <div style="font-size:11px;color:var(--mut);">${isReturn ? skT('loans.step.confirm_return_sub') : skT('loans.step.confirm_borrow_sub')}</div>
         </div>
       </div>
       <div class="sk-info-box" style="margin-bottom:14px;">
         ${rows.map(([k,v]) => `<div class="sk-info-row"><span class="lbl">${k}</span><span class="val">${v}</span></div>`).join('')}
       </div>
       <div class="sk-btn-row">
-        <button class="sk-btn" onclick="setState({step:'asset',scannedAsset:null,scenario:null,conflictLoan:null})">← Nazaj</button>
+        <button class="sk-btn" onclick="setState({step:'asset',scannedAsset:null,scenario:null,conflictLoan:null})">${skT('loans.btn.back')}</button>
         <button class="sk-btn ${isReturn?'sk-btn-org':'sk-btn-acc'} sk-btn-full" id="confirmBtn"
           onclick="executeConfirm()">
-          ${isReturn ? '↩ Vrni sredstvo' : '✓ Potrdi izposojo'}
+          ${isReturn ? skT('loans.btn.confirm_return') : '✓ ' + skT('loans.step.confirm_borrow_title')}
         </button>
       </div>
     </div>`;
@@ -585,12 +583,12 @@ function renderStepDone() {
     <div class="sk-done">
       <span class="ico">${isReturn ? '↩' : '✅'}</span>
       <div class="sk-done-title" style="color:${isReturn ? 'var(--org)' : 'var(--grn)'};">
-        ${isReturn ? 'Sredstvo vrnjeno!' : 'Izposoja zabeležena!'}
+        ${isReturn ? skT('loans.step.done_returned') : skT('loans.step.done_borrowed')}
       </div>
       <div style="font-size:12px;color:var(--sub);margin-bottom:20px;">
         ${a?.Name||a?.name||''} · ${skUserName(u)}
       </div>
-      <button class="sk-btn sk-btn-acc sk-btn-full" onclick="resetWizard()">Nova akcija</button>
+      <button class="sk-btn sk-btn-acc sk-btn-full" onclick="resetWizard()">${skT('loans.btn.new_action')}</button>
     </div>`;
   return d;
 }
@@ -617,19 +615,19 @@ async function confirmUserModal() {
   const code = document.getElementById('userCardInput').value.trim();
   if (!code) return;
   const btn = document.getElementById('userModalBtn');
-  skBtnLoading(btn, true, 'Potrdi');
+  skBtnLoading(btn, true, skT('loans.btn.confirm'));
 
   const r = await skGet(`/api/User/by-card/${encodeURIComponent(code)}`);
-  skBtnLoading(btn, false, 'Potrdi');
+  skBtnLoading(btn, false, skT('loans.btn.confirm'));
 
   if (!r.ok || !r.data) {
     const errEl = document.getElementById('userModalErr');
-    errEl.textContent = `Uporabnik ni najden: ${r.data?.message||'Preveri kodo'}`;
+    errEl.textContent = `${skT('loans.err.user_not_found')} ${r.data?.message||''}`;
     errEl.style.display = 'block';
     return;
   }
   closeUserModal();
-  skToast(`Uporabnik: ${skUserName(r.data)}`);
+  skToast(`${skT('loans.toast.user_found')} ${skUserName(r.data)}`);
   setState({ currentUser: r.data, step: 'asset' });
 }
 
@@ -658,14 +656,14 @@ async function confirmAssetModal() {
   const epc = document.getElementById('assetEpcInput').value.trim();
   if (!epc) return;
   const btn = document.getElementById('assetModalBtn');
-  skBtnLoading(btn, true, 'Preveri');
+  skBtnLoading(btn, true, skT('loans.btn.check'));
 
   const r = await skGet(`/api/Asset/by-epc/${encodeURIComponent(epc)}`);
-  skBtnLoading(btn, false, 'Preveri');
+  skBtnLoading(btn, false, skT('loans.btn.check'));
 
   if (!r.ok || !r.data) {
     const errEl = document.getElementById('assetModalErr');
-    errEl.textContent = `Sredstvo ni najdeno: ${r.data?.message||'Preveri EPC'}`;
+    errEl.textContent = `${skT('loans.err.asset_not_found')} ${r.data?.message||''}`;
     errEl.style.display = 'block';
     return;
   }
@@ -690,7 +688,7 @@ async function processAsset(asset) {
     (l.UserId||l.userId)   === uid
   );
   if (myLoan) {
-    skToast('Že imaš to sredstvo — ponujena je vrnitev.', 'info');
+    skToast(skT('loans.toast.already_have'), 'info');
     setState({ scannedAsset: asset, scenario: 'already_have', conflictLoan: myLoan, step: 'confirm' });
     return;
   }
@@ -719,8 +717,8 @@ function openConflictModal() {
   const who = cl?.UserName||cl?.userName||`User #${cl?.UserId||cl?.userId}`;
   document.getElementById('conflictInfo').innerHTML = `
     <div class="sk-info-box" style="margin-bottom:4px;">
-      <div class="sk-info-row"><span class="lbl">Sredstvo</span><span class="val">${ST.scannedAsset?.Name||ST.scannedAsset?.name||'—'}</span></div>
-      <div class="sk-info-row"><span class="lbl">Trenutni imetnik</span><span class="val">${who}</span></div>
+      <div class="sk-info-row"><span class="lbl">${skT('loans.step.conflict_asset')}</span><span class="val">${ST.scannedAsset?.Name||ST.scannedAsset?.name||'—'}</span></div>
+      <div class="sk-info-row"><span class="lbl">${skT('loans.step.conflict_owner')}</span><span class="val">${who}</span></div>
     </div>`;
   document.getElementById('conflictCardInput').value = '';
   document.getElementById('conflictErr').style.display = 'none';
@@ -735,14 +733,14 @@ async function sendExchangeRequest() {
   const code = document.getElementById('conflictCardInput').value.trim();
   if (!code) return;
   const btn = document.getElementById('conflictBtn');
-  skBtnLoading(btn, true, 'Pošlji zahtevo →');
+  skBtnLoading(btn, true, skT('loans.btn.send_request'));
 
   const r = await skGet(`/api/User/by-card/${encodeURIComponent(code)}`);
-  skBtnLoading(btn, false, 'Pošlji zahtevo →');
+  skBtnLoading(btn, false, skT('loans.btn.send_request'));
 
   if (!r.ok || !r.data) {
     const errEl = document.getElementById('conflictErr');
-    errEl.textContent = 'Napačen CardID — ni najden v sistemu.';
+    errEl.textContent = skT('loans.err.card_not_found');
     errEl.style.display = 'block';
     return;
   }
@@ -753,7 +751,7 @@ async function sendExchangeRequest() {
 
   if (String(ownerId) !== String(clUserId)) {
     const errEl = document.getElementById('conflictErr');
-    errEl.textContent = 'CardID se ne ujema z imetnikom tega sredstva.';
+    errEl.textContent = skT('loans.err.card_mismatch');
     errEl.style.display = 'block';
     return;
   }
@@ -762,25 +760,25 @@ async function sendExchangeRequest() {
   const assetId    = ST.scannedAsset?.id || ST.scannedAsset?.Id;
   const fromUserId = ST.currentUser?.Id  || ST.currentUser?.id || 0;
 
-  skBtnLoading(btn, true, 'Pošlji zahtevo →');
+  skBtnLoading(btn, true, skT('loans.btn.send_request'));
   const exR = await skPost('/api/Exchange', {
     fromUserId,
     toUserId: ownerId,
     assetId,
     message: '',
   });
-  skBtnLoading(btn, false, 'Pošlji zahtevo →');
+  skBtnLoading(btn, false, skT('loans.btn.send_request'));
 
   if (!exR.ok) {
     const errEl = document.getElementById('conflictErr');
-    errEl.textContent = `Napaka pri pošiljanju: ${exR.data?.message||''}`;
+    errEl.textContent = `${skT('loans.err.send_failed')} ${exR.data?.message||''}`;
     errEl.style.display = 'block';
     return;
   }
 
   const exchangeId = exR.data?.id || exR.data?.Id;
   closeConflictModal();
-  skToast(`Zahteva poslana ${skUserName(owner)}. Čakam potrditev…`, 'info');
+  skToast(`${skT('loans.toast.request_sent')} — ${skUserName(owner)}`, 'info');
   setState({ step: 'waitConfirm' });
 
   // Poll DB for response
@@ -805,13 +803,13 @@ async function sendExchangeRequestInline() {
   if (!code) return;
 
   errEl.style.display = 'none';
-  skBtnLoading(btn, true, 'Pošlji zahtevo →');
+  skBtnLoading(btn, true, skT('loans.btn.send_request'));
 
   // Poišči imetnika po CardID
   const userR = await skGet(`/api/User/by-card/${encodeURIComponent(code)}`);
   if (!userR.ok || !userR.data) {
-    skBtnLoading(btn, false, 'Pošlji zahtevo →');
-    errEl.textContent = 'CardID ni najden v sistemu.';
+    skBtnLoading(btn, false, skT('loans.btn.send_request'));
+    errEl.textContent = skT('loans.err.card_not_found2');
     errEl.style.display = 'block';
     return;
   }
@@ -821,8 +819,8 @@ async function sendExchangeRequestInline() {
   const clUserId = ST.conflictLoan?.UserId || ST.conflictLoan?.userId;
 
   if (String(ownerId) !== String(clUserId)) {
-    skBtnLoading(btn, false, 'Pošlji zahtevo →');
-    errEl.textContent = 'Ta CardID ne pripada imetniku tega sredstva.';
+    skBtnLoading(btn, false, skT('loans.btn.send_request'));
+    errEl.textContent = skT('loans.err.card_mismatch2');
     errEl.style.display = 'block';
     return;
   }
@@ -832,24 +830,24 @@ async function sendExchangeRequestInline() {
   const assetId    = ST.scannedAsset?.id || ST.scannedAsset?.Id;
 
   if (!fromUserId) {
-    skBtnLoading(btn, false, 'Pošlji zahtevo →');
-    errEl.textContent = 'Uporabnik ni identificiran. Pojdi nazaj in skeniraj kartico.';
+    skBtnLoading(btn, false, skT('loans.btn.send_request'));
+    errEl.textContent = skT('loans.err.user_not_identified');
     errEl.style.display = 'block';
     return;
   }
 
   const exR = await skPost('/api/Exchange', { fromUserId, toUserId: ownerId, assetId, message: '' });
-  skBtnLoading(btn, false, 'Pošlji zahtevo →');
+  skBtnLoading(btn, false, skT('loans.btn.send_request'));
 
   if (!exR.ok) {
-    const msg = exR.data?.message || (typeof exR.data === 'string' ? exR.data : '') || `Napaka ${exR.status}`;
+    const msg = exR.data?.message || (typeof exR.data === 'string' ? exR.data : '') || `${skT('loans.err.generic')} ${exR.status}`;
     errEl.textContent = msg;
     errEl.style.display = 'block';
     return;
   }
 
   const exchangeId = exR.data?.id || exR.data?.Id;
-  skToast(`Zahteva poslana ${skUserName(owner)}. Imetnik mora potrditi v profilu.`, 'info');
+  skToast(`${skT('loans.toast.request_sent')} — ${skUserName(owner)}`, 'info');
   setState({ step: 'waitConfirm', _exchangeResult: null });
 
   // Periodično preverjaj odgovor iz baze
@@ -876,31 +874,31 @@ async function executeConfirm() {
     const loanId = ST.conflictLoan?.Id || ST.conflictLoan?.id;
     const r = await skPost('/api/Loan/return', { LoanId: loanId });
     if (!r.ok) {
-      skToast(`Napaka: ${r.data?.message||''}`, 'error');
-      skBtnLoading(btn, false, '↩ Vrni sredstvo');
+      skToast(`${skT('loans.err.generic')} ${r.data?.message||''}`, 'error');
+      skBtnLoading(btn, false, skT('loans.btn.confirm_return'));
       return;
     }
-    skToast('Sredstvo uspešno vrnjeno!');
+    skToast(skT('loans.toast.returned'));
   } else {
     const uid    = ST.currentUser?.Id || ST.currentUser?.id;
     const aid    = ST.scannedAsset?.id || ST.scannedAsset?.Id;
     const zoneId = ST.selStation?.ZoneId || ST.selStation?.zoneId || null;
     const r = await skPost('/api/Loan', { UserId: uid, AssetId: aid, ZoneId: zoneId });
     if (!r.ok) {
-      skBtnLoading(btn, false, '✓ Potrdi izposojo');
+      skBtnLoading(btn, false, '✓ ' + skT('loans.step.confirm_borrow_title'));
       const msg = r.data?.message || r.data?.Message || '';
       // 409: user already has this asset — offer return
       if (r.status === 409 && r.data?.loanId) {
         const loanId = r.data.loanId || r.data.LoanId;
         const fakeLoan = { id: loanId, loanedAt: null };
         setState({ scenario: 'already_have', conflictLoan: fakeLoan, step: 'confirm' });
-        skToast('Že imaš to sredstvo — ponujena je vrnitev.', 'info');
+        skToast(skT('loans.toast.already_have'), 'info');
         return;
       }
-      skToast(`Napaka: ${msg}`, 'error');
+      skToast(`${skT('loans.err.generic')} ${msg}`, 'error');
       return;
     }
-    skToast('Izposoja zabeležena!');
+    skToast(skT('loans.toast.borrowed'));
   }
 
   await loadLoans();
@@ -929,15 +927,15 @@ function closeReturnModal() { document.getElementById('returnModal').style.displ
 async function executeReturn() {
   if (!_returnLoanId) return;
   const btn = document.getElementById('returnBtn');
-  skBtnLoading(btn, true, '↩ Potrdi vrnitev');
+  skBtnLoading(btn, true, skT('loans.btn.confirm_return'));
   const r = await skPost('/api/Loan/return', { LoanId: _returnLoanId });
-  skBtnLoading(btn, false, '↩ Potrdi vrnitev');
+  skBtnLoading(btn, false, skT('loans.btn.confirm_return'));
   if (r.ok) {
-    skToast('Sredstvo vrnjeno.');
+    skToast(skT('loans.toast.returned'));
     closeReturnModal();
     await loadLoans();
   } else {
-    skToast(`Napaka: ${r.data?.message||''}`, 'error');
+    skToast(`${skT('loans.err.generic')} ${r.data?.message||''}`, 'error');
   }
 }
 
@@ -947,9 +945,9 @@ async function executeReturn() {
 function renderLoansPanel() {
   const loans  = ST.allLoans;
   const active = loans.filter(isActive);
-  document.getElementById('badgeActive').textContent = `${active.length} aktivnih`;
-  document.getElementById('badgeAll').textContent    = `${loans.length} skupaj`;
-  document.getElementById('loansTbody').innerHTML    = loans.length ? buildLoanTable(loans, true) : emptyState('⇌', 'Ni izposoj.');
+  document.getElementById('badgeActive').textContent = `${active.length} ${skT('loans.badge.active')}`;
+  document.getElementById('badgeAll').textContent    = `${loans.length} ${skT('tags.total').toLowerCase()}`;
+  document.getElementById('loansTbody').innerHTML    = loans.length ? buildLoanTable(loans, true) : emptyState('⇌', skT('loans.empty'));
 }
 
 function buildLoanTable(loans, compact) {
@@ -960,8 +958,8 @@ function buildLoanTable(loans, compact) {
     <table class="sk-table">
       <thead>
         <tr>
-          <th></th><th>Sredstvo</th><th>Uporabnik</th>
-          <th>Cona</th><th>Izposojeno</th><th>Status</th><th></th>
+          <th></th><th>${skT('loans.col.asset')}</th><th>${skT('loans.col.user')}</th>
+          <th>${skT('loans.col.zone')}</th><th>${skT('loans.col.loaned_at')}</th><th>${skT('loans.col.status')}</th><th></th>
         </tr>
       </thead>
       <tbody>
@@ -982,12 +980,12 @@ function buildLoanTable(loans, compact) {
               <td style="font-size:11px;color:var(--mut);">${skFmt(l.LoanedAt||l.loanedAt)}</td>
               <td>
                 <span class="sk-badge ${active ? 'sk-badge-org' : 'sk-badge-grn'}">
-                  ${active ? 'aktivno' : 'vrnjeno'}
+                  ${active ? skT('loans.badge.active') : skT('loans.badge.returned')}
                 </span>
               </td>
               <td>${canReturn
                 ? `<button class="sk-btn sk-btn-sm sk-btn-grn"
-                     onclick="openReturnModal(${id},'${esc(assetName)}','${esc(userName)}')">↩ Vrni</button>`
+                     onclick="openReturnModal(${id},'${esc(assetName)}','${esc(userName)}')">↩ ${skT('loans.btn.return')}</button>`
                 : active ? '' : `<span style="font-size:10px;color:var(--mut);">${skFmt(l.ReturnedAt||l.returnedAt)}</span>`}
               </td>
             </tr>`;
@@ -1001,17 +999,17 @@ function buildLoanTable(loans, compact) {
 ════════════════════════════════════════════════════════════ */
 async function loadTabActive() {
   const c = document.getElementById('tabActiveCard');
-  c.innerHTML = '<div class="sk-state-loading"><div class="sk-spin"></div>Nalaganje…</div>';
+  c.innerHTML = `<div class="sk-state-loading"><div class="sk-spin"></div>${skT('lbl.loading')}</div>`;
   const r = await skGet('/api/Loan');
   const data = r.ok ? (Array.isArray(r.data) ? r.data : []).filter(isActive) : [];
-  c.innerHTML = data.length ? buildLoanTable(data) : emptyState('⇌', 'Ni aktivnih izposoj.');
+  c.innerHTML = data.length ? buildLoanTable(data) : emptyState('⇌', skT('loans.no_active'));
 }
 async function loadTabHistory() {
   const c = document.getElementById('tabHistoryCard');
-  c.innerHTML = '<div class="sk-state-loading"><div class="sk-spin"></div>Nalaganje…</div>';
+  c.innerHTML = `<div class="sk-state-loading"><div class="sk-spin"></div>${skT('lbl.loading')}</div>`;
   const r = await skGet('/api/Loan');
   const data = r.ok ? (Array.isArray(r.data) ? r.data : []) : [];
-  c.innerHTML = data.length ? buildLoanTable(data) : emptyState('⇌', 'Ni izposoj.');
+  c.innerHTML = data.length ? buildLoanTable(data) : emptyState('⇌', skT('loans.empty'));
 }
 
 /* ════════════════════════════════════════════════════════════

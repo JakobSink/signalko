@@ -175,6 +175,8 @@ function skLoadSidebar() {
       host.innerHTML = '';
       const frag = document.createRange().createContextualFragment(html);
       host.appendChild(frag);
+      // Apply translations to sidebar elements after injection
+      if (typeof skApplyI18n === 'function') skApplyI18n();
     })
     .catch(() => {});
 }

@@ -160,11 +160,11 @@
     <div class="sk-page-sub" data-i18n="page.assets.sub">Katalog sredstev in RFID tagi</div>
 
     <div class="toolbar">
-      <input class="search-box" id="searchInput" type="text" placeholder="Išči po imenu, EPC ASCII ali hex…" oninput="filterAssets()"/>
-      <button class="sk-btn sk-btn-acc" id="btnAdd" onclick="skModal('addModal')" style="display:none">+ Novo sredstvo</button>
-      <button class="sk-btn" onclick="exportAssets()">⬇ Izvoz</button>
-      <button class="sk-btn" id="btnImport" onclick="skModal('importModal')" style="display:none">⬆ Uvoz</button>
-      <button class="sk-btn" onclick="loadAssets()" id="refreshBtn">↺ Osveži</button>
+      <input class="search-box" id="searchInput" type="text" data-i18n-placeholder="assets.search_placeholder" placeholder="Išči po imenu, EPC ASCII ali hex…" oninput="filterAssets()"/>
+      <button class="sk-btn sk-btn-acc" id="btnAdd" onclick="skModal('addModal')" style="display:none">+ <span data-i18n="assets.btn.new">Novo sredstvo</span></button>
+      <button class="sk-btn" onclick="exportAssets()">⬇ <span data-i18n="assets.btn.export">Izvoz</span></button>
+      <button class="sk-btn" id="btnImport" onclick="skModal('importModal')" style="display:none">⬆ <span data-i18n="assets.btn.import">Uvoz</span></button>
+      <button class="sk-btn" onclick="loadAssets()" id="refreshBtn">↺ <span data-i18n="assets.btn.refresh">Osveži</span></button>
     </div>
 
     <div class="assets-layout" id="assetsLayout">
@@ -191,8 +191,8 @@
           </div>
         </div>
         <div class="detail-tabs">
-          <button class="detail-tab active" data-tab="movements" onclick="switchTab('movements')">Premiki</button>
-          <button class="detail-tab" data-tab="loans" onclick="switchTab('loans')">Izposoje</button>
+          <button class="detail-tab active" data-tab="movements" onclick="switchTab('movements')" data-i18n="assets.tab.movements">Premiki</button>
+          <button class="detail-tab" data-tab="loans" onclick="switchTab('loans')" data-i18n="assets.tab.loans">Izposoje</button>
         </div>
         <div class="detail-tab-body" id="detailBody">
           <div class="state-loading"><div class="sk-spin"></div>Nalaganje…</div>
@@ -206,52 +206,52 @@
 <div class="sk-modal-bg" id="editModal" onclick="if(event.target===this)skModalClose('editModal')">
   <div class="sk-modal" style="max-width:480px;">
     <div class="sk-modal-head">
-      <div class="sk-modal-title">Uredi sredstvo</div>
+      <div class="sk-modal-title" data-i18n="assets.modal.edit_title">Uredi sredstvo</div>
       <button class="sk-modal-close" onclick="skModalClose('editModal')">✕</button>
     </div>
     <div class="sk-modal-content">
       <div class="modal-field">
-        <label>Ikona</label>
+        <label data-i18n="assets.lbl.icon">Ikona</label>
         <div class="icon-picker">
           <div class="icon-preview-box" id="editIconPreview">▣</div>
           <div class="icon-picker-right">
             <div class="icon-emoji-grid" id="editEmojiGrid"></div>
-            <div class="icon-or">ali naloži sliko</div>
+            <div class="icon-or" data-i18n="assets.icon_or">ali naloži sliko</div>
             <div class="icon-upload-row">
               <input type="file" id="editIconFile" accept="image/*" style="display:none" onchange="handleIconFile('edit',this)"/>
-              <button class="sk-btn sk-btn-sm" type="button" onclick="document.getElementById('editIconFile').click()">⬆ Slika</button>
-              <button class="sk-btn sk-btn-sm" type="button" onclick="clearIcon('edit')">✕ Počisti</button>
+              <button class="sk-btn sk-btn-sm" type="button" onclick="document.getElementById('editIconFile').click()">⬆ <span data-i18n="assets.btn.upload_img">Slika</span></button>
+              <button class="sk-btn sk-btn-sm" type="button" onclick="clearIcon('edit')">✕ <span data-i18n="assets.btn.clear_icon">Počisti</span></button>
             </div>
           </div>
         </div>
         <input type="hidden" id="editIcon"/>
       </div>
       <div class="modal-field">
-        <label>Ime sredstva</label>
+        <label data-i18n="assets.lbl.name">Ime sredstva</label>
         <input id="editName" placeholder="npr. Laptop Dell XPS 15"/>
       </div>
       <div class="modal-field">
-        <label>Opis</label>
+        <label data-i18n="assets.lbl.desc">Opis</label>
         <textarea id="editDesc" rows="2" placeholder="Opis sredstva (neobvezno)"></textarea>
       </div>
       <div class="modal-field">
-        <label>EPC oznaka (hex) *</label>
+        <label data-i18n="assets.lbl.epc_hex">EPC oznaka (hex) *</label>
         <div class="input-with-btn">
           <input id="editEpc" placeholder="npr. E280110600002007…" oninput="onEpcInput('edit')"/>
           <button class="sk-btn" type="button" onclick="autoFillHex('edit')" title="Pretvori ASCII v hex EPC">⇄ hex</button>
         </div>
       </div>
       <div class="modal-field">
-        <label>EPC ASCII *</label>
+        <label data-i18n="assets.lbl.epc_ascii">EPC ASCII *</label>
         <div class="input-with-btn">
           <input id="editEpcAscii" placeholder="npr. SN-12345" oninput="onAsciiInput('edit')"/>
           <button class="sk-btn" type="button" onclick="autoFillAscii('edit')" title="Pretvori hex EPC v ASCII">⇄ ASCII</button>
         </div>
-        <span class="ascii-warn" id="editAsciiWarn" style="display:none">⚠ EPC ASCII je prazen — vnesi ročno ali klikni ⇄ ASCII</span>
+        <span class="ascii-warn" id="editAsciiWarn" data-i18n="assets.ascii_warn" style="display:none">⚠ EPC ASCII je prazen — vnesi ročno ali klikni ⇄ ASCII</span>
       </div>
       <div class="modal-actions">
-        <button class="sk-btn" onclick="skModalClose('editModal')">Prekliči</button>
-        <button class="sk-btn sk-btn-acc" id="editSaveBtn" onclick="saveEdit()">Shrani</button>
+        <button class="sk-btn" onclick="skModalClose('editModal')" data-i18n="btn.cancel">Prekliči</button>
+        <button class="sk-btn sk-btn-acc" id="editSaveBtn" onclick="saveEdit()" data-i18n="btn.save">Shrani</button>
       </div>
     </div>
   </div>
@@ -261,7 +261,7 @@
 <div class="sk-modal-bg" id="deleteModal" onclick="if(event.target===this)skModalClose('deleteModal')">
   <div class="sk-modal" style="max-width:400px;">
     <div class="sk-modal-head">
-      <div class="sk-modal-title">Izbriši sredstvo</div>
+      <div class="sk-modal-title" data-i18n="assets.modal.delete_title">Izbriši sredstvo</div>
       <button class="sk-modal-close" onclick="skModalClose('deleteModal')">✕</button>
     </div>
     <div class="sk-modal-content">
@@ -270,8 +270,8 @@
         Tega dejanja ni mogoče razveljaviti.
       </p>
       <div class="modal-actions">
-        <button class="sk-btn" onclick="skModalClose('deleteModal')">Prekliči</button>
-        <button class="sk-btn sk-btn-red" id="deleteConfirmBtn" onclick="executeDelete()">Izbriši</button>
+        <button class="sk-btn" onclick="skModalClose('deleteModal')" data-i18n="btn.cancel">Prekliči</button>
+        <button class="sk-btn sk-btn-red" id="deleteConfirmBtn" onclick="executeDelete()" data-i18n="btn.delete">Izbriši</button>
       </div>
     </div>
   </div>
@@ -281,52 +281,52 @@
 <div class="sk-modal-bg" id="addModal" onclick="if(event.target===this)skModalClose('addModal')">
   <div class="sk-modal" style="max-width:480px;">
     <div class="sk-modal-head">
-      <div class="sk-modal-title">Novo sredstvo</div>
+      <div class="sk-modal-title" data-i18n="assets.modal.add_title">Novo sredstvo</div>
       <button class="sk-modal-close" onclick="skModalClose('addModal')">✕</button>
     </div>
     <div class="sk-modal-content">
       <div class="modal-field">
-        <label>Ikona</label>
+        <label data-i18n="assets.lbl.icon">Ikona</label>
         <div class="icon-picker">
           <div class="icon-preview-box" id="addIconPreview">▣</div>
           <div class="icon-picker-right">
             <div class="icon-emoji-grid" id="addEmojiGrid"></div>
-            <div class="icon-or">ali naloži sliko</div>
+            <div class="icon-or" data-i18n="assets.icon_or">ali naloži sliko</div>
             <div class="icon-upload-row">
               <input type="file" id="addIconFile" accept="image/*" style="display:none" onchange="handleIconFile('add',this)"/>
-              <button class="sk-btn sk-btn-sm" type="button" onclick="document.getElementById('addIconFile').click()">⬆ Slika</button>
-              <button class="sk-btn sk-btn-sm" type="button" onclick="clearIcon('add')">✕ Počisti</button>
+              <button class="sk-btn sk-btn-sm" type="button" onclick="document.getElementById('addIconFile').click()">⬆ <span data-i18n="assets.btn.upload_img">Slika</span></button>
+              <button class="sk-btn sk-btn-sm" type="button" onclick="clearIcon('add')">✕ <span data-i18n="assets.btn.clear_icon">Počisti</span></button>
             </div>
           </div>
         </div>
         <input type="hidden" id="addIcon"/>
       </div>
       <div class="modal-field">
-        <label>Ime sredstva *</label>
+        <label data-i18n="assets.lbl.name_req">Ime sredstva *</label>
         <input id="addName" placeholder="npr. Laptop Dell XPS 15"/>
       </div>
       <div class="modal-field">
-        <label>Opis</label>
+        <label data-i18n="assets.lbl.desc">Opis</label>
         <textarea id="addDesc" rows="2" placeholder="Opis sredstva (neobvezno)"></textarea>
       </div>
       <div class="modal-field">
-        <label>EPC oznaka (hex) *</label>
+        <label data-i18n="assets.lbl.epc_hex">EPC oznaka (hex) *</label>
         <div class="input-with-btn">
           <input id="addEpc" placeholder="npr. E280110600002007…" oninput="onEpcInput('add')"/>
           <button class="sk-btn" type="button" onclick="autoFillHex('add')" title="Pretvori ASCII v hex EPC">⇄ hex</button>
         </div>
       </div>
       <div class="modal-field">
-        <label>EPC ASCII *</label>
+        <label data-i18n="assets.lbl.epc_ascii">EPC ASCII *</label>
         <div class="input-with-btn">
           <input id="addEpcAscii" placeholder="npr. SN-12345" oninput="onAsciiInput('add')"/>
           <button class="sk-btn" type="button" onclick="autoFillAscii('add')" title="Pretvori hex EPC v ASCII">⇄ ASCII</button>
         </div>
-        <span class="ascii-warn" id="addAsciiWarn" style="display:none">⚠ EPC ASCII je prazen — vnesi ročno ali klikni ⇄ ASCII</span>
+        <span class="ascii-warn" id="addAsciiWarn" data-i18n="assets.ascii_warn" style="display:none">⚠ EPC ASCII je prazen — vnesi ročno ali klikni ⇄ ASCII</span>
       </div>
       <div class="modal-actions">
-        <button class="sk-btn" onclick="skModalClose('addModal')">Prekliči</button>
-        <button class="sk-btn sk-btn-acc" id="addSaveBtn" onclick="saveAdd()">Dodaj</button>
+        <button class="sk-btn" onclick="skModalClose('addModal')" data-i18n="btn.cancel">Prekliči</button>
+        <button class="sk-btn sk-btn-acc" id="addSaveBtn" onclick="saveAdd()" data-i18n="btn.add">Dodaj</button>
       </div>
     </div>
   </div>
@@ -336,54 +336,54 @@
 <div class="sk-modal-bg" id="importModal" onclick="if(event.target===this)skModalClose('importModal')">
   <div class="sk-modal" style="max-width:500px;">
     <div class="sk-modal-head">
-      <div class="sk-modal-title">Uvoz sredstev iz Excela</div>
+      <div class="sk-modal-title" data-i18n="assets.modal.import_title">Uvoz sredstev iz Excela</div>
       <button class="sk-modal-close" onclick="skModalClose('importModal')">✕</button>
     </div>
     <div class="sk-modal-content">
 
     <!-- Template info -->
     <div style="background:var(--up);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:16px;">
-      <div style="font-size:13px;font-weight:700;color:var(--txt);margin-bottom:10px;font-family:'Syne',sans-serif;">Pričakovani stolpci</div>
-      <div style="font-size:11px;color:var(--sub);margin-bottom:10px;">1. vrstica = glava in se <strong style="color:var(--txt);">ne upošteva</strong> pri uvozu.</div>
+      <div style="font-size:13px;font-weight:700;color:var(--txt);margin-bottom:10px;font-family:'Syne',sans-serif;" data-i18n="assets.import.expected_cols">Pričakovani stolpci</div>
+      <div style="font-size:11px;color:var(--sub);margin-bottom:10px;" data-i18n="assets.import.header_note">1. vrstica = glava in se <strong style="color:var(--txt);">ne upošteva</strong> pri uvozu.</div>
       <table style="width:100%;border-collapse:collapse;">
         <thead>
           <tr style="border-bottom:1px solid var(--border);">
-            <th style="text-align:left;padding:5px 8px;font-size:10px;color:var(--mut);font-weight:600;letter-spacing:1px;text-transform:uppercase;">Stolpec</th>
-            <th style="text-align:left;padding:5px 8px;font-size:10px;color:var(--mut);font-weight:600;letter-spacing:1px;text-transform:uppercase;">Polje</th>
-            <th style="text-align:left;padding:5px 8px;font-size:10px;color:var(--mut);font-weight:600;letter-spacing:1px;text-transform:uppercase;">Opis</th>
+            <th style="text-align:left;padding:5px 8px;font-size:10px;color:var(--mut);font-weight:600;letter-spacing:1px;text-transform:uppercase;" data-i18n="assets.import.col_header">Stolpec</th>
+            <th style="text-align:left;padding:5px 8px;font-size:10px;color:var(--mut);font-weight:600;letter-spacing:1px;text-transform:uppercase;" data-i18n="assets.import.field_header">Polje</th>
+            <th style="text-align:left;padding:5px 8px;font-size:10px;color:var(--mut);font-weight:600;letter-spacing:1px;text-transform:uppercase;" data-i18n="assets.import.desc_header">Opis</th>
           </tr>
         </thead>
         <tbody>
           <tr style="border-bottom:1px solid var(--border);">
             <td style="padding:7px 8px;font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;color:var(--acc);">A</td>
-            <td style="padding:7px 8px;font-size:12px;color:var(--txt);font-weight:600;">Ime <span style="color:var(--red);">*</span></td>
-            <td style="padding:7px 8px;font-size:12px;color:var(--sub);">Ime sredstva — obvezno</td>
+            <td style="padding:7px 8px;font-size:12px;color:var(--txt);font-weight:600;" data-i18n="assets.import.col_a_field">Ime <span style="color:var(--red);">*</span></td>
+            <td style="padding:7px 8px;font-size:12px;color:var(--sub);" data-i18n="assets.import.col_a_desc">Ime sredstva — obvezno</td>
           </tr>
           <tr style="border-bottom:1px solid var(--border);">
             <td style="padding:7px 8px;font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;color:var(--acc);">B</td>
-            <td style="padding:7px 8px;font-size:12px;color:var(--txt);">Opis</td>
-            <td style="padding:7px 8px;font-size:12px;color:var(--sub);">Opis sredstva — neobvezno</td>
+            <td style="padding:7px 8px;font-size:12px;color:var(--txt);" data-i18n="assets.import.col_b_field">Opis</td>
+            <td style="padding:7px 8px;font-size:12px;color:var(--sub);" data-i18n="assets.import.col_b_desc">Opis sredstva — neobvezno</td>
           </tr>
           <tr style="border-bottom:1px solid var(--border);">
             <td style="padding:7px 8px;font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;color:var(--acc);">C</td>
-            <td style="padding:7px 8px;font-size:12px;color:var(--txt);font-weight:600;">EPC hex <span style="color:var(--red);">*</span></td>
-            <td style="padding:7px 8px;font-size:12px;color:var(--sub);">HEX koda RFID taga — obvezno</td>
+            <td style="padding:7px 8px;font-size:12px;color:var(--txt);font-weight:600;" data-i18n="assets.import.col_c_field">EPC hex <span style="color:var(--red);">*</span></td>
+            <td style="padding:7px 8px;font-size:12px;color:var(--sub);" data-i18n="assets.import.col_c_desc">HEX koda RFID taga — obvezno</td>
           </tr>
           <tr>
             <td style="padding:7px 8px;font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;color:var(--acc);">D</td>
-            <td style="padding:7px 8px;font-size:12px;color:var(--txt);">EPC ASCII</td>
-            <td style="padding:7px 8px;font-size:12px;color:var(--sub);">Če prazno, se samodejno izračuna iz hex</td>
+            <td style="padding:7px 8px;font-size:12px;color:var(--txt);" data-i18n="assets.import.col_d_field">EPC ASCII</td>
+            <td style="padding:7px 8px;font-size:12px;color:var(--sub);" data-i18n="assets.import.col_d_desc">Če prazno, se samodejno izračuna iz hex</td>
           </tr>
         </tbody>
       </table>
       <div style="margin-top:12px;">
-        <button class="sk-btn sk-btn-sm" onclick="downloadTemplate()">⬇ Prenesi predlogo</button>
+        <button class="sk-btn sk-btn-sm" onclick="downloadTemplate()">⬇ <span data-i18n="assets.import.download_tpl">Prenesi predlogo</span></button>
       </div>
     </div>
 
     <!-- File upload -->
     <div class="modal-field">
-      <label>Excel datoteka (.xlsx)</label>
+      <label data-i18n="assets.lbl.excel_file">Excel datoteka (.xlsx)</label>
       <input type="file" id="importFile" accept=".xlsx,.xls"
         style="background:var(--up);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:12px;color:var(--txt);cursor:pointer;"
         onchange="onImportFileChange(this)"/>
@@ -391,8 +391,8 @@
     <div id="importStatus" style="font-size:11px;color:var(--sub);margin-bottom:8px;display:none;"></div>
 
     <div class="modal-actions">
-      <button class="sk-btn" onclick="skModalClose('importModal')">Prekliči</button>
-      <button class="sk-btn sk-btn-acc" id="importBtn" onclick="runImport()" disabled>⬆ Uvozi</button>
+      <button class="sk-btn" onclick="skModalClose('importModal')" data-i18n="btn.cancel">Prekliči</button>
+      <button class="sk-btn sk-btn-acc" id="importBtn" onclick="runImport()" disabled>⬆ <span data-i18n="btn.import">Uvozi</span></button>
     </div>
     </div><!-- /sk-modal-content -->
   </div>
@@ -592,8 +592,8 @@ function renderGrid() {
     const isSel   = selectedAsset && (selectedAsset.Id||selectedAsset.id) === id;
 
     const badge = active
-      ? `<span class="sk-badge sk-badge-org">Izposojeno</span>`
-      : `<span class="sk-badge sk-badge-grn">Prosto</span>`;
+      ? `<span class="sk-badge sk-badge-org">${skT('assets.badge.loaned')}</span>`
+      : `<span class="sk-badge sk-badge-grn">${skT('assets.badge.free')}</span>`;
 
     const asciiLine = ascii
       ? `<div class="ac-ascii">${escHtml(ascii)}</div>` : '';
@@ -669,7 +669,7 @@ async function loadMovements(body) {
 
   body.innerHTML = `
     <table class="dtable">
-      <thead><tr><th>Čas</th><th>Zona / čitalec</th><th>RSSI</th></tr></thead>
+      <thead><tr><th>${skT('assets.col.time')}</th><th>${skT('assets.col.zone_reader')}</th><th>${skT('assets.col.rssi')}</th></tr></thead>
       <tbody>
         ${r.data.map(t => {
           const rssi = t.rssi ?? t.RSSI;
@@ -695,7 +695,7 @@ async function loadLoanHistory(body) {
 
   body.innerHTML = `
     <table class="dtable">
-      <thead><tr><th>Uporabnik</th><th>Od</th><th>Do</th><th>Status</th></tr></thead>
+      <thead><tr><th>${skT('assets.col.user')}</th><th>${skT('assets.col.loaned_at')}</th><th>${skT('assets.col.returned_at')}</th><th>${skT('lbl.status')}</th></tr></thead>
       <tbody>
         ${loans.map(l => {
           const ret = l.ReturnedAt || l.returnedAt;
@@ -703,7 +703,7 @@ async function loadLoanHistory(body) {
             <td>${escHtml(l.UserName||l.userName||`#${l.UserId||l.userId}`)}</td>
             <td style="white-space:nowrap;">${skFmtDate(l.LoanedAt||l.loanedAt)}</td>
             <td style="white-space:nowrap;">${ret ? skFmtDate(ret) : '—'}</td>
-            <td>${ret ? '<span class="sk-badge sk-badge-grn">Vrnjeno</span>' : '<span class="sk-badge sk-badge-org">Aktivno</span>'}</td>
+            <td>${ret ? `<span class="sk-badge sk-badge-grn">${skT('assets.badge.returned')}</span>` : `<span class="sk-badge sk-badge-org">${skT('assets.badge.active')}</span>`}</td>
           </tr>`;
         }).join('')}
       </tbody>

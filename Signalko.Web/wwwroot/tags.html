@@ -82,21 +82,21 @@ table.tag-table tbody tr.active-row td{background:var(--high);border-left:2px so
     <div class="sk-page-sub" data-i18n="page.tags.sub">Vsa branja in zgodovina</div>
 
     <div class="toolbar">
-      <button class="sk-btn sk-btn-acc" id="btnExport" onclick="exportCsv()">↓ Izvozi CSV</button>
-      <button class="sk-btn" id="btnRefresh" onclick="loadPage(true)">↺ Osveži</button>
-      <button class="sk-btn" onclick="clearFilters()">✕ Počisti filtre</button>
-      <span style="margin-left:auto;font-size:11px;color:var(--mut);">Skupaj: <span id="totalCount">—</span></span>
+      <button class="sk-btn sk-btn-acc" id="btnExport" onclick="exportCsv()">↓ <span data-i18n="tags.btn.export_csv">Izvozi CSV</span></button>
+      <button class="sk-btn" id="btnRefresh" onclick="loadPage(true)">↺ <span data-i18n="tags.btn.refresh">Osveži</span></button>
+      <button class="sk-btn" onclick="clearFilters()">✕ <span data-i18n="tags.btn.clear_filters">Počisti filtre</span></button>
+      <span style="margin-left:auto;font-size:11px;color:var(--mut);"><span data-i18n="tags.total">Skupaj</span>: <span id="totalCount">—</span></span>
     </div>
 
     <div class="tags-layout">
       <!-- Left: table -->
       <div>
         <div class="filter-row">
-          <input class="filter-input" id="f-epc"     placeholder="EPC…"        oninput="onFilter()"/>
-          <input class="filter-input" id="f-reader"  placeholder="Reader…"     oninput="onFilter()"/>
-          <input class="filter-input" id="f-zone"    placeholder="Cona…"       oninput="onFilter()"/>
-          <input class="filter-input" id="f-antenna" placeholder="Antena…"     oninput="onFilter()"/>
-          <input class="filter-input" id="f-count"   placeholder="Min branj…"  type="number" oninput="onFilter()"/>
+          <input class="filter-input" id="f-epc"     data-i18n-placeholder="tags.filter.epc"       placeholder="EPC…"        oninput="onFilter()"/>
+          <input class="filter-input" id="f-reader"  data-i18n-placeholder="tags.filter.reader"    placeholder="Reader…"     oninput="onFilter()"/>
+          <input class="filter-input" id="f-zone"    data-i18n-placeholder="tags.filter.zone"      placeholder="Cona…"       oninput="onFilter()"/>
+          <input class="filter-input" id="f-antenna" data-i18n-placeholder="tags.filter.antenna"   placeholder="Antena…"     oninput="onFilter()"/>
+          <input class="filter-input" id="f-count"   data-i18n-placeholder="tags.filter.min_reads" placeholder="Min branj…"  type="number" oninput="onFilter()"/>
         </div>
 
         <div class="table-wrap">
@@ -105,10 +105,10 @@ table.tag-table tbody tr.active-row td{background:var(--high);border-left:2px so
               <tr>
                 <th>EPC</th>
                 <th>ASCII</th>
-                <th>Reader</th>
-                <th>Cona</th>
-                <th>Antena</th>
-                <th>Branj</th>
+                <th data-i18n="tags.col.reader">Reader</th>
+                <th data-i18n="tags.col.zone">Cona</th>
+                <th data-i18n="tags.col.antenna">Antena</th>
+                <th data-i18n="tags.col.reads">Branj</th>
               </tr>
             </thead>
             <tbody id="tagTableBody">
@@ -118,7 +118,7 @@ table.tag-table tbody tr.active-row td{background:var(--high);border-left:2px so
         </div>
 
         <div class="pager-bar">
-          <div style="font-size:11px;color:var(--mut);">Stran <span id="pageInfo">1</span></div>
+          <div style="font-size:11px;color:var(--mut);"><span data-i18n="lbl.page">Stran</span> <span id="pageInfo">1</span></div>
           <div style="display:flex;gap:8px;align-items:center;">
             <div class="pager" id="pager"></div>
             <select class="page-size-sel" id="pageSize" onchange="onPageSizeChange()">
@@ -131,11 +131,11 @@ table.tag-table tbody tr.active-row td{background:var(--high);border-left:2px so
       <!-- Right: detail panel -->
       <div class="detail-panel">
         <div class="detail-head">
-          <div class="detail-head-title" id="panelEpc">Izberi tag…</div>
-          <div class="detail-head-sub" id="panelAscii">Klikni vrstico v tabeli</div>
+          <div class="detail-head-title" id="panelEpc" data-i18n="tags.panel.select">Izberi tag…</div>
+          <div class="detail-head-sub" id="panelAscii" data-i18n="tags.panel.click_hint">Klikni vrstico v tabeli</div>
         </div>
         <div class="detail-body" id="panelBody">
-          <div class="state-empty">Ni izbranega taga.</div>
+          <div class="state-empty" data-i18n="tags.panel.no_selection">Ni izbranega taga.</div>
         </div>
       </div>
     </div>
@@ -178,12 +178,12 @@ function buildQuery() {
 
 async function loadPage(keepSel = true) {
   document.getElementById('tagTableBody').innerHTML =
-    '<tr><td colspan="6"><div class="state-loading-sm"><div class="sk-spin"></div>Nalaganje…</div></td></tr>';
+    `<tr><td colspan="6"><div class="state-loading-sm"><div class="sk-spin"></div>${skT('lbl.loading')}</div></td></tr>`;
 
   const r = await skGet(`/api/Tag/grouped-table?${buildQuery()}`);
   if (!r.ok || !r.data) {
     document.getElementById('tagTableBody').innerHTML =
-      '<tr><td colspan="6"><div class="state-empty">Napaka pri nalaganju.</div></td></tr>';
+      `<tr><td colspan="6"><div class="state-empty">${skT('tags.error.load')}</div></td></tr>`;
     return;
   }
 
@@ -203,7 +203,7 @@ async function loadPage(keepSel = true) {
 function renderTable(rows, keepSel) {
   const tbody = document.getElementById('tagTableBody');
   if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="6"><div class="state-empty">Ni tagonov.</div></td></tr>';
+    tbody.innerHTML = `<tr><td colspan="6"><div class="state-empty">${skT('lbl.no_data')}</div></td></tr>`;
     return;
   }
   tbody.innerHTML = '';
@@ -254,12 +254,12 @@ async function selectTag(epc, ascii) {
   document.getElementById('panelEpc').textContent = epc || '—';
   document.getElementById('panelAscii').textContent = ascii || '—';
   document.getElementById('panelBody').innerHTML =
-    '<div class="state-loading-sm"><div class="sk-spin"></div>Nalaganje…</div>';
+    `<div class="state-loading-sm"><div class="sk-spin"></div>${skT('lbl.loading')}</div>`;
 
   const r = await skGet(`/api/Tag/by-epc/details/${encodeURIComponent(epc)}?take=200`);
   const body = document.getElementById('panelBody');
   if (!r.ok || !r.data || !r.data.length) {
-    body.innerHTML = '<div class="state-empty">Ni zgodovine.</div>';
+    body.innerHTML = `<div class="state-empty">${skT('tags.panel.no_history')}</div>`;
     return;
   }
 

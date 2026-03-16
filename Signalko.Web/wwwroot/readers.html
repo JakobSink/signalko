@@ -80,26 +80,21 @@
     <div class="sk-page-title" data-i18n="page.readers">Čitalci</div>
     <div class="sk-page-sub" data-i18n="page.readers.sub">RFID bralniki in stanje</div>
 
-    <div class="hint-bar">
-      <strong>Čitalec (Reader)</strong> je fizična RFID naprava, ki prek anten bere tage. Vsak čitalec
-      mora imeti <strong>ime</strong> in <strong>IP naslov</strong>, da se sistem poveže z njim.
-      Neaktiven čitalec ne pošilja podatkov. Klikni kartico ali <strong>✎ Uredi</strong> za spremembo.
-      Z gumbom <strong>● / ○</strong> vklopiš ali izklopiš čitalec brez brisanja.
-    </div>
+    <div class="hint-bar" data-i18n="readers.hint"></div>
 
     <div class="toolbar">
-      <input class="search-box" id="searchInput" placeholder="Išči (ime, IP, hostname)…" oninput="applyFilters()"/>
+      <input class="search-box" id="searchInput" data-i18n-placeholder="readers.search_ph" placeholder="Išči (ime, IP, hostname)…" oninput="applyFilters()"/>
       <select class="filter-sel" id="filterEnabled" onchange="applyFilters()">
-        <option value="">Vsi</option>
-        <option value="true">Samo aktivni</option>
-        <option value="false">Samo neaktivni</option>
+        <option value="" data-i18n="readers.filter.all">Vsi</option>
+        <option value="true" data-i18n="readers.filter.active_only">Samo aktivni</option>
+        <option value="false" data-i18n="readers.filter.inactive_only">Samo neaktivni</option>
       </select>
-      <button class="sk-btn sk-btn-acc" onclick="openEditor(null)">+ Dodaj čitalec</button>
-      <button class="sk-btn" id="refreshBtn" onclick="loadReaders()">↺ Osveži</button>
+      <button class="sk-btn sk-btn-acc" onclick="openEditor(null)">+ <span data-i18n="readers.btn.add">Dodaj čitalec</span></button>
+      <button class="sk-btn" id="refreshBtn" onclick="loadReaders()">↺ <span data-i18n="tags.btn.refresh">Osveži</span></button>
     </div>
 
     <div id="gridHost">
-      <div class="state-loading"><div class="sk-spin"></div>Nalaganje…</div>
+      <div class="state-loading"><div class="sk-spin"></div><span data-i18n="lbl.loading">Nalaganje…</span></div>
     </div>
 
   </main>
@@ -114,16 +109,16 @@
     </div>
     <div class="sk-modal-content">
     <input type="hidden" id="e-id"/>
-    <div class="modal-field"><label>Ime *</label><input id="e-name" placeholder="npr. FX7500-Entrance"/></div>
-    <div class="modal-field"><label>IP naslov *</label><input id="e-ip" placeholder="npr. 192.168.1.50"/></div>
-    <div class="modal-field"><label>Hostname</label><input id="e-hostname" placeholder="npr. FX7500-123456"/></div>
+    <div class="modal-field"><label data-i18n="readers.modal.lbl.name">Ime *</label><input id="e-name" data-i18n-placeholder="readers.modal.ph.name" placeholder="npr. FX7500-Entrance"/></div>
+    <div class="modal-field"><label data-i18n="readers.modal.lbl.ip">IP naslov *</label><input id="e-ip" data-i18n-placeholder="readers.modal.ph.ip" placeholder="npr. 192.168.1.50"/></div>
+    <div class="modal-field"><label data-i18n="readers.modal.lbl.hostname">Hostname</label><input id="e-hostname" data-i18n-placeholder="readers.modal.ph.hostname" placeholder="npr. FX7500-123456"/></div>
     <div class="checkbox-row">
       <input type="checkbox" id="e-enabled"/>
-      <label for="e-enabled">Čitalec je aktiven</label>
+      <label for="e-enabled" data-i18n="readers.modal.lbl.enabled">Čitalec je aktiven</label>
     </div>
     <div class="modal-actions">
-      <button class="sk-btn" onclick="skModalClose('editorModal')">Prekliči</button>
-      <button class="sk-btn sk-btn-acc" id="editorSaveBtn" onclick="saveEditor()">Shrani</button>
+      <button class="sk-btn" onclick="skModalClose('editorModal')" data-i18n="btn.cancel">Prekliči</button>
+      <button class="sk-btn sk-btn-acc" id="editorSaveBtn" onclick="saveEditor()" data-i18n="btn.save">Shrani</button>
     </div>
     </div>
   </div>
@@ -133,16 +128,16 @@
 <div class="sk-modal-bg" id="deleteModal" onclick="if(event.target===this)skModalClose('deleteModal')">
   <div class="sk-modal" style="max-width:380px;">
     <div class="sk-modal-head">
-      <div class="sk-modal-title">Izbriši čitalec</div>
+      <div class="sk-modal-title" data-i18n="readers.modal.delete_title">Izbriši čitalec</div>
       <button class="sk-modal-close" onclick="skModalClose('deleteModal')">✕</button>
     </div>
     <div class="sk-modal-content">
     <p style="color:var(--sub);font-size:12px;margin-bottom:20px;line-height:1.6;">
-      Ali res želiš izbrisati čitalec <strong id="deleteLabel" style="color:var(--txt);"></strong>?
+      <span data-i18n="readers.modal.delete_confirm">Ali res želiš izbrisati čitalec</span> <strong id="deleteLabel" style="color:var(--txt);"></strong>?
     </p>
     <div class="modal-actions">
-      <button class="sk-btn" onclick="skModalClose('deleteModal')">Prekliči</button>
-      <button class="sk-btn sk-btn-red" id="deleteConfirmBtn" onclick="executeDelete()">Izbriši</button>
+      <button class="sk-btn" onclick="skModalClose('deleteModal')" data-i18n="btn.cancel">Prekliči</button>
+      <button class="sk-btn sk-btn-red" id="deleteConfirmBtn" onclick="executeDelete()" data-i18n="btn.delete">Izbriši</button>
     </div>
     </div>
   </div>
@@ -156,11 +151,11 @@ let readers = [], filtered = [], pendingDelete = null;
 
 async function loadReaders() {
   const btn = document.getElementById('refreshBtn');
-  skBtnLoading(btn, true, '↺ Osveži');
-  document.getElementById('gridHost').innerHTML = '<div class="state-loading"><div class="sk-spin"></div>Nalaganje…</div>';
+  skBtnLoading(btn, true, skT('tags.btn.refresh'));
+  document.getElementById('gridHost').innerHTML = `<div class="state-loading"><div class="sk-spin"></div>${skT('lbl.loading')}</div>`;
   const r = await skGet('/api/Reader');
-  skBtnLoading(btn, false, '↺ Osveži');
-  if (!r.ok || !r.data) { document.getElementById('gridHost').innerHTML = '<div class="state-empty">Napaka pri nalaganju.</div>'; return; }
+  skBtnLoading(btn, false, skT('tags.btn.refresh'));
+  if (!r.ok || !r.data) { document.getElementById('gridHost').innerHTML = `<div class="state-empty">${skT('tags.error.load')}</div>`; return; }
   readers = r.data;
   applyFilters();
 }
@@ -179,7 +174,7 @@ function applyFilters() {
 
 function renderGrid() {
   const host = document.getElementById('gridHost');
-  if (!filtered.length) { host.innerHTML = '<div class="state-empty">Ni čitalcev.</div>'; return; }
+  if (!filtered.length) { host.innerHTML = `<div class="state-empty">${skT('readers.no_data')}</div>`; return; }
   host.innerHTML = '<div class="ic-grid"></div>';
   const grid = host.querySelector('.ic-grid');
   filtered.forEach(r => {
@@ -193,8 +188,8 @@ function renderGrid() {
           <div class="ic-sub">${escHtml(r.ip||'—')}</div>
         </div>
         ${r.enabled
-          ? '<span class="sk-badge sk-badge-grn">Aktiven</span>'
-          : '<span class="sk-badge sk-badge-red">Izklopljen</span>'}
+          ? `<span class="sk-badge sk-badge-grn">${skT('lbl.active')}</span>`
+          : `<span class="sk-badge sk-badge-red">${skT('lbl.inactive')}</span>`}
       </div>
       <div class="ic-kv">
         <div class="ic-row"><span class="ic-key">Hostname</span><span class="ic-val">${escHtml(r.hostname||'—')}</span></div>
@@ -202,8 +197,8 @@ function renderGrid() {
         <div class="ic-row"><span class="ic-key">ID</span><span class="ic-val">${r.id}</span></div>
       </div>
       <div class="ic-foot">
-        <button class="sk-btn sk-btn-sm" data-act="edit">✎ Uredi</button>
-        <button class="sk-btn sk-btn-sm" data-act="toggle">${r.enabled ? '○ Onemogoči' : '● Omogoči'}</button>
+        <button class="sk-btn sk-btn-sm" data-act="edit">✎ ${skT('btn.edit')}</button>
+        <button class="sk-btn sk-btn-sm" data-act="toggle">${r.enabled ? `○ ${skT('readers.btn.disable')}` : `● ${skT('readers.btn.enable')}`}</button>
         <button class="sk-btn sk-btn-sm sk-btn-red" data-act="delete">✕</button>
       </div>`;
     card.querySelector('[data-act="edit"]').addEventListener('click',   e => { e.stopPropagation(); openEditor(r); });
@@ -220,7 +215,7 @@ function openEditor(r) {
   document.getElementById('e-ip').value        = r?.ip ?? '';
   document.getElementById('e-hostname').value  = r?.hostname ?? '';
   document.getElementById('e-enabled').checked = r ? !!r.enabled : true;
-  document.getElementById('editorTitle').textContent = r ? 'Uredi čitalec' : 'Dodaj čitalec';
+  document.getElementById('editorTitle').textContent = r ? skT('readers.modal.title.edit') : skT('readers.modal.title.add');
   skModal('editorModal');
 }
 
@@ -231,23 +226,23 @@ async function saveEditor() {
   const Ip       = document.getElementById('e-ip').value.trim();
   const Hostname = document.getElementById('e-hostname').value.trim() || null;
   const Enabled  = document.getElementById('e-enabled').checked;
-  if (!Name) { skToast('Ime je obvezno.', 'error'); return; }
-  if (!Ip)   { skToast('IP naslov je obvezen.', 'error'); return; }
-  skBtnLoading(btn, true, 'Shrani');
+  if (!Name) { skToast(skT('readers.validation.name_required'), 'error'); return; }
+  if (!Ip)   { skToast(skT('readers.validation.ip_required'), 'error'); return; }
+  skBtnLoading(btn, true, skT('btn.save'));
   const r = id
     ? await skPut(`/api/Reader/${id}`, { Id: id, Name, Ip, Hostname, Enabled })
     : await skPost('/api/Reader', { Name, Ip, Hostname, Enabled });
-  skBtnLoading(btn, false, 'Shrani');
-  if (!r.ok) { skToast(r.data?.message || `Napaka ${r.status}`, 'error'); return; }
-  skToast(id ? 'Čitalec posodobljen.' : 'Čitalec dodan.', 'success');
+  skBtnLoading(btn, false, skT('btn.save'));
+  if (!r.ok) { skToast(r.data?.message || `${skT('tags.error.load')} ${r.status}`, 'error'); return; }
+  skToast(id ? skT('readers.toast.updated') : skT('readers.toast.added'), 'success');
   skModalClose('editorModal');
   await loadReaders();
 }
 
 async function toggleEnabled(r) {
   const res = await skPut(`/api/Reader/${r.id}`, { Id: r.id, Name: r.name, Ip: r.ip, Hostname: r.hostname||null, Enabled: !r.enabled });
-  if (!res.ok) { skToast('Preklop ni uspel.', 'error'); return; }
-  skToast(!r.enabled ? 'Čitalec omogočen.' : 'Čitalec onemogočen.', 'success');
+  if (!res.ok) { skToast(skT('readers.toast.toggle_error'), 'error'); return; }
+  skToast(!r.enabled ? skT('readers.toast.enabled') : skT('readers.toast.disabled'), 'success');
   await loadReaders();
 }
 
@@ -260,11 +255,11 @@ function confirmDelete(r) {
 async function executeDelete() {
   if (!pendingDelete) return;
   const btn = document.getElementById('deleteConfirmBtn');
-  skBtnLoading(btn, true, 'Izbriši');
+  skBtnLoading(btn, true, skT('btn.delete'));
   const r = await skDel(`/api/Reader/${pendingDelete.id}`);
-  skBtnLoading(btn, false, 'Izbriši');
-  if (!r.ok) { skToast(r.data?.message || 'Napaka pri brisanju.', 'error'); return; }
-  skToast('Čitalec izbrisan.', 'success');
+  skBtnLoading(btn, false, skT('btn.delete'));
+  if (!r.ok) { skToast(r.data?.message || skT('admin.toast.delete_error'), 'error'); return; }
+  skToast(skT('readers.toast.deleted'), 'success');
   skModalClose('deleteModal');
   pendingDelete = null;
   await loadReaders();

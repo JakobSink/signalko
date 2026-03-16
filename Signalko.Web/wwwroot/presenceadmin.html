@@ -88,73 +88,73 @@
 
     <!-- Stats -->
     <div class="stat-row">
-      <div class="sc si"><div class="sl">Trenutno znotraj</div><div class="sv" id="sIn">—</div><div class="ss">aktivnih oseb</div></div>
-      <div class="sc so"><div class="sl">Skupaj zapisov</div><div class="sv" id="sTot">—</div><div class="ss">vsi IN + OUT</div></div>
-      <div class="sc st"><div class="sl">Aktivnih uporabnikov</div><div class="sv" id="sUsers">—</div><div class="ss">s prisotnostjo</div></div>
+      <div class="sc si"><div class="sl" data-i18n="presenceadmin.stat.inside_lbl">Trenutno znotraj</div><div class="sv" id="sIn">—</div><div class="ss" data-i18n="presenceadmin.stat.inside_sub">aktivnih oseb</div></div>
+      <div class="sc so"><div class="sl" data-i18n="presenceadmin.stat.total_lbl">Skupaj zapisov</div><div class="sv" id="sTot">—</div><div class="ss" data-i18n="presenceadmin.stat.total_sub">vsi IN + OUT</div></div>
+      <div class="sc st"><div class="sl" data-i18n="presenceadmin.stat.users_lbl">Aktivnih uporabnikov</div><div class="sv" id="sUsers">—</div><div class="ss" data-i18n="presenceadmin.stat.users_sub">s prisotnostjo</div></div>
     </div>
 
     <!-- Zdaj znotraj -->
     <div class="sechdr">
-      <div class="sectitle">Zdaj znotraj</div>
+      <div class="sectitle" data-i18n="presenceadmin.section.inside">Zdaj znotraj</div>
       <span class="secbadge" id="inBadge">0 oseb</span>
-      <button class="sk-btn" onclick="loadCurrent()" style="padding:5px 10px;">↺</button>
+      <button class="sk-btn" onclick="loadCurrent()" style="padding:5px 10px;" data-i18n-title="tags.btn.refresh">↺</button>
     </div>
     <div class="pgrid" id="grid">
-      <div class="stl" style="grid-column:1/-1;">Nalaganje…</div>
+      <div class="stl" style="grid-column:1/-1;" data-i18n="lbl.loading">Nalaganje…</div>
     </div>
 
     <!-- Log -->
     <div class="sechdr">
-      <div class="sectitle">Evidenca prisotnosti</div>
-      <button class="sk-btn" onclick="loadLog(1)">↺ Osveži</button>
+      <div class="sectitle" data-i18n="presenceadmin.section.log">Evidenca prisotnosti</div>
+      <button class="sk-btn" onclick="loadLog(1)">↺ <span data-i18n="tags.btn.refresh">Osveži</span></button>
     </div>
     <div class="lwrap">
       <div class="fbar">
         <div class="ff ff-w">
-          <label>Iskanje — ime / priimek</label>
-          <input id="fSearch" placeholder="npr. Janez Novak…" oninput="dbt()"/>
+          <label data-i18n="presenceadmin.filter.search_lbl">Iskanje — ime / priimek</label>
+          <input id="fSearch" data-i18n-placeholder="presenceadmin.filter.search_ph" placeholder="npr. Janez Novak…" oninput="dbt()"/>
         </div>
         <div class="ff">
-          <label>Kartica ID</label>
-          <input id="fCard" placeholder="npr. 001234" style="min-width:110px;" oninput="dbt()"/>
+          <label data-i18n="presenceadmin.filter.card_lbl">Kartica ID</label>
+          <input id="fCard" data-i18n-placeholder="presenceadmin.filter.card_ph" placeholder="npr. 001234" style="min-width:110px;" oninput="dbt()"/>
         </div>
         <div class="ff">
-          <label>Tip</label>
+          <label data-i18n="presence.col.type">Tip</label>
           <select id="fType" onchange="loadLog(1)" style="min-width:110px;">
-            <option value="">— vsi —</option>
-            <option value="IN">▲ Prihod (IN)</option>
-            <option value="OUT">▼ Odhod (OUT)</option>
+            <option value="" data-i18n="presence.filter.type_all">— vsi —</option>
+            <option value="IN" data-i18n="presence.filter.type_in">▲ Prihod (IN)</option>
+            <option value="OUT" data-i18n="presence.filter.type_out">▼ Odhod (OUT)</option>
           </select>
         </div>
         <div class="ff">
-          <label>Od</label>
+          <label data-i18n="presence.filter.from">Od</label>
           <input type="date" id="fFrom" onchange="loadLog(1)"/>
         </div>
         <div class="ff">
-          <label>Do</label>
+          <label data-i18n="presence.filter.to">Do</label>
           <input type="date" id="fTo" onchange="loadLog(1)"/>
         </div>
-        <button class="sk-btn" onclick="clearF()" style="align-self:flex-end;color:var(--mut);">✕ Počisti</button>
+        <button class="sk-btn" onclick="clearF()" style="align-self:flex-end;color:var(--mut);">✕ <span data-i18n="tags.btn.clear_filters">Počisti</span></button>
       </div>
 
       <table class="ltbl">
         <thead>
           <tr>
-            <th style="width:105px;">Tip</th>
-            <th>Ime in priimek</th>
-            <th>Kartica</th>
-            <th>Čas</th>
-            <th>Cona</th>
+            <th style="width:105px;" data-i18n="presence.col.type">Tip</th>
+            <th data-i18n="presenceadmin.col.name">Ime in priimek</th>
+            <th data-i18n="presenceadmin.col.card">Kartica</th>
+            <th data-i18n="presence.col.time">Čas</th>
+            <th data-i18n="tags.col.zone">Cona</th>
           </tr>
         </thead>
         <tbody id="tbody">
-          <tr><td colspan="5" class="stl">Nalaganje…</td></tr>
+          <tr><td colspan="5" class="stl" data-i18n="lbl.loading">Nalaganje…</td></tr>
         </tbody>
       </table>
 
       <div class="pbar">
-        <button class="sk-btn" id="bPrev" onclick="loadLog(pg-1)" disabled>‹ Nazaj</button>
-        <button class="sk-btn" id="bNext" onclick="loadLog(pg+1)" disabled>Naprej ›</button>
+        <button class="sk-btn" id="bPrev" onclick="loadLog(pg-1)" disabled>‹ <span data-i18n="lbl.prev">Nazaj</span></button>
+        <button class="sk-btn" id="bNext" onclick="loadLog(pg+1)" disabled><span data-i18n="lbl.next">Naprej</span> ›</button>
         <div class="pi" id="pi">—</div>
       </div>
     </div>
@@ -180,27 +180,27 @@ function dbt(){ clearTimeout(dbTimer); dbTimer=setTimeout(()=>loadLog(1),380); }
 /* ── "Zdaj znotraj" ───────────────────────────────────────────── */
 async function loadCurrent() {
   const grid = document.getElementById('grid');
-  grid.innerHTML = '<div class="stl" style="grid-column:1/-1;">Nalaganje…</div>';
+  grid.innerHTML = `<div class="stl" style="grid-column:1/-1;">${skT('lbl.loading')}</div>`;
 
   const r = await skGet('/api/Presence/current');
   if (!r.ok) {
-    grid.innerHTML = `<div class="stl" style="grid-column:1/-1;color:var(--red);">Napaka (${r.status}) — preverite prijavo.</div>`;
+    grid.innerHTML = `<div class="stl" style="grid-column:1/-1;color:var(--red);">${skT('tags.error.load')} (${r.status}).</div>`;
     return;
   }
 
   const data = Array.isArray(r.data) ? r.data : [];
   document.getElementById('sIn').textContent      = data.length;
-  document.getElementById('inBadge').textContent  = data.length + ' oseb';
+  document.getElementById('inBadge').textContent  = data.length + ' ' + skT('presenceadmin.persons');
 
   if (data.length === 0) {
-    grid.innerHTML = '<div class="stl" style="grid-column:1/-1;">Nihče ni trenutno znotraj.</div>';
+    grid.innerHTML = `<div class="stl" style="grid-column:1/-1;">${skT('presenceadmin.nobody_inside')}</div>`;
     return;
   }
   grid.innerHTML = data.map(u => `
     <div class="pcard">
       <div class="pcn">${esc(((u.name||'')+' '+(u.surname||'')).trim()||'—')}</div>
       ${u.cardId ? `<div class="pcc">🪪 ${esc(u.cardId)}</div>` : ''}
-      <div><span class="pcb">● Znotraj</span></div>
+      <div><span class="pcb">● ${skT('presenceadmin.badge.inside')}</span></div>
       <div class="pcm">${fmtDt(u.scannedAt)}</div>
       ${u.zone ? `<div class="pcz">${esc(u.zone)}</div>` : ''}
     </div>`).join('');
@@ -212,7 +212,7 @@ async function loadLog(page) {
   pg   = page;
 
   const tbody = document.getElementById('tbody');
-  tbody.innerHTML = '<tr><td colspan="5" class="stl">Nalaganje…</td></tr>';
+  tbody.innerHTML = `<tr><td colspan="5" class="stl">${skT('lbl.loading')}</td></tr>`;
 
   const p = new URLSearchParams({ page, pageSize: 50 });
   const s    = (document.getElementById('fSearch').value||'').trim();
@@ -228,7 +228,7 @@ async function loadLog(page) {
 
   const r = await skGet('/api/Presence/log?'+p);
   if (!r.ok) {
-    tbody.innerHTML = `<tr><td colspan="5" class="stl" style="color:var(--red);">Napaka (${r.status}).</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5" class="stl" style="color:var(--red);">${skT('tags.error.load')} (${r.status}).</td></tr>`;
     return;
   }
 
@@ -236,11 +236,11 @@ async function loadLog(page) {
   document.getElementById('sTot').textContent = total;
 
   if (!items.length) {
-    tbody.innerHTML = '<tr><td colspan="5" class="stl">Ni zapisov za izbrane filtre.</td></tr>';
+    tbody.innerHTML = `<tr><td colspan="5" class="stl">${skT('presence.no_data')}</td></tr>`;
   } else {
     tbody.innerHTML = items.map(e => `
       <tr>
-        <td>${e.type==='IN' ? '<span class="bin">▲ IN</span>' : '<span class="bout">▼ OUT</span>'}</td>
+        <td>${e.type==='IN' ? `<span class="bin">▲ ${skT('presence.badge.in')}</span>` : `<span class="bout">▼ ${skT('presence.badge.out')}</span>`}</td>
         <td style="font-weight:600;">${esc(e.name||'—')}</td>
         <td>${e.cardId ? `<span class="cchip">🪪 ${esc(e.cardId)}</span>` : '<span style="color:var(--mut);">—</span>'}</td>
         <td style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--sub);">${fmtDt(e.scannedAt)}</td>
@@ -249,7 +249,7 @@ async function loadLog(page) {
   }
 
   const tp = Math.ceil(total/pageSize)||1;
-  document.getElementById('pi').textContent    = `Stran ${page} / ${tp} · skupaj ${total}`;
+  document.getElementById('pi').textContent    = `${skT('lbl.page')} ${page} / ${tp} · ${skT('tags.total').toLowerCase()} ${total}`;
   document.getElementById('bPrev').disabled    = page <= 1;
   document.getElementById('bNext').disabled    = page >= tp;
 }

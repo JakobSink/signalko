@@ -102,20 +102,20 @@ table.pr-table tbody tr:hover td { background: var(--up); }
 
     <!-- Toolbar -->
     <div class="toolbar">
-      <button class="sk-btn" id="btnRefresh" onclick="load(pg)">↺ Osveži</button>
-      <button class="sk-btn" onclick="clearF()">✕ Počisti filtre</button>
-      <span style="margin-left:auto;font-size:11px;color:var(--mut);">Skupaj: <span id="totalCount">—</span></span>
+      <button class="sk-btn" id="btnRefresh" onclick="load(pg)">↺ <span data-i18n="tags.btn.refresh">Osveži</span></button>
+      <button class="sk-btn" onclick="clearF()">✕ <span data-i18n="tags.btn.clear_filters">Počisti filtre</span></button>
+      <span style="margin-left:auto;font-size:11px;color:var(--mut);"><span data-i18n="tags.total">Skupaj</span>: <span id="totalCount">—</span></span>
     </div>
 
     <!-- Filters -->
     <div class="filter-row">
       <select class="filter-input" id="fType" onchange="load(1)">
-        <option value="">— tip: vsi —</option>
-        <option value="IN">▲ Prihod (IN)</option>
-        <option value="OUT">▼ Odhod (OUT)</option>
+        <option value="" data-i18n="presence.filter.type_all">— tip: vsi —</option>
+        <option value="IN" data-i18n="presence.filter.type_in">▲ Prihod (IN)</option>
+        <option value="OUT" data-i18n="presence.filter.type_out">▼ Odhod (OUT)</option>
       </select>
-      <input class="filter-input" type="date" id="fFrom" onchange="load(1)" style="color-scheme:dark;" title="Od datuma"/>
-      <input class="filter-input" type="date" id="fTo"   onchange="load(1)" style="color-scheme:dark;" title="Do datuma"/>
+      <input class="filter-input" type="date" id="fFrom" onchange="load(1)" style="color-scheme:dark;" data-i18n-title="presence.filter.from" title="Od datuma"/>
+      <input class="filter-input" type="date" id="fTo"   onchange="load(1)" style="color-scheme:dark;" data-i18n-title="presence.filter.to" title="Do datuma"/>
     </div>
 
     <!-- Table -->
@@ -123,20 +123,20 @@ table.pr-table tbody tr:hover td { background: var(--up); }
       <table class="pr-table">
         <thead>
           <tr>
-            <th style="width:110px;">Tip</th>
-            <th>Čas</th>
-            <th>Cona</th>
+            <th style="width:110px;" data-i18n="presence.col.type">Tip</th>
+            <th data-i18n="presence.col.time">Čas</th>
+            <th data-i18n="tags.col.zone">Cona</th>
           </tr>
         </thead>
         <tbody id="tbody">
-          <tr><td colspan="3"><div class="state-loading-sm"><div class="sk-spin"></div>Nalaganje…</div></td></tr>
+          <tr><td colspan="3"><div class="state-loading-sm"><div class="sk-spin"></div><span data-i18n="lbl.loading">Nalaganje…</span></div></td></tr>
         </tbody>
       </table>
     </div>
 
     <!-- Pager -->
     <div class="pager-bar">
-      <div style="font-size:11px;color:var(--mut);">Stran <span id="pageInfo">1</span></div>
+      <div style="font-size:11px;color:var(--mut);"><span data-i18n="lbl.page">Stran</span> <span id="pageInfo">1</span></div>
       <div style="display:flex;gap:8px;align-items:center;">
         <div class="pager" id="pager"></div>
         <select class="page-size-sel" id="pageSize" onchange="onPageSizeChange()">
@@ -182,7 +182,7 @@ async function load(page) {
   pg   = page;
 
   const tbody = document.getElementById('tbody');
-  tbody.innerHTML = '<tr><td colspan="3"><div class="state-loading-sm"><div class="sk-spin"></div>Nalaganje…</div></td></tr>';
+  tbody.innerHTML = `<tr><td colspan="3"><div class="state-loading-sm"><div class="sk-spin"></div>${skT('lbl.loading')}</div></td></tr>`;
 
   const p    = new URLSearchParams({ page, pageSize: pgSize });
   const type = document.getElementById('fType').value;
@@ -194,7 +194,7 @@ async function load(page) {
 
   const r = await skGet('/api/Presence/me?' + p);
   if (!r.ok) {
-    tbody.innerHTML = `<tr><td colspan="3"><div class="state-empty" style="color:var(--red);">Napaka (${r.status}).</div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="3"><div class="state-empty" style="color:var(--red);">${skT('tags.error.load')} (${r.status}).</div></td></tr>`;
     return;
   }
 
@@ -202,11 +202,11 @@ async function load(page) {
   document.getElementById('totalCount').textContent = total;
 
   if (!items.length) {
-    tbody.innerHTML = '<tr><td colspan="3"><div class="state-empty">Ni zapisov za izbrane filtre.</div></td></tr>';
+    tbody.innerHTML = `<tr><td colspan="3"><div class="state-empty">${skT('presence.no_data')}</div></td></tr>`;
   } else {
     tbody.innerHTML = items.map(e => `
       <tr>
-        <td>${e.type==='IN' ? '<span class="badge-in">▲ IN</span>' : '<span class="badge-out">▼ OUT</span>'}</td>
+        <td>${e.type==='IN' ? `<span class="badge-in">▲ ${skT('presence.badge.in')}</span>` : `<span class="badge-out">▼ ${skT('presence.badge.out')}</span>`}</td>
         <td style="font-family:'JetBrains Mono',monospace;color:var(--sub);">${fmtDt(e.scannedAt)}</td>
         <td style="color:var(--sub);">${esc(e.zone||'—')}</td>
       </tr>`).join('');
