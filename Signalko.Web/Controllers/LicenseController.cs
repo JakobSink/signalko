@@ -98,9 +98,9 @@ public class LicenseController : PermissionedController
     {
         const string chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no ambiguous chars
         var rng = System.Security.Cryptography.RandomNumberGenerator.Create();
-        string[] groups = new string[3];
+        string[] groups = new string[4];
         var usedGroups = new HashSet<string>();
-        for (int i = 0; i < 3; i++)
+        for (int i = 0; i < 4; i++)
         {
             string group;
             do
@@ -111,7 +111,7 @@ public class LicenseController : PermissionedController
             } while (!usedGroups.Add(group));
             groups[i] = group;
         }
-        return $"signal-{groups[0]}-{groups[1]}-{groups[2]}";
+        return $"{groups[0]}-{groups[1]}-{groups[2]}-{groups[3]}";
     }
 }
 

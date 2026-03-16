@@ -96,10 +96,8 @@ function render(d) {
         <label>Domena (neobvezno)</label>
         <input class="sk-input" id="inpDomain" type="text" value="${h(d.domain || '')}" placeholder="npr. signalko.si" style="max-width:320px;"/>
       </div>
-      <div style="font-size:10px;color:var(--mut);margin-bottom:12px;">Omejitev uporabnikov (${d.maxUsers}) se nastavi samo v bazi podatkov.</div>
       <div style="display:flex;gap:10px;flex-wrap:wrap;">
         <button class="sk-btn sk-btn-acc" id="saveBtn" onclick="save()">✓ Shrani domeno</button>
-        <button class="lic-regen-btn" id="regenBtn" onclick="regen()">↻ Regeneriraj ključ</button>
       </div>
     </div>` : ''}
   `;
