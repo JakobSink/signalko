@@ -352,11 +352,15 @@ async function saveProfile() {
   }
 
   // Update localStorage
+  const prevLang = me.language || me.Language || 'en';
   const updated = { ...me, name, surname, email, language: lang };
   localStorage.setItem('sk_user', JSON.stringify(updated));
 
-  // Re-apply translations immediately with new language
-  skApplyI18n();
+  // If language changed, reload so every page element (sidebar + i18n) re-renders
+  if (lang !== prevLang) {
+    location.reload();
+    return;
+  }
 
   // Update avatar chip
   const initials = [name[0], surname[0]].filter(Boolean).join('').toUpperCase() || '?';

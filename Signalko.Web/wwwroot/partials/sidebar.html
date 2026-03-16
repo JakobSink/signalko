@@ -437,9 +437,15 @@
           roleId:   fresh.roleId   || fresh.RoleId   || null,
           roleName: fresh.roleName || fresh.RoleName || null,
           role:     fresh.role     || fresh.Role     || null,
-          language: fresh.language || fresh.Language || cached.language || 'sl',
+          language: fresh.language || fresh.Language || cached.language || 'en',
         };
         localStorage.setItem('sk_user', JSON.stringify(updatedUser));
+
+        // If language changed server-side, reload so i18n re-fetches the correct file
+        if (cached && updatedUser.language !== cached.language) {
+          location.reload();
+          return;
+        }
       }
       render(updatedUser, Array.isArray(perms) ? perms : cachedPerms);
     });

@@ -217,10 +217,18 @@ static async Task MigrateAndSeedCoreAsync(WebApplication app)
         // Add Language column to users if it doesn't exist yet
         try
         {
-            await db.Database.ExecuteSqlRawAsync("ALTER TABLE `users` ADD COLUMN `Language` VARCHAR(5) NOT NULL DEFAULT 'sl';");
+            await db.Database.ExecuteSqlRawAsync("ALTER TABLE `users` ADD COLUMN `Language` VARCHAR(5) NOT NULL DEFAULT 'en';");
             Console.WriteLine("[DB] Added Language column to users.");
         }
         catch { /* column already exists */ }
+
+        // Fix Language default from 'sl' to 'en' for installs that had the old default
+        try
+        {
+            await db.Database.ExecuteSqlRawAsync("ALTER TABLE `users` MODIFY COLUMN `Language` VARCHAR(5) NOT NULL DEFAULT 'en';");
+            Console.WriteLine("[DB] Updated Language column default to 'en'.");
+        }
+        catch { /* safe to ignore */ }
 
         // Add LicenseId columns to tenant-scoped tables
         try { await db.Database.ExecuteSqlRawAsync("ALTER TABLE `users` ADD COLUMN `LicenseId` INT NULL;"); } catch { /* already exists */ }
@@ -229,6 +237,22 @@ static async Task MigrateAndSeedCoreAsync(WebApplication app)
         try { await db.Database.ExecuteSqlRawAsync("ALTER TABLE `readers` ADD COLUMN `LicenseId` INT NULL;"); } catch { /* already exists */ }
         try { await db.Database.ExecuteSqlRawAsync("ALTER TABLE `TAG` ADD COLUMN `LicenseId` INT NULL;"); } catch { /* already exists */ }
         Console.WriteLine("[DB] LicenseId columns ensured.");
+
+        // Add foreign key constraints for LicenseId (safe — only if not already present)
+        var fkTables = new[] { ("users", "fk_users_license"), ("ASSET", "fk_asset_license"),
+                                ("zones", "fk_zones_license"), ("readers", "fk_readers_license"), ("TAG", "fk_tag_license") };
+        foreach (var (tbl, fkName) in fkTables)
+        {
+            try
+            {
+                await db.Database.ExecuteSqlRawAsync($@"
+                    ALTER TABLE `{tbl}`
+                    ADD CONSTRAINT `{fkName}` FOREIGN KEY (`LicenseId`) REFERENCES `licenses`(`id`) ON DELETE SET NULL;
+                ");
+                Console.WriteLine($"[DB] Added FK {fkName}.");
+            }
+            catch { /* FK already exists or table not ready — safe to ignore */ }
+        }
 
         // Seed roles
         if (!await db.Roles.AnyAsync())
