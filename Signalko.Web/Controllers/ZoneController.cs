@@ -42,13 +42,15 @@ public class ZoneController : PermissionedController
     [HttpGet]
     public async Task<IActionResult> GetZones()
     {
-        return Ok(await _db.zones.ToListAsync());
+        var licId = GetLicenseId();
+        return Ok(await _db.zones.Where(z => z.LicenseId == licId).ToListAsync());
     }
 
     [HttpPost, Authorize]
     public async Task<IActionResult> AddZone([FromBody] Zone zone)
     {
         if (!await HasPermAsync("zones.manage")) return Forbidden("zones.manage");
+        zone.LicenseId = GetLicenseId();
         _db.zones.Add(zone);
         await _db.SaveChangesAsync();
         return Ok(zone);
@@ -58,7 +60,8 @@ public class ZoneController : PermissionedController
     public async Task<IActionResult> GetZone(int id)
     {
         if (!await HasPermAsync("zones.view")) return Forbidden("zones.view");
-        var z = await _db.zones.FindAsync(id);
+        var licId = GetLicenseId();
+        var z = await _db.zones.FirstOrDefaultAsync(x => x.id == id && x.LicenseId == licId);
         if (z is null) return NotFound();
         return Ok(new ZoneDto(z.id, z.Name, z.Type));
     }
@@ -67,7 +70,8 @@ public class ZoneController : PermissionedController
     public async Task<IActionResult> UpdateZone(int id, [FromBody] ZoneDto dto)
     {
         if (!await HasPermAsync("zones.manage")) return Forbidden("zones.manage");
-        var z = await _db.zones.FindAsync(id);
+        var licId = GetLicenseId();
+        var z = await _db.zones.FirstOrDefaultAsync(x => x.id == id && x.LicenseId == licId);
         if (z is null) return NotFound(new { message = $"Cona #{id} ne obstaja." });
 
         z.Name = dto.Name;
@@ -80,9 +84,10 @@ public class ZoneController : PermissionedController
     public async Task<IActionResult> DeleteZone(int id)
     {
         if (!await HasPermAsync("zones.manage")) return Forbidden("zones.manage");
+        var licId = GetLicenseId();
         var z = await _db.zones
             .Include(x => x.Antennas)
-            .FirstOrDefaultAsync(x => x.id == id);
+            .FirstOrDefaultAsync(x => x.id == id && x.LicenseId == licId);
 
         if (z is null) return NotFound();
 
@@ -98,8 +103,10 @@ public class ZoneController : PermissionedController
     public async Task<IEnumerable<ZoneWithAntennasDto>> GetWithAntennas()
     {
         if (!await HasPermAsync("zones.view")) { Response.StatusCode = 403; return Enumerable.Empty<ZoneWithAntennasDto>(); }
-        var zones = await _db.zones.OrderBy(z => z.Name).ToListAsync();
-        var antennas = await _db.antennas.Include(a => a.Reader).Include(a => a.Role).ToListAsync();
+        var licId = GetLicenseId();
+        var zones = await _db.zones.Where(z => z.LicenseId == licId).OrderBy(z => z.Name).ToListAsync();
+        var antennas = await _db.antennas.Include(a => a.Reader).Include(a => a.Role)
+            .Where(a => a.Reader != null && a.Reader.LicenseId == licId).ToListAsync();
         var result = new List<ZoneWithAntennasDto>();
         foreach (var z in zones)
         {

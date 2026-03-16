@@ -21,12 +21,13 @@ public class LoginRequest
 
 public class AuthResponse
 {
-    public string  token   { get; set; } = "";
-    public int     id      { get; set; }
-    public string  cardID  { get; set; } = "";
-    public string  name    { get; set; } = "";
-    public string? surname { get; set; }
-    public string  email   { get; set; } = "";
-    public int?    roleId  { get; set; }
-    public string? role    { get; set; }
+    public string  token     { get; set; } = "";
+    public int     id        { get; set; }
+    public string  cardID    { get; set; } = "";
+    public string  name      { get; set; } = "";
+    public string? surname   { get; set; }
+    public string  email     { get; set; } = "";
+    public int?    roleId    { get; set; }
+    public string? role      { get; set; }
+    public int?    licenseId { get; set; }
 }

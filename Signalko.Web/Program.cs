@@ -194,6 +194,14 @@ static async Task MigrateAndSeedCoreAsync(WebApplication app)
         }
         catch { /* column already exists — safe to ignore */ }
 
+        // Add LicenseId columns to tenant-scoped tables
+        try { await db.Database.ExecuteSqlRawAsync("ALTER TABLE `users` ADD COLUMN `LicenseId` INT NULL;"); } catch { /* already exists */ }
+        try { await db.Database.ExecuteSqlRawAsync("ALTER TABLE `ASSET` ADD COLUMN `LicenseId` INT NULL;"); } catch { /* already exists */ }
+        try { await db.Database.ExecuteSqlRawAsync("ALTER TABLE `zones` ADD COLUMN `LicenseId` INT NULL;"); } catch { /* already exists */ }
+        try { await db.Database.ExecuteSqlRawAsync("ALTER TABLE `readers` ADD COLUMN `LicenseId` INT NULL;"); } catch { /* already exists */ }
+        try { await db.Database.ExecuteSqlRawAsync("ALTER TABLE `TAG` ADD COLUMN `LicenseId` INT NULL;"); } catch { /* already exists */ }
+        Console.WriteLine("[DB] LicenseId columns ensured.");
+
         // Seed roles
         if (!await db.Roles.AnyAsync())
         {
@@ -320,6 +328,18 @@ static async Task MigrateAndSeedCoreAsync(WebApplication app)
             });
             await db.SaveChangesAsync();
             Console.WriteLine("[Seed] License created.");
+        }
+
+        // Migrate existing data to first license (assigns LicenseId to rows that don't have one yet)
+        var firstLicenseId = await db.Licenses.AsNoTracking().OrderBy(l => l.id).Select(l => l.id).FirstOrDefaultAsync();
+        if (firstLicenseId > 0)
+        {
+            await db.Database.ExecuteSqlRawAsync($"UPDATE `users`   SET `LicenseId` = {firstLicenseId} WHERE `LicenseId` IS NULL;");
+            await db.Database.ExecuteSqlRawAsync($"UPDATE `ASSET`   SET `LicenseId` = {firstLicenseId} WHERE `LicenseId` IS NULL;");
+            await db.Database.ExecuteSqlRawAsync($"UPDATE `zones`   SET `LicenseId` = {firstLicenseId} WHERE `LicenseId` IS NULL;");
+            await db.Database.ExecuteSqlRawAsync($"UPDATE `readers` SET `LicenseId` = {firstLicenseId} WHERE `LicenseId` IS NULL;");
+            await db.Database.ExecuteSqlRawAsync($"UPDATE `TAG`     SET `LicenseId` = {firstLicenseId} WHERE `LicenseId` IS NULL;");
+            Console.WriteLine($"[DB] Existing data migrated to license {firstLicenseId}.");
         }
     }
     catch (Exception ex)

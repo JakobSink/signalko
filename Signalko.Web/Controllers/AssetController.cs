@@ -25,6 +25,7 @@ public class AssetController : PermissionedController
     public async Task<IActionResult> GetAssets()
     {
         if (!await HasPermAsync("assets.view")) return Forbidden("assets.view");
+        var licId = GetLicenseId();
         // One-time backfill: set EpcAscii for any tag that still has it empty
         var tagsToFix = await _db.TAG
             .Where(t => !string.IsNullOrEmpty(t.Epc) && string.IsNullOrEmpty(t.EpcAscii))
@@ -36,15 +37,17 @@ public class AssetController : PermissionedController
         if (tagsToFix.Count > 0)
             await _db.SaveChangesAsync();
 
-        // Normal load
+        // Normal load — filtered by tenant
         var assets = await _db.ASSET
+            .Where(a => a.LicenseId == licId)
             .Include(a => a.Author)
             .Include(a => a.Tag)
             .AsNoTracking()
             .ToListAsync();
 
+        var assetIds = assets.Select(a => a.id).ToList();
         var activeLoans = await _db.assets_loans
-            .Where(l => l.ReturnedAt == null)
+            .Where(l => l.ReturnedAt == null && assetIds.Contains(l.AssetId))
             .Select(l => new { l.AssetId, l.id })
             .ToListAsync();
 
@@ -63,11 +66,12 @@ public class AssetController : PermissionedController
     public async Task<IActionResult> GetAsset(int id)
     {
         if (!await HasPermAsync("assets.view")) return Forbidden("assets.view");
+        var licId = GetLicenseId();
         var a = await _db.ASSET
             .Include(x => x.Author)
             .Include(x => x.Tag)
             .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.id == id);
+            .FirstOrDefaultAsync(x => x.id == id && x.LicenseId == licId);
 
         return a == null ? NotFound() : Ok(a);
     }
@@ -115,10 +119,11 @@ public class AssetController : PermissionedController
 
         var entity = new Asset
         {
-            Name    = dto.Name,
-            Details = dto.Description,
-            TagId   = tagId,
-            Icon    = dto.Icon,
+            Name      = dto.Name,
+            Details   = dto.Description,
+            TagId     = tagId,
+            Icon      = dto.Icon,
+            LicenseId = GetLicenseId(),
         };
         _db.ASSET.Add(entity);
         await _db.SaveChangesAsync();
@@ -132,7 +137,8 @@ public class AssetController : PermissionedController
     public async Task<IActionResult> UpdateAsset(int id, [FromBody] AssetUpsertDto dto)
     {
         if (!await HasPermAsync("assets.edit")) return Forbidden("assets.edit");
-        var entity = await _db.ASSET.Include(a => a.Tag).FirstOrDefaultAsync(a => a.id == id);
+        var licId = GetLicenseId();
+        var entity = await _db.ASSET.Include(a => a.Tag).FirstOrDefaultAsync(a => a.id == id && a.LicenseId == licId);
         if (entity == null) return NotFound();
 
         if (!string.IsNullOrWhiteSpace(dto.Name))        entity.Name    = dto.Name;
@@ -176,7 +182,8 @@ public class AssetController : PermissionedController
     public async Task<IActionResult> UploadIcon(int id, IFormFile file)
     {
         if (!await HasPermAsync("assets.edit")) return Forbidden("assets.edit");
-        var entity = await _db.ASSET.FindAsync(id);
+        var licId = GetLicenseId();
+        var entity = await _db.ASSET.FirstOrDefaultAsync(a => a.id == id && a.LicenseId == licId);
         if (entity == null) return NotFound();
 
         var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
@@ -205,7 +212,8 @@ public class AssetController : PermissionedController
     public async Task<IActionResult> DeleteAsset(int id)
     {
         if (!await HasPermAsync("assets.edit")) return Forbidden("assets.edit");
-        var entity = await _db.ASSET.FirstOrDefaultAsync(a => a.id == id);
+        var licId = GetLicenseId();
+        var entity = await _db.ASSET.FirstOrDefaultAsync(a => a.id == id && a.LicenseId == licId);
         if (entity == null) return NotFound();
         _db.ASSET.Remove(entity);
         await _db.SaveChangesAsync();
@@ -226,8 +234,10 @@ public class AssetController : PermissionedController
     [HttpGet("export"), Authorize]
     public async Task<IActionResult> Export()
     {
+        var licId = GetLicenseId();
         // Single query — join ASSET + TAG in DB, no per-row round-trips
         var rows = await _db.ASSET
+            .Where(a => a.LicenseId == licId)
             .AsNoTracking()
             .OrderBy(a => a.Name)
             .Select(a => new
@@ -252,6 +262,7 @@ public class AssetController : PermissionedController
     public async Task<IActionResult> Import(IFormFile file)
     {
         if (!await HasPermAsync("assets.edit")) return Forbidden("assets.edit");
+        var importLicId = GetLicenseId();
         if (file == null || file.Length == 0)
             return BadRequest(new { message = "Datoteka je prazna." });
 
@@ -331,9 +342,10 @@ public class AssetController : PermissionedController
             {
                 var newAsset = new Asset
                 {
-                    Name    = rowName,
-                    Details = rowDetails.Length > 0 ? rowDetails : null,
-                    Tag     = tag,   // EF resolves FK via navigation for new tags
+                    Name      = rowName,
+                    Details   = rowDetails.Length > 0 ? rowDetails : null,
+                    Tag       = tag,   // EF resolves FK via navigation for new tags
+                    LicenseId = importLicId,
                 };
                 _db.ASSET.Add(newAsset);
                 created++;

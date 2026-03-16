@@ -17,7 +17,9 @@ public class PresenceController : PermissionedController
     {
         if (!await HasPermAsync("presence.manage")) return Forbidden("presence.manage");
 
-        var sql = @"
+        var licId = GetLicenseId();
+        var licFilter = licId.HasValue ? $"AND u.LicenseId = {licId.Value}" : "";
+        var sql = $@"
             SELECT u.id, u.Name, u.Surname, u.CardID, u.CardEpc,
                    p.Type, p.ScannedAt, z.Name AS ZoneName
             FROM users u
@@ -28,7 +30,7 @@ public class PresenceController : PermissionedController
                 LIMIT 1
             )
             LEFT JOIN zones z ON z.id = p.ZoneId
-            WHERE p.Type = 'IN'
+            WHERE p.Type = 'IN' {licFilter}
             ORDER BY p.ScannedAt DESC;";
 
         await using var conn = _db.Database.GetDbConnection();
@@ -73,7 +75,9 @@ public class PresenceController : PermissionedController
         page     = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, 200);
 
-        var q = _db.UserPresences.AsNoTracking().Include(p => p.User).Include(p => p.Zone).AsQueryable();
+        var licId = GetLicenseId();
+        var q = _db.UserPresences.AsNoTracking().Include(p => p.User).Include(p => p.Zone)
+            .Where(p => p.User != null && p.User.LicenseId == licId).AsQueryable();
 
         if (userId.HasValue) q = q.Where(p => p.UserId == userId.Value);
         if (!string.IsNullOrWhiteSpace(cardId))
@@ -154,6 +158,7 @@ public class PresenceController : PermissionedController
         page     = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, 200);
 
+        var licId = GetLicenseId();
         var q = _db.UserPresences.AsNoTracking().Where(p => p.UserId == id).Include(p => p.Zone).AsQueryable();
 
         if (from.HasValue) q = q.Where(p => p.ScannedAt >= from.Value);
@@ -173,7 +178,7 @@ public class PresenceController : PermissionedController
             .ToListAsync();
 
         var user = await _db.users.AsNoTracking()
-            .Where(u => u.id == id)
+            .Where(u => u.id == id && u.LicenseId == licId)
             .Select(u => new { u.id, u.Name, u.Surname, u.CardID, u.CardEpc })
             .FirstOrDefaultAsync();
 

@@ -21,10 +21,12 @@ public class LoanController : PermissionedController
         // Authenticated users need loans.view; guests may browse freely
         var uid = GetUserId();
         if (uid != null && !await HasPermAsync("loans.view")) return Forbidden("loans.view");
+        var licId = GetLicenseId();
         var q = _db.assets_loans
             .Include(l => l.Asset)
             .Include(l => l.User)
             .Include(l => l.Zone)
+            .Where(l => l.User != null && l.User.LicenseId == licId)
             .AsNoTracking();
 
         if (active == true)
@@ -118,12 +120,15 @@ public class LoanController : PermissionedController
         // Authenticated users need loans.create; kiosk (guest) use is allowed — user identified by card scan
         var uid = GetUserId();
         if (uid != null && !await HasPermAsync("loans.create")) return Forbidden("loans.create");
-        var asset = await _db.ASSET.AsNoTracking().FirstOrDefaultAsync(a => a.id == dto.AssetId);
+        var licId = GetLicenseId();
+        var asset = await _db.ASSET.AsNoTracking()
+            .FirstOrDefaultAsync(a => a.id == dto.AssetId && (licId == null || a.LicenseId == licId));
         if (asset == null)
             return NotFound($"Sredstvo z ID {dto.AssetId} ne obstaja.");
 
-        // Validate user
-        var user = await _db.users.AsNoTracking().FirstOrDefaultAsync(u => u.id == dto.UserId);
+        // Validate user — must belong to same tenant
+        var user = await _db.users.AsNoTracking()
+            .FirstOrDefaultAsync(u => u.id == dto.UserId && (licId == null || u.LicenseId == licId));
         if (user == null)
             return NotFound($"Uporabnik z ID {dto.UserId} ne obstaja.");
 

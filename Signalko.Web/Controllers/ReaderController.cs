@@ -17,7 +17,9 @@ public class ReaderController : PermissionedController
     public async Task<IActionResult> Get()
     {
         if (!await HasPermAsync("readers.view")) return Forbidden("readers.view");
+        var licId = GetLicenseId();
         var list = await _db.readers
+            .Where(r => r.LicenseId == licId)
             .AsNoTracking()
             .Include(r => r.Antennas)
             .Select(r => new ReaderDto
@@ -38,10 +40,11 @@ public class ReaderController : PermissionedController
 
         var entity = new Reader
         {
-            Name     = dto.Name.Trim(),
-            IP       = dto.Ip.Trim(),
-            Hostname = string.IsNullOrWhiteSpace(dto.Hostname) ? null : dto.Hostname.Trim(),
-            Enabled  = dto.Enabled
+            Name      = dto.Name.Trim(),
+            IP        = dto.Ip.Trim(),
+            Hostname  = string.IsNullOrWhiteSpace(dto.Hostname) ? null : dto.Hostname.Trim(),
+            Enabled   = dto.Enabled,
+            LicenseId = GetLicenseId(),
         };
         _db.readers.Add(entity);
         await _db.SaveChangesAsync();
@@ -53,7 +56,8 @@ public class ReaderController : PermissionedController
     public async Task<IActionResult> Update(int id, [FromBody] ReaderDto dto)
     {
         if (!await HasPermAsync("readers.manage")) return Forbidden("readers.manage");
-        var entity = await _db.readers.FindAsync(id);
+        var licId = GetLicenseId();
+        var entity = await _db.readers.FirstOrDefaultAsync(r => r.id == id && r.LicenseId == licId);
         if (entity == null) return NotFound($"Reader z ID={id} ne obstaja.");
 
         if (!string.IsNullOrWhiteSpace(dto.Name)) entity.Name = dto.Name.Trim();
@@ -68,7 +72,8 @@ public class ReaderController : PermissionedController
     public async Task<IActionResult> Delete(int id)
     {
         if (!await HasPermAsync("readers.manage")) return Forbidden("readers.manage");
-        var entity = await _db.readers.FindAsync(id);
+        var licId = GetLicenseId();
+        var entity = await _db.readers.FirstOrDefaultAsync(r => r.id == id && r.LicenseId == licId);
         if (entity == null) return NotFound();
         _db.readers.Remove(entity);
         await _db.SaveChangesAsync();

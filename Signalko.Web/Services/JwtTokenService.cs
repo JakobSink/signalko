@@ -26,6 +26,7 @@ public class JwtTokenService
             new Claim(JwtRegisteredClaimNames.Email, u.Email),
             new Claim("cardID", u.CardID ?? ""),
             new Claim("name",   u.Name   ?? ""),
+            new Claim("lid",    u.LicenseId?.ToString() ?? ""),
         };
 
         // Role claims — use navigation prop name if available, fallback to parameter

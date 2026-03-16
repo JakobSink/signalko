@@ -19,8 +19,10 @@ public class UserController : PermissionedController
     public async Task<IActionResult> GetUsers()
     {
         if (!await HasPermAsync("users.view")) return Forbidden("users.view");
+        var licId = GetLicenseId();
         var users = await _db.users
             .Include(u => u.Role)
+            .Where(u => u.LicenseId == licId)
             .AsNoTracking()
             .ToListAsync();
 
@@ -40,10 +42,11 @@ public class UserController : PermissionedController
     public async Task<IActionResult> GetUser(int id)
     {
         if (GetUserId() != id && !await HasPermAsync("users.view")) return Forbidden("users.view");
+        var licId = GetLicenseId();
         var u = await _db.users
             .Include(x => x.Role)
             .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.id == id);
+            .FirstOrDefaultAsync(x => x.id == id && x.LicenseId == licId);
         if (u == null) return NotFound();
         return Ok(new UserAdminDto(u.id, u.CardID, u.Name, u.Surname, u.Email, u.RoleId, u.Role?.Name, u.CardEpc, u.IsActive));
     }
@@ -66,16 +69,19 @@ public class UserController : PermissionedController
     public async Task<IActionResult> AddUser([FromBody] UserCreateDto dto)
     {
         if (!await HasPermAsync("users.manage")) return Forbidden("users.manage");
+        var licId = GetLicenseId();
         if (await _db.users.AnyAsync(u => u.Email == dto.Email))
             return Conflict(new { message = "Email je že registriran." });
         if (await _db.users.AnyAsync(u => u.CardID == dto.CardID))
             return Conflict(new { message = "CardID je že zaseden." });
 
-        // License: check active user limit
-        var lic = await _db.Licenses.AsNoTracking().FirstOrDefaultAsync();
+        // License: check active user limit for this tenant
+        var lic = licId.HasValue
+            ? await _db.Licenses.AsNoTracking().FirstOrDefaultAsync(l => l.id == licId.Value)
+            : null;
         if (lic != null)
         {
-            var activeCount = await _db.users.CountAsync(u => u.IsActive);
+            var activeCount = await _db.users.CountAsync(u => u.IsActive && u.LicenseId == licId);
             if (activeCount >= lic.MaxUsers)
                 return Conflict(new { message = $"Dosežena omejitev licence ({lic.MaxUsers} aktivnih uporabnikov). Deaktiviraj obstoječega uporabnika ali nadgradi licenco." });
         }
@@ -91,6 +97,7 @@ public class UserController : PermissionedController
             Password     = PasswordHasher.Hash(dto.Password),
             CardEpc      = string.IsNullOrWhiteSpace(dto.CardEpc) ? null : dto.CardEpc.Trim(),
             IsActive     = true,
+            LicenseId    = licId,
         };
         _db.users.Add(entity);
         await _db.SaveChangesAsync();

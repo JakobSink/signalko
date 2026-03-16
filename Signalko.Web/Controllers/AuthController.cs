@@ -39,27 +39,28 @@ public class AuthController : ControllerBase
         if (license == null)
             return BadRequest(new { message = "Neveljaven licenčni ključ." });
 
-        // If license already has any users → it's activated, block further registrations
-        if (await _db.users.AnyAsync())
+        // If this license already has any users → it's activated, block further registrations
+        if (await _db.users.AnyAsync(u => u.LicenseId == license.id))
             return Conflict(new { message = "Licenčni ključ je že aktiviran. Obrnite se na administratorja sistema." });
 
         if (await _db.users.AnyAsync(u => u.Email == email))
             return Conflict(new { message = "Email je že registriran." });
 
-        // First user to register gets Admin; all others get User
+        // First user on this license gets Admin; all others get User
         var adminRole = await _db.Roles.FirstOrDefaultAsync(r => r.Name == "Admin");
         var userRole  = await _db.Roles.FirstOrDefaultAsync(r => r.Name == "User");
-        var hasAdmin  = adminRole != null && await _db.users.AnyAsync(u => u.RoleId == adminRole.id);
+        var hasAdmin  = adminRole != null && await _db.users.AnyAsync(u => u.RoleId == adminRole.id && u.LicenseId == license.id);
         var assignedRole = (!hasAdmin && adminRole != null) ? adminRole : userRole;
 
         var user = new User
         {
-            Name     = (req.Name ?? "").Trim(),
-            Surname  = string.IsNullOrWhiteSpace(req.Surname) ? null : req.Surname.Trim(),
-            Email    = email,
-            Password = PasswordHasher.Hash(req.Password),
-            CardID   = await GenerateUniqueCardIdAsync(),
-            RoleId   = assignedRole?.id
+            Name      = (req.Name ?? "").Trim(),
+            Surname   = string.IsNullOrWhiteSpace(req.Surname) ? null : req.Surname.Trim(),
+            Email     = email,
+            Password  = PasswordHasher.Hash(req.Password),
+            CardID    = await GenerateUniqueCardIdAsync(),
+            RoleId    = assignedRole?.id,
+            LicenseId = license.id
         };
 
         _db.users.Add(user);
@@ -69,14 +70,15 @@ public class AuthController : ControllerBase
 
         return Ok(new AuthResponse
         {
-            token   = token,
-            id      = user.id,
-            cardID  = user.CardID,
-            name    = user.Name,
-            surname = user.Surname,
-            email   = user.Email,
-            roleId  = assignedRole?.id,
-            role    = assignedRole?.Name
+            token     = token,
+            id        = user.id,
+            cardID    = user.CardID,
+            name      = user.Name,
+            surname   = user.Surname,
+            email     = user.Email,
+            roleId    = assignedRole?.id,
+            role      = assignedRole?.Name,
+            licenseId = user.LicenseId
         });
     }
 
@@ -100,14 +102,15 @@ public class AuthController : ControllerBase
 
         return Ok(new AuthResponse
         {
-            token   = token,
-            id      = user.id,
-            cardID  = user.CardID,
-            name    = user.Name,
-            surname = user.Surname,
-            email   = user.Email,
-            roleId  = user.RoleId,
-            role    = user.Role?.Name
+            token     = token,
+            id        = user.id,
+            cardID    = user.CardID,
+            name      = user.Name,
+            surname   = user.Surname,
+            email     = user.Email,
+            roleId    = user.RoleId,
+            role      = user.Role?.Name,
+            licenseId = user.LicenseId
         });
     }
 

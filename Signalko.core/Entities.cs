@@ -41,6 +41,8 @@ public class Zone
     public string? Name { get; set; }
     public string? Type { get; set; }
 
+    public int? LicenseId { get; set; }
+
     [JsonIgnore]
     public ICollection<Antenna> Antennas { get; set; } = new List<Antenna>();
 }
@@ -83,6 +85,8 @@ public class User
 
     public bool IsActive { get; set; } = true;
 
+    public int? LicenseId { get; set; }
+
     [JsonIgnore]
     public ICollection<AssetLoan> Loans { get; set; } = new List<AssetLoan>();
 }
@@ -101,6 +105,8 @@ public class Reader
 
     [MaxLength(100)]
     public string? Hostname { get; set; }
+
+    public int? LicenseId { get; set; }
 
     [JsonIgnore]
     public ICollection<Antenna> Antennas { get; set; } = new List<Antenna>();
@@ -152,6 +158,8 @@ public class Asset
 
     public int? TagId { get; set; }
     public int? AuthorId { get; set; }
+
+    public int? LicenseId { get; set; }
 
     [ForeignKey(nameof(AuthorId))] public Author? Author { get; set; }
     [ForeignKey(nameof(TagId))]    public Tag? Tag { get; set; }
@@ -263,6 +271,8 @@ public class Tag
 
     [MaxLength(128)]
     public string? EpcAscii { get; set; }
+
+    public int? LicenseId { get; set; }
 }
 
 // ============ LICENSE ============

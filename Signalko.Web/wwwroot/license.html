@@ -21,10 +21,6 @@
 .lic-bar-fill.warn{background:var(--org);}
 .lic-bar-fill.full{background:var(--red);}
 .lic-bar-label{font-size:10px;color:var(--mut);margin-top:5px;}
-.lic-field{margin-bottom:14px;}
-.lic-field label{display:block;font-size:9px;color:var(--mut);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:5px;}
-.lic-regen-btn{background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.25);color:var(--red);font-size:11px;font-weight:700;padding:8px 14px;border-radius:8px;cursor:pointer;font-family:'JetBrains Mono',monospace;transition:background .13s;display:flex;align-items:center;gap:6px;}
-.lic-regen-btn:hover{background:rgba(248,113,113,.15);}
 .lic-meta{font-size:11px;color:var(--mut);}
 .lic-meta span{color:var(--sub);}
 </style>
@@ -57,7 +53,6 @@ async function load() {
 function render(d) {
   const pct    = Math.min(100, Math.round((d.activeUsers / d.maxUsers) * 100));
   const fillCls = pct >= 100 ? 'full' : pct >= 80 ? 'warn' : '';
-  const canManage = skHasPerm('license.manage');
 
   document.getElementById('licContent').innerHTML = `
     <div class="sk-card sk-card-pad" style="margin-bottom:16px;">
@@ -69,7 +64,6 @@ function render(d) {
       <div class="lic-meta" style="margin-top:10px;">
         Ustvarjena: <span>${fmt(d.createdAt)}</span> &nbsp;·&nbsp;
         Posodobljena: <span>${fmt(d.updatedAt)}</span>
-        ${d.domain ? ` &nbsp;·&nbsp; Domena: <span>${h(d.domain)}</span>` : ''}
       </div>
     </div>
 
@@ -88,41 +82,7 @@ function render(d) {
         <div style="font-size:11px;color:var(--mut);margin-top:10px;">Neaktivni: ${d.totalUsers - d.activeUsers}</div>
       </div>
     </div>
-
-    ${canManage ? `
-    <div class="sk-card sk-card-pad">
-      <div style="font-size:11px;font-weight:700;color:var(--txt);margin-bottom:14px;">Nastavitve licence</div>
-      <div class="lic-field">
-        <label>Domena (neobvezno)</label>
-        <input class="sk-input" id="inpDomain" type="text" value="${h(d.domain || '')}" placeholder="npr. signalko.si" style="max-width:320px;"/>
-      </div>
-      <div style="display:flex;gap:10px;flex-wrap:wrap;">
-        <button class="sk-btn sk-btn-acc" id="saveBtn" onclick="save()">✓ Shrani domeno</button>
-      </div>
-    </div>` : ''}
   `;
-}
-
-async function save() {
-  const btn    = document.getElementById('saveBtn');
-  const domain = document.getElementById('inpDomain')?.value.trim() || '';
-  skBtnLoading(btn, true, '✓ Shrani domeno');
-  const r = await skPut('/api/License', { domain });
-  skBtnLoading(btn, false, '✓ Shrani domeno');
-  if (!r.ok) { skToast(r.data?.message || 'Napaka pri shranjevanju.', 'error'); return; }
-  skToast('Licenca shranjena!');
-  render(r.data);
-}
-
-async function regen() {
-  if (!confirm('Regeneriraj licenčni ključ? Stari ključ bo neveljavno.')) return;
-  const btn = document.getElementById('regenBtn');
-  skBtnLoading(btn, true, '↻ Regeneriraj ključ');
-  const r = await skPost('/api/License/regenerate', {});
-  skBtnLoading(btn, false, '↻ Regeneriraj ključ');
-  if (!r.ok) { skToast(r.data?.message || 'Napaka.', 'error'); return; }
-  skToast('Ključ regeneriran!');
-  render(r.data);
 }
 
 function copyKey() {

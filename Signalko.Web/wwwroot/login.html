@@ -196,13 +196,14 @@ async function doLogin() {
     localStorage.removeItem('sk_user_perms');
     localStorage.setItem('token', tok);
     localStorage.setItem('sk_user', JSON.stringify({
-      id:      data.id      || 0,
-      name:    data.name    || data.Name    || '',
-      surname: data.surname || data.Surname || '',
-      cardID:  data.cardID  || data.CardID  || '',
+      id:        data.id        || 0,
+      name:      data.name      || data.Name    || '',
+      surname:   data.surname   || data.Surname || '',
+      cardID:    data.cardID    || data.CardID  || '',
       email,
-      roleId:  data.roleId  || null,
-      role:    data.role    || null,
+      roleId:    data.roleId    || null,
+      role:      data.role      || null,
+      licenseId: data.licenseId || null,
     }));
     location.href = 'index.html';
   } catch (e) {
@@ -238,10 +239,12 @@ async function doRegister() {
       localStorage.removeItem('sk_user_perms');
       localStorage.setItem('token', tok);
       localStorage.setItem('sk_user', JSON.stringify({
-        id: data.id || 0, name, surname, email,
-        cardID: data.cardID || data.CardID || '',
-        roleId: data.roleId || null,
-        role:   data.role   || null,
+        id:        data.id        || 0,
+        name, surname, email,
+        cardID:    data.cardID    || data.CardID || '',
+        roleId:    data.roleId    || null,
+        role:      data.role      || null,
+        licenseId: data.licenseId || null,
       }));
       location.href = 'index.html';
     } else {

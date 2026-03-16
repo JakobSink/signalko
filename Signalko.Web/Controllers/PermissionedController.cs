@@ -24,6 +24,13 @@ public class PermissionedController : ControllerBase
         return null;
     }
 
+    /// <summary>Extracts the tenant LicenseId from the "lid" JWT claim.</summary>
+    protected int? GetLicenseId()
+    {
+        var raw = User.Claims.FirstOrDefault(c => c.Type == "lid")?.Value;
+        return int.TryParse(raw, out var id) ? id : null;
+    }
+
     /// <summary>
     /// Checks if the current user has a specific permission code.
     /// Always queries DB (fresh roleId + role_permissions check).

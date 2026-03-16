@@ -22,7 +22,9 @@ public class AntennaController : PermissionedController
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] int? readerId)
     {
-        IQueryable<Antenna> q = _db.antennas.AsNoTracking();
+        var licId = GetLicenseId();
+        IQueryable<Antenna> q = _db.antennas.AsNoTracking().Include(a => a.Reader)
+            .Where(a => a.Reader != null && a.Reader.LicenseId == licId);
         if (readerId.HasValue) q = q.Where(a => a.ReaderId == readerId.Value);
         var list = await q.OrderBy(a => a.ReaderId).ThenBy(a => a.Port).ToListAsync();
         var result = new List<AntennaDto>(list.Count);
@@ -34,7 +36,9 @@ public class AntennaController : PermissionedController
     public async Task<IActionResult> GetById(int id)
     {
         if (!await HasPermAsync("antennas.view")) return Forbidden("antennas.view");
-        var entity = await _db.antennas.FirstOrDefaultAsync(a => a.id == id);
+        var licId = GetLicenseId();
+        var entity = await _db.antennas.Include(a => a.Reader)
+            .FirstOrDefaultAsync(a => a.id == id && a.Reader != null && a.Reader.LicenseId == licId);
         if (entity == null) return NotFound();
         return Ok(await MapToDtoAsync(entity));
     }
@@ -43,6 +47,10 @@ public class AntennaController : PermissionedController
     public async Task<IActionResult> ByReader(int readerId)
     {
         if (!await HasPermAsync("antennas.view")) return Forbidden("antennas.view");
+        var licId = GetLicenseId();
+        // Verify reader belongs to this tenant
+        var readerExists = await _db.readers.AnyAsync(r => r.id == readerId && r.LicenseId == licId);
+        if (!readerExists) return NotFound();
         var list = await _db.antennas.Where(a => a.ReaderId == readerId).OrderBy(a => a.Port).ToListAsync();
         var result = new List<AntennaDto>(list.Count);
         foreach (var a in list) result.Add(await MapToDtoAsync(a));
@@ -54,6 +62,10 @@ public class AntennaController : PermissionedController
     {
         if (!await HasPermAsync("antennas.manage")) return Forbidden("antennas.manage");
         if (!ModelState.IsValid) return BadRequest(ModelState);
+        var licId = GetLicenseId();
+        // Ensure the reader belongs to this tenant
+        var readerOwned = await _db.readers.AnyAsync(r => r.id == dto.ReaderId && r.LicenseId == licId);
+        if (!readerOwned) return BadRequest($"Reader {dto.ReaderId} ne obstaja ali ne pripada vaši licenci.");
         if (await _db.antennas.AnyAsync(a => a.ReaderId == dto.ReaderId && a.Port == dto.Port))
             return BadRequest($"Reader {dto.ReaderId} že ima anteno na portu {dto.Port}.");
 
@@ -68,7 +80,9 @@ public class AntennaController : PermissionedController
     {
         if (!await HasPermAsync("antennas.manage")) return Forbidden("antennas.manage");
         if (!ModelState.IsValid) return BadRequest(ModelState);
-        var entity = await _db.antennas.FirstOrDefaultAsync(a => a.id == id);
+        var licId = GetLicenseId();
+        var entity = await _db.antennas.Include(a => a.Reader)
+            .FirstOrDefaultAsync(a => a.id == id && a.Reader != null && a.Reader.LicenseId == licId);
         if (entity == null) return NotFound();
         if (await _db.antennas.AnyAsync(a => a.ReaderId == dto.ReaderId && a.Port == dto.Port && a.id != id))
             return BadRequest($"Reader {dto.ReaderId} že ima anteno na portu {dto.Port}.");
@@ -83,7 +97,9 @@ public class AntennaController : PermissionedController
     public async Task<IActionResult> Delete(int id)
     {
         if (!await HasPermAsync("antennas.manage")) return Forbidden("antennas.manage");
-        var entity = await _db.antennas.FirstOrDefaultAsync(a => a.id == id);
+        var licId = GetLicenseId();
+        var entity = await _db.antennas.Include(a => a.Reader)
+            .FirstOrDefaultAsync(a => a.id == id && a.Reader != null && a.Reader.LicenseId == licId);
         if (entity == null) return NotFound();
         _db.antennas.Remove(entity);
         await _db.SaveChangesAsync();
