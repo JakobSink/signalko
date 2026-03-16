@@ -8,10 +8,9 @@ namespace Signalko.Web.Controllers;
 
 [ApiController]
 [Route("api/Role")]
-public class RoleController : ControllerBase
+public class RoleController : PermissionedController
 {
-    private readonly AppDbContext _db;
-    public RoleController(AppDbContext db) => _db = db;
+    public RoleController(AppDbContext db) : base(db) { }
 
     // GET /api/Role/my-permissions — fresh from DB, never from stale JWT
     [HttpGet("my-permissions"), Authorize]
@@ -51,12 +50,14 @@ public class RoleController : ControllerBase
         }));
     }
 
-    // GET /api/Role
+    // GET /api/Role — returns system roles (LicenseId IS NULL) + this tenant's custom roles
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
+        var licId = GetLicenseId();
         var roles = await _db.Roles.AsNoTracking()
             .Include(r => r.RolePermissions).ThenInclude(rp => rp.Permission)
+            .Where(r => r.LicenseId == null || r.LicenseId == licId)
             .ToListAsync();
 
         return Ok(roles.Select(r => new
@@ -76,14 +77,16 @@ public class RoleController : ControllerBase
     [HttpPost, Authorize]
     public async Task<IActionResult> Create([FromBody] RoleWriteDto dto)
     {
-        if (!await HasPermissionAsync("roles.manage"))
+        if (!await HasPermAsync("roles.manage"))
             return StatusCode(403, new { message = "Nimaš dovoljenja za upravljanje vlog (roles.manage)." });
         if (string.IsNullOrWhiteSpace(dto.Name))
             return BadRequest(new { message = "Ime je obvezno." });
-        if (await _db.Roles.AnyAsync(r => r.Name == dto.Name))
+
+        var licId = GetLicenseId();
+        if (await _db.Roles.AnyAsync(r => r.Name == dto.Name && (r.LicenseId == null || r.LicenseId == licId)))
             return Conflict(new { message = "Vloga s tem imenom že obstaja." });
 
-        var role = new UserRole { Name = dto.Name.Trim() };
+        var role = new UserRole { Name = dto.Name.Trim(), LicenseId = licId };
         _db.Roles.Add(role);
         await _db.SaveChangesAsync();
 
@@ -103,10 +106,11 @@ public class RoleController : ControllerBase
     [HttpPut("{id:int}"), Authorize]
     public async Task<IActionResult> Update(int id, [FromBody] RoleWriteDto dto)
     {
-        if (!await HasPermissionAsync("roles.manage"))
+        if (!await HasPermAsync("roles.manage"))
             return StatusCode(403, new { message = "Nimaš dovoljenja za upravljanje vlog (roles.manage)." });
 
-        var role = await _db.Roles.FirstOrDefaultAsync(r => r.id == id);
+        var licId = GetLicenseId();
+        var role = await _db.Roles.FirstOrDefaultAsync(r => r.id == id && (r.LicenseId == null || r.LicenseId == licId));
         if (role == null) return NotFound();
         if (role.Name == "Admin")
             return BadRequest(new { message = "Pravice vloge Admin ni mogoče urejati." });
@@ -131,10 +135,11 @@ public class RoleController : ControllerBase
     [HttpDelete("{id:int}"), Authorize]
     public async Task<IActionResult> Delete(int id)
     {
-        if (!await HasPermissionAsync("roles.manage"))
+        if (!await HasPermAsync("roles.manage"))
             return StatusCode(403, new { message = "Nimaš dovoljenja za upravljanje vlog (roles.manage)." });
 
-        var role = await _db.Roles.FirstOrDefaultAsync(r => r.id == id);
+        var licId = GetLicenseId();
+        var role = await _db.Roles.FirstOrDefaultAsync(r => r.id == id && (r.LicenseId == null || r.LicenseId == licId));
         if (role == null) return NotFound();
         if (role.Name is "Admin" or "User")
             return BadRequest(new { message = "Sistemske vloge ni mogoče izbrisati." });
@@ -147,55 +152,6 @@ public class RoleController : ControllerBase
     }
 
     // ── helpers ──────────────────────────────────────────────────────────────
-
-    // Extracts user ID from any possible JWT claim location
-    private int? GetUserId()
-    {
-        // Try every possible claim type — behavior differs by .NET version & claim mapping
-        string? raw = null;
-        foreach (var c in User.Claims)
-        {
-            if (c.Type == "sub" || c.Type == System.Security.Claims.ClaimTypes.NameIdentifier)
-            {
-                raw = c.Value;
-                break;
-            }
-        }
-        // Fallback: User.Identity.Name (set when NameClaimType="sub" in TokenValidationParameters)
-        raw ??= User.Identity?.Name;
-
-        if (!int.TryParse(raw, out var id))
-        {
-            Console.WriteLine($"[Auth] GetUserId: FAILED — claims: {string.Join(" | ", User.Claims.Select(c => $"{c.Type}={c.Value}"))}");
-            return null;
-        }
-        return id;
-    }
-
-    // Permission-based check — works for any role that has the permission, not just Admin
-    private async Task<bool> HasPermissionAsync(string permCode)
-    {
-        var uid = GetUserId();
-        if (uid == null) return false;
-
-        // Get fresh roleId from DB — never trust potentially stale JWT roleId
-        var roleId = await _db.users.AsNoTracking()
-            .Where(u => u.id == uid)
-            .Select(u => u.RoleId)
-            .FirstOrDefaultAsync();
-
-        if (roleId == null)
-        {
-            Console.WriteLine($"[Auth] HasPermission({permCode}): uid={uid} has no role in DB");
-            return false;
-        }
-
-        var hasPerm = await _db.RolePermissions
-            .AnyAsync(rp => rp.RoleId == roleId && rp.Permission!.Code == permCode);
-
-        Console.WriteLine($"[Auth] HasPermission({permCode}): uid={uid} roleId={roleId} => {hasPerm}");
-        return hasPerm;
-    }
 
     private async Task SetPermissionsAsync(int roleId, IEnumerable<string> codes)
     {

@@ -90,7 +90,9 @@ public class TagController : PermissionedController
     public async Task<IActionResult> Latest([FromQuery] int take = 50)
     {
         if (!await HasPermAsync("tags.view")) return Forbidden("tags.view");
+        var licId = GetLicenseId();
         return Ok(await _db.TAG.AsNoTracking()
+                           .Where(t => t.LicenseId == licId)
                            .OrderByDescending(t => t.id)
                            .Take(Math.Clamp(take, 1, 500))
                            .ToListAsync());
@@ -119,12 +121,13 @@ public class TagController : PermissionedController
         page = page <= 0 ? 1 : page;
         pageSize = pageSize switch { <= 0 => 20, > 200 => 200, _ => pageSize };
         var skip = (page - 1) * pageSize;
+        var licId = GetLicenseId();
 
         var cte = @"
 WITH latest AS (
     SELECT Epc, MAX(id) AS LastId, COUNT(*) AS Cnt
     FROM TAG
-    WHERE Epc IS NOT NULL AND Epc <> ''
+    WHERE Epc IS NOT NULL AND Epc <> '' AND LicenseId = @p_lic
     GROUP BY Epc
 ),
 joined AS (
@@ -225,6 +228,8 @@ joined AS (
         AddBetween("j.LastTime", from, to, "@p_from", "@p_to");
         AddRangeInt("j.RSSI", rssiMin, rssiMax, "@p_rmin", "@p_rmax");
 
+        parms.Add(("@p_lic", (object?)licId ?? DBNull.Value));
+
         var sqlCount = cte + " SELECT COUNT(*) FROM joined j " + where.ToString();
 
         var sqlPage = cte + @"
@@ -293,6 +298,7 @@ LIMIT @p_skip, @p_take;";
             return BadRequest(new { error = "EPC je obvezen." });
 
         take = Math.Clamp(take, 1, 1000);
+        var licId = GetLicenseId();
 
         var sql = @"
 SELECT
@@ -303,7 +309,7 @@ FROM TAG t
 LEFT JOIN readers  r ON (r.IP = t.ReaderIP OR (r.Hostname IS NOT NULL AND r.Hostname = t.Hostname))
 LEFT JOIN antennas a ON (a.ReaderId = r.id AND a.Port = t.Antenna)
 LEFT JOIN zones    z ON (z.id = a.ZoneId)
-WHERE t.Epc = @p_epc
+WHERE t.Epc = @p_epc AND t.LicenseId = @p_lic
 ORDER BY t.id DESC
 LIMIT @p_take;";
 
@@ -313,6 +319,7 @@ LIMIT @p_take;";
         cmd.CommandText = sql;
         var p1 = cmd.CreateParameter(); p1.ParameterName = "@p_epc"; p1.Value = epc; cmd.Parameters.Add(p1);
         var p2 = cmd.CreateParameter(); p2.ParameterName = "@p_take"; p2.Value = take; cmd.Parameters.Add(p2);
+        var p3 = cmd.CreateParameter(); p3.ParameterName = "@p_lic"; p3.Value = (object?)licId ?? DBNull.Value; cmd.Parameters.Add(p3);
 
         var items = new List<object>(take);
         await using var rdr = await cmd.ExecuteReaderAsync();
@@ -379,6 +386,15 @@ LIMIT @p_take;";
         // fallback: neposredni naslov
         if (string.IsNullOrEmpty(remoteIp))
             remoteIp = HttpContext.Connection.RemoteIpAddress?.ToString();
+
+        // Look up the reader for this IP/hostname to get its LicenseId (all tags in batch share the same source)
+        int? ingestLicenseId = null;
+        if (!string.IsNullOrEmpty(remoteIp))
+        {
+            var reader = await _db.readers.AsNoTracking()
+                .FirstOrDefaultAsync(r => r.IP == remoteIp);
+            ingestLicenseId = reader?.LicenseId;
+        }
 
         int saved = 0;
         // Zberemo podatke za presence processing po SaveChanges
@@ -450,6 +466,15 @@ LIMIT @p_take;";
                 string epcAscii = HexToAscii(epc);
 
                 // 🇸🇮 3) Zapišemo v bazo
+                // If we found reader by IP, use it; if hostname gives us a different reader, resolve it now
+                var tagLicId = ingestLicenseId;
+                if (tagLicId == null && !string.IsNullOrEmpty(host))
+                {
+                    var hostReader = await _db.readers.AsNoTracking()
+                        .FirstOrDefaultAsync(r => r.Hostname == host);
+                    tagLicId = hostReader?.LicenseId;
+                }
+
                 _db.TAG.Add(new Signalko.Core.Tag
                 {
                     Epc = epc,
@@ -459,7 +484,8 @@ LIMIT @p_take;";
                     RSSI = rssi,
                     SEEN_COUNT = seen,
                     Hostname = host,
-                    ReaderIP = remoteIp
+                    ReaderIP = remoteIp,
+                    LicenseId = tagLicId,
                 });
 
                 presenceCandidates.Add((epc, remoteIp, host, antenna));

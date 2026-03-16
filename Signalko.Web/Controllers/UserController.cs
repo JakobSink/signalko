@@ -34,7 +34,12 @@ public class UserController : PermissionedController
     // ── GET /api/User/roles ───────────────────────────────────────────────────
     [HttpGet("roles"), Authorize]
     public async Task<IActionResult> GetRoles()
-        => Ok(await _db.Roles.AsNoTracking().ToListAsync());
+    {
+        var licId = GetLicenseId();
+        return Ok(await _db.Roles.AsNoTracking()
+            .Where(r => r.LicenseId == null || r.LicenseId == licId)
+            .ToListAsync());
+    }
 
     // ── GET /api/User/{id} ────────────────────────────────────────────────────
     // Own profile always allowed; viewing others requires users.view

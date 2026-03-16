@@ -252,7 +252,17 @@ static async Task MigrateAndSeedCoreAsync(WebApplication app)
         try { await db.Database.ExecuteSqlRawAsync("ALTER TABLE `zones` ADD COLUMN `LicenseId` INT NULL;"); } catch { /* already exists */ }
         try { await db.Database.ExecuteSqlRawAsync("ALTER TABLE `readers` ADD COLUMN `LicenseId` INT NULL;"); } catch { /* already exists */ }
         try { await db.Database.ExecuteSqlRawAsync("ALTER TABLE `TAG` ADD COLUMN `LicenseId` INT NULL;"); } catch { /* already exists */ }
+        // Add LicenseId to Roles (null = system role, shared; non-null = tenant custom role)
+        try { await db.Database.ExecuteSqlRawAsync("ALTER TABLE `Roles` ADD COLUMN `LicenseId` INT NULL;"); Console.WriteLine("[DB] Added LicenseId to Roles."); } catch { /* already exists */ }
         Console.WriteLine("[DB] LicenseId columns ensured.");
+
+        // Unique constraint on LicenseKey
+        try
+        {
+            await db.Database.ExecuteSqlRawAsync("ALTER TABLE `licenses` ADD UNIQUE INDEX `uix_license_key` (`LicenseKey`);");
+            Console.WriteLine("[DB] Added UNIQUE index on licenses.LicenseKey.");
+        }
+        catch { /* already exists */ }
 
         // Add foreign key constraints for LicenseId (safe — only if not already present)
         var fkTables = new[] { ("users", "fk_users_license"), ("ASSET", "fk_asset_license"),
