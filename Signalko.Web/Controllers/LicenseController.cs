@@ -26,12 +26,15 @@ public class LicenseController : PermissionedController
             : await _db.Licenses.AsNoTracking().FirstOrDefaultAsync();
         if (lic == null) return NotFound(new { message = "Licenca ni nastavljena." });
 
-        var activeUsers = await _db.users.CountAsync(u => u.IsActive && u.LicenseId == lic.id);
-        var totalUsers  = await _db.users.CountAsync(u => u.LicenseId == lic.id);
+        var activeUsers         = await _db.users.CountAsync(u => u.IsActive && u.LicenseId == lic.id);
+        var totalUsers          = await _db.users.CountAsync(u => u.LicenseId == lic.id);
+        var activeReadingPoints = await _db.antennas.CountAsync(a =>
+            a.IsActive && a.Reader != null && a.Reader.LicenseId == lic.id);
 
         return Ok(new LicenseDto(
             lic.id, lic.LicenseKey, lic.MaxUsers,
             activeUsers, totalUsers,
+            lic.MaxReadingPoints, activeReadingPoints,
             lic.CompanyName, lic.CreatedAt, lic.UpdatedAt
         ));
     }

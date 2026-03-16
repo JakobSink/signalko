@@ -184,6 +184,22 @@ static async Task MigrateAndSeedCoreAsync(WebApplication app)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
         ");
 
+        // Add MaxReadingPoints to licenses
+        try
+        {
+            await db.Database.ExecuteSqlRawAsync("ALTER TABLE `licenses` ADD COLUMN `MaxReadingPoints` INT NOT NULL DEFAULT 5;");
+            Console.WriteLine("[DB] Added MaxReadingPoints to licenses.");
+        }
+        catch { /* already exists */ }
+
+        // Add IsActive to antennas
+        try
+        {
+            await db.Database.ExecuteSqlRawAsync("ALTER TABLE `antennas` ADD COLUMN `IsActive` TINYINT(1) NOT NULL DEFAULT 1;");
+            Console.WriteLine("[DB] Added IsActive to antennas.");
+        }
+        catch { /* already exists */ }
+
         // Rename Domain → CompanyName on licenses if old column exists
         try
         {
@@ -372,11 +388,12 @@ static async Task MigrateAndSeedCoreAsync(WebApplication app)
         {
             db.Licenses.Add(new License
             {
-                LicenseKey = LicenseController.GenerateLicenseKey(),
-                MaxUsers   = 10,
-                CompanyName = null,
-                CreatedAt  = DateTime.UtcNow,
-                UpdatedAt  = DateTime.UtcNow,
+                LicenseKey        = LicenseController.GenerateLicenseKey(),
+                MaxUsers          = 10,
+                MaxReadingPoints  = 5,
+                CompanyName       = null,
+                CreatedAt         = DateTime.UtcNow,
+                UpdatedAt         = DateTime.UtcNow,
             });
             await db.SaveChangesAsync();
             Console.WriteLine("[Seed] License created.");

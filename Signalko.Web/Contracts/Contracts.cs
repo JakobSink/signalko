@@ -142,6 +142,8 @@ public sealed record LicenseDto(
     int      MaxUsers,
     int      ActiveUsers,
     int      TotalUsers,
+    int      MaxReadingPoints,
+    int      ActiveReadingPoints,
     string?  CompanyName,
     DateTime CreatedAt,
     DateTime UpdatedAt

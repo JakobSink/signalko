@@ -30,6 +30,7 @@
   overflow:hidden;transition:border-color .13s,transform .13s;cursor:pointer;
 }
 .ic-card:hover{border-color:var(--acc);transform:translateY(-2px);}
+.ic-card-disabled{opacity:.5;}
 .ic-head{
   display:flex;align-items:flex-start;justify-content:space-between;
   padding:14px 16px 12px;border-bottom:1px solid var(--border);gap:10px;
@@ -243,8 +244,9 @@ function renderGrid() {
     const zn   = zones.find(z => String(z.id) === String(a.zoneId));
     const rl   = roles.find(r => String(r.id) === String(a.roleID));
     const roleName = a.roleName || rl?.name || `Role ${a.roleID||'?'}`;
+    const isActive = a.isActive !== false;
     const card = document.createElement('div');
-    card.className = 'ic-card';
+    card.className = 'ic-card' + (isActive ? '' : ' ic-card-disabled');
     card.innerHTML = `
       <div class="ic-head">
         <div class="ic-icon">⊕</div>
@@ -252,18 +254,25 @@ function renderGrid() {
           <div class="ic-title">${escHtml(rdr?.name||`Reader #${a.readerId}`)} · Port ${a.port}</div>
           <div class="ic-sub">${escHtml(rdr?.ip||'—')}</div>
         </div>
-        <span class="sk-badge sk-badge-acc">${escHtml(roleName)}</span>
+        <span class="sk-badge ${isActive ? 'sk-badge-acc' : 'sk-badge-mut'}">${escHtml(roleName)}</span>
       </div>
       <div class="ic-kv">
         <div class="ic-row"><span class="ic-key">${skT('tags.col.zone')}</span><span class="ic-val">${escHtml(zn?.name||a.zoneName||`#${a.zoneId||'?'}`)}</span></div>
         <div class="ic-row"><span class="ic-key">${skT('antennas.lbl.reader_id')}</span><span class="ic-val">${a.readerId}</span></div>
         <div class="ic-row"><span class="ic-key">${skT('antennas.lbl.antenna_id')}</span><span class="ic-val">${a.id}</span></div>
+        <div class="ic-row"><span class="ic-key">${skT('lbl.status')}</span><span class="ic-val">
+          <span class="sk-badge ${isActive ? 'sk-badge-grn' : 'sk-badge-mut'}">${isActive ? skT('lbl.active') : skT('lbl.inactive')}</span>
+        </span></div>
       </div>
       <div class="ic-foot">
         <button class="sk-btn sk-btn-sm" data-act="edit">✎ ${skT('btn.edit')}</button>
+        <button class="sk-btn sk-btn-sm ${isActive ? 'sk-btn-org' : 'sk-btn-grn'}" data-act="toggle">
+          ${isActive ? ('○ ' + skT('readers.btn.card_disable')) : ('● ' + skT('readers.btn.card_enable'))}
+        </button>
         <button class="sk-btn sk-btn-sm sk-btn-red" data-act="delete">✕ ${skT('btn.delete')}</button>
       </div>`;
     card.querySelector('[data-act="edit"]').addEventListener('click', e => { e.stopPropagation(); openEditor(a); });
+    card.querySelector('[data-act="toggle"]').addEventListener('click', e => { e.stopPropagation(); toggleAntenna(a.id); });
     card.querySelector('[data-act="delete"]').addEventListener('click', e => { e.stopPropagation(); confirmDelete(a); });
     card.addEventListener('click', () => openEditor(a));
     grid.appendChild(card);
@@ -299,6 +308,13 @@ async function saveEditor() {
   if (!r.ok) { skToast(r.data?.message || `${skT('tags.error.load')} ${r.status}`, 'error'); return; }
   skToast(id ? skT('antennas.toast.updated') : skT('antennas.toast.added'), 'success');
   skModalClose('editorModal');
+  await init();
+}
+
+async function toggleAntenna(id) {
+  const r = await skPatch(`/api/Antenna/${id}/toggle`);
+  if (!r.ok) { skToast(r.data?.message || 'Napaka', 'error'); return; }
+  skToast(r.data?.isActive ? skT('lbl.active') : skT('lbl.inactive'), 'success');
   await init();
 }
 

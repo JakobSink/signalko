@@ -7,7 +7,8 @@ public record AntennaDto(
     int Port,
     int ZoneId,
     int RoleID,
-    string? RoleName   // ime vloge iz tabele role.Name (če obstaja)
+    string? RoleName,
+    bool IsActive
 );
 
 // DTO za ustvarjanje/posodabljanje antene – input iz UI

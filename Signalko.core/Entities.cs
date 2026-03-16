@@ -127,6 +127,8 @@ public class Antenna
     [Column("RoleID")]
     public int RoleID { get; set; }
 
+    public bool IsActive { get; set; } = true;
+
     [JsonIgnore, ForeignKey(nameof(ReaderId))]
     public Reader? Reader { get; set; }
 
@@ -285,6 +287,7 @@ public class License
     [Key] public int id { get; set; }
     [Required, MaxLength(30)] public string LicenseKey { get; set; } = "";
     public int MaxUsers { get; set; } = 10;
+    public int MaxReadingPoints { get; set; } = 5;
     [MaxLength(255)] public string? CompanyName { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }

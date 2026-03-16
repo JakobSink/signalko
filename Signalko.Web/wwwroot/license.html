@@ -52,8 +52,10 @@ async function load() {
 }
 
 function render(d) {
-  const pct    = Math.min(100, Math.round((d.activeUsers / d.maxUsers) * 100));
-  const fillCls = pct >= 100 ? 'full' : pct >= 80 ? 'warn' : '';
+  const pctU   = Math.min(100, Math.round((d.activeUsers         / d.maxUsers)         * 100));
+  const pctR   = Math.min(100, Math.round((d.activeReadingPoints / d.maxReadingPoints) * 100));
+  const clsU   = pctU >= 100 ? 'full' : pctU >= 80 ? 'warn' : '';
+  const clsR   = pctR >= 100 ? 'full' : pctR >= 80 ? 'warn' : '';
 
   document.getElementById('licContent').innerHTML = `
     <div class="sk-card sk-card-pad" style="margin-bottom:16px;">
@@ -74,14 +76,22 @@ function render(d) {
         <div class="lic-stat-num">${d.activeUsers}</div>
         <div class="lic-stat-label">Aktivni uporabniki</div>
         <div class="lic-bar-wrap">
-          <div class="lic-bar-track"><div class="lic-bar-fill ${fillCls}" style="width:${pct}%"></div></div>
-          <div class="lic-bar-label">${d.activeUsers} / ${d.maxUsers} dovoljenjih &nbsp;·&nbsp; ${d.maxUsers - d.activeUsers} prostih</div>
+          <div class="lic-bar-track"><div class="lic-bar-fill ${clsU}" style="width:${pctU}%"></div></div>
+          <div class="lic-bar-label">${d.activeUsers} / ${d.maxUsers} &nbsp;·&nbsp; ${d.maxUsers - d.activeUsers} prostih</div>
         </div>
       </div>
       <div class="lic-stat">
         <div class="lic-stat-num">${d.totalUsers}</div>
         <div class="lic-stat-label">Vsi uporabniki (skupaj)</div>
         <div style="font-size:11px;color:var(--mut);margin-top:10px;">Neaktivni: ${d.totalUsers - d.activeUsers}</div>
+      </div>
+      <div class="lic-stat">
+        <div class="lic-stat-num">${d.activeReadingPoints}</div>
+        <div class="lic-stat-label">Aktivni reading pointi</div>
+        <div class="lic-bar-wrap">
+          <div class="lic-bar-track"><div class="lic-bar-fill ${clsR}" style="width:${pctR}%"></div></div>
+          <div class="lic-bar-label">${d.activeReadingPoints} / ${d.maxReadingPoints} &nbsp;·&nbsp; ${d.maxReadingPoints - d.activeReadingPoints} prostih</div>
+        </div>
       </div>
     </div>
   `;

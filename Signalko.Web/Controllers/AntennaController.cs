@@ -16,7 +16,7 @@ public class AntennaController : PermissionedController
     private async Task<AntennaDto> MapToDtoAsync(Antenna a)
     {
         var role = await _db.Role.AsNoTracking().FirstOrDefaultAsync(r => r.id == a.RoleID);
-        return new AntennaDto(a.id, a.ReaderId, a.Port, a.ZoneId, a.RoleID, role?.Name);
+        return new AntennaDto(a.id, a.ReaderId, a.Port, a.ZoneId, a.RoleID, role?.Name, a.IsActive);
     }
 
     [HttpGet]
@@ -91,6 +91,36 @@ public class AntennaController : PermissionedController
         entity.ZoneId   = dto.ZoneId;   entity.RoleID = dto.RoleID;
         await _db.SaveChangesAsync();
         return NoContent();
+    }
+
+    // PATCH /api/Antenna/{id}/toggle — activate / deactivate
+    [HttpPatch("{id:int}/toggle"), Authorize]
+    public async Task<IActionResult> Toggle(int id)
+    {
+        if (!await HasPermAsync("antennas.manage")) return Forbidden("antennas.manage");
+        var licId = GetLicenseId();
+        var entity = await _db.antennas.Include(a => a.Reader)
+            .FirstOrDefaultAsync(a => a.id == id && a.Reader != null && a.Reader.LicenseId == licId);
+        if (entity == null) return NotFound();
+
+        // If activating, check reading-point limit
+        if (!entity.IsActive)
+        {
+            var lic = licId.HasValue
+                ? await _db.Licenses.AsNoTracking().FirstOrDefaultAsync(l => l.id == licId.Value)
+                : null;
+            if (lic != null)
+            {
+                var active = await _db.antennas.CountAsync(a =>
+                    a.IsActive && a.Reader != null && a.Reader.LicenseId == licId);
+                if (active >= lic.MaxReadingPoints)
+                    return Conflict(new { message = $"Licenca dovoljuje največ {lic.MaxReadingPoints} aktivnih reading pointov." });
+            }
+        }
+
+        entity.IsActive = !entity.IsActive;
+        await _db.SaveChangesAsync();
+        return Ok(await MapToDtoAsync(entity));
     }
 
     [HttpDelete("{id:int}"), Authorize]

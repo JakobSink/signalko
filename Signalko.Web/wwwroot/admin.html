@@ -88,11 +88,12 @@ table.user-table tbody tr:hover td{background:var(--up);}
             <th data-i18n="admin.col.card">Kartica (CardID)</th>
             <th data-i18n="lbl.email">Email</th>
             <th data-i18n="lbl.role">Vloga</th>
+            <th data-i18n="lbl.status">Status</th>
             <th data-i18n="lbl.actions">Akcije</th>
           </tr>
         </thead>
         <tbody id="userTableBody">
-          <tr><td colspan="5"><div class="state-loading"><div class="sk-spin"></div><span data-i18n="lbl.loading">Nalaganje…</span></div></td></tr>
+          <tr><td colspan="6"><div class="state-loading"><div class="sk-spin"></div><span data-i18n="lbl.loading">Nalaganje…</span></div></td></tr>
         </tbody>
       </table>
     </div>
@@ -251,7 +252,7 @@ function applyFilter() {
 function renderTable() {
   const tbody = document.getElementById('userTableBody');
   if (!filtered.length) {
-    tbody.innerHTML = `<tr><td colspan="5"><div class="state-empty">${skT('admin.no_users')}</div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6"><div class="state-empty">${skT('admin.no_users')}</div></td></tr>`;
     return;
   }
   tbody.innerHTML = filtered.map(u => {
@@ -260,7 +261,11 @@ function renderTable() {
     const role     = u.RoleName || u.roleName || '—';
     const roleClass = role === 'Admin' ? 'sk-badge-org' : 'sk-badge-acc';
     const id       = u.Id || u.id;
-    return `<tr>
+    const isActive = u.IsActive !== undefined ? u.IsActive : u.isActive !== undefined ? u.isActive : true;
+    const activeBadge = isActive
+      ? `<span class="sk-badge sk-badge-grn">${skT('lbl.active')}</span>`
+      : `<span class="sk-badge sk-badge-mut">${skT('lbl.inactive')}</span>`;
+    return `<tr style="${isActive ? '' : 'opacity:.55;'}">
       <td>
         <span class="user-avatar">${initials}</span>
         ${escHtml(name)}
@@ -268,9 +273,11 @@ function renderTable() {
       <td style="font-family:'JetBrains Mono',monospace;">${escHtml(u.CardID||u.cardID||'—')}</td>
       <td>${escHtml(u.Email||u.email||'—')}</td>
       <td><span class="${role !== '—' ? roleClass : 'sk-badge-mut'} sk-badge">${escHtml(role)}</span></td>
+      <td>${activeBadge}</td>
       <td>
         <div style="display:flex;gap:6px;">
           <button class="sk-btn" style="font-size:10px;padding:4px 10px;" onclick="openEdit(${id})">✎ ${skT('btn.edit')}</button>
+          <button class="sk-btn ${isActive ? 'sk-btn-org' : 'sk-btn-grn'}" style="font-size:10px;padding:4px 10px;" onclick="toggleUser(${id})">${isActive ? skT('btn.deactivate') : skT('btn.activate')}</button>
           <button class="sk-btn sk-btn-red" style="font-size:10px;padding:4px 10px;" onclick="confirmDelete(${id},'${escAttr(name)}')">✕</button>
         </div>
       </td>
@@ -344,6 +351,14 @@ async function saveUser() {
   if (!r.ok) { skToast(r.data?.message || `${skT('tags.error.load')} ${r.status}`, 'error'); return; }
   skToast(id ? skT('admin.toast.user_updated') : skT('admin.toast.user_added'), 'success');
   skModalClose('userModal');
+  await loadUsers();
+}
+
+async function toggleUser(id) {
+  const r = await skPatch(`/api/User/${id}/toggle`);
+  if (!r.ok) { skToast(r.data?.message || skT('admin.toast.toggle_error'), 'error'); return; }
+  const active = r.data?.IsActive !== undefined ? r.data.IsActive : r.data?.isActive;
+  skToast(active ? skT('admin.toast.user_activated') : skT('admin.toast.user_deactivated'), 'success');
   await loadUsers();
 }
 

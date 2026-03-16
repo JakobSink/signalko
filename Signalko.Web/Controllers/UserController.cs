@@ -155,6 +155,47 @@ public class UserController : PermissionedController
         return Ok(new UserAdminDto(entity.id, entity.CardID, entity.Name, entity.Surname, entity.Email, entity.RoleId, entity.Role?.Name, entity.CardEpc, entity.IsActive, entity.Language));
     }
 
+    // ── PATCH /api/User/{id}/toggle ───────────────────────────────────────────
+    [HttpPatch("{id:int}/toggle"), Authorize]
+    public async Task<IActionResult> Toggle(int id)
+    {
+        if (!await HasPermAsync("users.manage")) return Forbidden("users.manage");
+        var licId = GetLicenseId();
+        var entity = await _db.users.Include(u => u.Role)
+            .FirstOrDefaultAsync(u => u.id == id && u.LicenseId == licId);
+        if (entity == null) return NotFound();
+
+        // Guard: cannot deactivate last Admin
+        if (entity.IsActive)
+        {
+            var adminRole = await _db.Roles.AsNoTracking().FirstOrDefaultAsync(r => r.Name == "Admin");
+            if (adminRole != null && entity.RoleId == adminRole.id)
+            {
+                var otherActiveAdmins = await _db.users.CountAsync(u => u.RoleId == adminRole.id && u.IsActive && u.id != id);
+                if (otherActiveAdmins == 0)
+                    return Conflict(new { message = "Vsaj en Admin mora ostati aktiven." });
+            }
+        }
+
+        // Guard: check license limit when activating
+        if (!entity.IsActive)
+        {
+            var lic = licId.HasValue
+                ? await _db.Licenses.AsNoTracking().FirstOrDefaultAsync(l => l.id == licId.Value)
+                : null;
+            if (lic != null)
+            {
+                var activeCount = await _db.users.CountAsync(u => u.IsActive && u.LicenseId == licId);
+                if (activeCount >= lic.MaxUsers)
+                    return Conflict(new { message = $"Licenca dovoljuje največ {lic.MaxUsers} aktivnih uporabnikov." });
+            }
+        }
+
+        entity.IsActive = !entity.IsActive;
+        await _db.SaveChangesAsync();
+        return Ok(new UserAdminDto(entity.id, entity.CardID, entity.Name, entity.Surname, entity.Email, entity.RoleId, entity.Role?.Name, entity.CardEpc, entity.IsActive, entity.Language));
+    }
+
     // ── DELETE /api/User/{id} ─────────────────────────────────────────────────
     [HttpDelete("{id:int}"), Authorize]
     public async Task<IActionResult> DeleteUser(int id)

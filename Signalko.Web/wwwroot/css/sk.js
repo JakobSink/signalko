@@ -111,10 +111,11 @@ async function skApi(method, path, body) {
     return { ok: false, status: 0, data: { message: e.message } };
   }
 }
-const skGet  = p     => skApi('GET',    p);
-const skPost = (p,b) => skApi('POST',   p, b);
-const skPut  = (p,b) => skApi('PUT',    p, b);
-const skDel  = p     => skApi('DELETE', p);
+const skGet   = p     => skApi('GET',    p);
+const skPost  = (p,b) => skApi('POST',   p, b);
+const skPut   = (p,b) => skApi('PUT',    p, b);
+const skPatch = (p,b) => skApi('PATCH',  p, b);
+const skDel   = p     => skApi('DELETE', p);
 
 /* ── Toast ──────────────────────────────────────────────────── */
 function skToast(msg, type = 'success') {
