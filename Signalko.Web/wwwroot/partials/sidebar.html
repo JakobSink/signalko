@@ -106,7 +106,7 @@
 <div class="sb">
   <div class="sb-brand">
     <a class="sb-brand-name" href="/index.html">signal<span>ko</span></a>
-    <div class="sb-brand-sub">RFID Management &nbsp;·&nbsp; <span style="color:var(--sb-muted);font-size:8px;">v1.0.3</span></div>
+    <div class="sb-brand-sub">RFID Management &nbsp;·&nbsp; <span style="color:var(--sb-muted);font-size:8px;" id="sbVersion"></span></div>
   </div>
 
   <nav class="sb-nav" id="sbNav">
@@ -176,6 +176,10 @@
 (async function() {
   // Wait for language file to load before using skT()
   if (typeof SK_I18N_READY !== 'undefined') await SK_I18N_READY;
+
+  // Version — defined once in sk.js
+  const vEl = document.getElementById('sbVersion');
+  if (vEl && typeof SK_VERSION !== 'undefined') vEl.textContent = 'v' + SK_VERSION;
   var path = location.pathname.toLowerCase();
 
   // ── Mark active — desktop sidebar ──
