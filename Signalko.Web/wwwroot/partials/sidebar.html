@@ -173,7 +173,9 @@
 </div>
 
 <script>
-(function() {
+(async function() {
+  // Wait for language file to load before using skT()
+  if (typeof SK_I18N_READY !== 'undefined') await SK_I18N_READY;
   var path = location.pathname.toLowerCase();
 
   // ── Mark active — desktop sidebar ──
