@@ -71,8 +71,8 @@
   <aside class="sk-sidebar-col" id="sidebarHost"></aside>
 
   <main class="sk-main">
-    <div class="sk-page-title">Profil</div>
-    <div class="sk-page-sub">Vaši podatki in zgodovina izposoj</div>
+    <div class="sk-page-title" data-i18n="page.profile">Moj profil</div>
+    <div class="sk-page-sub" data-i18n="page.profile.sub">Osebni podatki in nastavitve</div>
 
     <div id="notLoggedIn" style="display:none;">
       <div class="sk-alert sk-alert-acc" style="max-width:460px;">
@@ -131,6 +131,13 @@
                   <input class="sk-input" id="editPassConfirm" type="password" placeholder="Ponovi geslo"/>
                 </div>
               </div>
+              <div class="sk-field" style="margin-top:6px;">
+                <label data-i18n="profile.language">Jezik vmesnika</label>
+                <select id="selLang" class="sk-input" style="max-width:200px;">
+                  <option value="sl" data-i18n="profile.lang.sl">Slovenščina</option>
+                  <option value="en" data-i18n="profile.lang.en">English</option>
+                </select>
+              </div>
               <div id="editErr" class="sk-alert sk-alert-red" style="display:none;"></div>
               <div>
                 <button class="sk-btn sk-btn-acc" id="saveProfileBtn" onclick="saveProfile()">Shrani spremembe</button>
@@ -167,6 +174,7 @@
   </main>
 </div>
 
+<script src="/css/i18n.js"></script>
 <script src="/css/sk.js"></script>
 <script>
 const me = skCurrentUser();
@@ -199,6 +207,10 @@ function initProfile() {
   document.getElementById('editName').value    = name;
   document.getElementById('editSurname').value = surname;
   document.getElementById('editEmail').value   = email;
+
+  // Pre-fill language selector
+  const lang = me.language || me.Language || 'sl';
+  document.getElementById('selLang').value = lang;
 
   loadLoans();
   loadExchanges();
@@ -307,6 +319,7 @@ async function saveProfile() {
   const email   = document.getElementById('editEmail').value.trim();
   const pass    = document.getElementById('editPass').value;
   const passC   = document.getElementById('editPassConfirm').value;
+  const lang    = document.getElementById('selLang').value;
   const errEl   = document.getElementById('editErr');
 
   errEl.style.display = 'none';
@@ -323,7 +336,7 @@ async function saveProfile() {
   }
 
   const uid = me.id || me.Id || 0;
-  const body = { name, surname, email };
+  const body = { name, surname, email, language: lang };
   if (pass) body.password = pass;
 
   skBtnLoading(btn, true, 'Shrani spremembe');
@@ -337,8 +350,11 @@ async function saveProfile() {
   }
 
   // Update localStorage
-  const updated = { ...me, name, surname, email };
+  const updated = { ...me, name, surname, email, language: lang };
   localStorage.setItem('sk_user', JSON.stringify(updated));
+
+  // Re-apply translations immediately with new language
+  skApplyI18n();
 
   // Update avatar chip
   const initials = [name[0], surname[0]].filter(Boolean).join('').toUpperCase() || '?';

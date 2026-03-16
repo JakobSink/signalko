@@ -80,7 +80,8 @@ public sealed record UserAdminDto(
     int?    RoleId,
     string? RoleName,
     string? CardEpc = null,
-    bool    IsActive = true
+    bool    IsActive = true,
+    string  Language = "sl"
 );
 
 public sealed record UserCreateDto(
@@ -103,7 +104,8 @@ public sealed record UserUpdateDto(
     string? Password,
     int?    RoleId,
     string? CardEpc = null,
-    bool?   IsActive = null
+    bool?   IsActive = null,
+    string? Language = null
 );
 
 // ── Exchange Request DTOs ─────────────────────────────────────────────────────

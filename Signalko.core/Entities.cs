@@ -85,6 +85,9 @@ public class User
 
     public bool IsActive { get; set; } = true;
 
+    [MaxLength(5)]
+    public string Language { get; set; } = "sl";
+
     public int? LicenseId { get; set; }
 
     [JsonIgnore]

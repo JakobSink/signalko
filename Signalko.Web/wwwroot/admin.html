@@ -68,8 +68,8 @@ table.user-table tbody tr:hover td{background:var(--up);}
   <aside class="sk-sidebar-col" id="sidebarHost"></aside>
 
   <main class="sk-main">
-    <div class="sk-page-title">Upravljanje uporabnikov</div>
-    <div class="sk-page-sub" id="adminSub">Nalaganje…</div>
+    <div class="sk-page-title" data-i18n="page.users">Uporabniki</div>
+    <div class="sk-page-sub" id="adminSub" data-i18n="page.users.sub">Upravljanje uporabnikov</div>
 
     <div class="toolbar">
       <input class="search-box" id="searchInput" placeholder="Išči (ime, email, kartica)…" oninput="applyFilter()"/>
@@ -194,6 +194,7 @@ table.user-table tbody tr:hover td{background:var(--up);}
   </div>
 </div>
 
+<script src="/css/i18n.js"></script>
 <script src="/css/sk.js"></script>
 <script>
 skRequirePerm('page.users');

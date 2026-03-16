@@ -30,4 +30,5 @@ public class AuthResponse
     public int?    roleId    { get; set; }
     public string? role      { get; set; }
     public int?    licenseId { get; set; }
+    public string  language  { get; set; } = "sl";
 }

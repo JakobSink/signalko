@@ -78,7 +78,8 @@ public class AuthController : ControllerBase
             email     = user.Email,
             roleId    = assignedRole?.id,
             role      = assignedRole?.Name,
-            licenseId = user.LicenseId
+            licenseId = user.LicenseId,
+            language  = user.Language
         });
     }
 
@@ -110,7 +111,8 @@ public class AuthController : ControllerBase
             email     = user.Email,
             roleId    = user.RoleId,
             role      = user.Role?.Name,
-            licenseId = user.LicenseId
+            licenseId = user.LicenseId,
+            language  = user.Language
         });
     }
 

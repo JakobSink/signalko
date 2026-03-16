@@ -102,45 +102,46 @@ html,body{background:var(--bg);color:var(--txt);font-family:'JetBrains Mono',mon
 
       <div class="login-card">
         <div class="tabs">
-          <button class="tab active" data-pane="login">Prijava</button>
-          <button class="tab"        data-pane="signup">Registracija</button>
+          <button class="tab active" data-pane="login" data-i18n="login.tab.login">Prijava</button>
+          <button class="tab"        data-pane="signup" data-i18n="login.tab.register">Registracija</button>
         </div>
 
         <!-- Prijava -->
         <div class="tab-pane active" id="pane-login">
           <div class="field">
-            <label>Email</label>
+            <label data-i18n="login.email">Email</label>
             <input id="loginEmail" type="email" placeholder="admin@signalko.si" autocomplete="email"/>
           </div>
           <div class="field">
-            <label>Geslo</label>
+            <label data-i18n="login.password">Geslo</label>
             <input id="loginPass" type="password" placeholder="••••••••" autocomplete="current-password"/>
           </div>
           <div class="err" id="loginErr"></div>
-          <button class="btn-acc" id="loginBtn" onclick="doLogin()">Prijavi se</button>
+          <button class="btn-acc" id="loginBtn" onclick="doLogin()" data-i18n="login.submit">Prijavi se</button>
         </div>
 
         <!-- Registracija -->
         <div class="tab-pane" id="pane-signup">
           <div class="two-col">
-            <div class="field"><label>Ime</label>    <input id="regName"    placeholder="Jakob"/></div>
-            <div class="field"><label>Priimek</label><input id="regSurname" placeholder="Šink"/></div>
+            <div class="field"><label data-i18n="login.name">Ime</label>    <input id="regName"    placeholder="Jakob"/></div>
+            <div class="field"><label data-i18n="login.surname">Priimek</label><input id="regSurname" placeholder="Šink"/></div>
           </div>
-          <div class="field"><label>Email</label><input id="regEmail" type="email" placeholder="admin@signalko.si"/></div>
-          <div class="field"><label>Geslo</label>        <input id="regPass"  type="password" placeholder="••••••••"/></div>
-          <div class="field"><label>Ponovi geslo</label> <input id="regPass2" type="password" placeholder="••••••••"/></div>
+          <div class="field"><label data-i18n="login.email">Email</label><input id="regEmail" type="email" placeholder="admin@signalko.si"/></div>
+          <div class="field"><label data-i18n="login.password">Geslo</label>        <input id="regPass"  type="password" placeholder="••••••••"/></div>
+          <div class="field"><label data-i18n="login.confirm_pass">Ponovi geslo</label> <input id="regPass2" type="password" placeholder="••••••••"/></div>
           <div class="field">
-            <label>Licenčni ključ</label>
+            <label data-i18n="login.license_key">Licenčni ključ</label>
             <input id="regLicKey" placeholder="XXXX-XXXX-XXXX-XXXX" autocomplete="off" style="font-family:'JetBrains Mono',monospace;letter-spacing:.04em;"/>
           </div>
           <div class="err" id="regErr"></div>
-          <button class="btn-acc" id="regBtn" onclick="doRegister()">Registriraj se</button>
+          <button class="btn-acc" id="regBtn" onclick="doRegister()" data-i18n="login.register_btn">Registriraj se</button>
         </div>
       </div>
     </div>
   </main>
 </div>
 
+<script src="/css/i18n.js"></script>
 <script src="/css/sk.js"></script>
 <script>
 // Tabs
@@ -171,8 +172,8 @@ function setLoading(btnId, loading) {
   btn.innerHTML = loading ? '<div class="spin"></div>' : btn.dataset.label;
 }
 
-document.getElementById('loginBtn').dataset.label = 'Prijavi se';
-document.getElementById('regBtn').dataset.label   = 'Registriraj se';
+document.getElementById('loginBtn').dataset.label = document.getElementById('loginBtn').textContent;
+document.getElementById('regBtn').dataset.label   = document.getElementById('regBtn').textContent;
 
 async function doLogin() {
   showErr('loginErr', '');
@@ -204,6 +205,7 @@ async function doLogin() {
       roleId:    data.roleId    || null,
       role:      data.role      || null,
       licenseId: data.licenseId || null,
+      language:  data.language  || 'sl',
     }));
     location.href = 'index.html';
   } catch (e) {
@@ -245,6 +247,7 @@ async function doRegister() {
         roleId:    data.roleId    || null,
         role:      data.role      || null,
         licenseId: data.licenseId || null,
+        language:  data.language  || 'sl',
       }));
       location.href = 'index.html';
     } else {

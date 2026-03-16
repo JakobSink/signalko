@@ -194,6 +194,14 @@ static async Task MigrateAndSeedCoreAsync(WebApplication app)
         }
         catch { /* column already exists — safe to ignore */ }
 
+        // Add Language column to users if it doesn't exist yet
+        try
+        {
+            await db.Database.ExecuteSqlRawAsync("ALTER TABLE `users` ADD COLUMN `Language` VARCHAR(5) NOT NULL DEFAULT 'sl';");
+            Console.WriteLine("[DB] Added Language column to users.");
+        }
+        catch { /* column already exists */ }
+
         // Add LicenseId columns to tenant-scoped tables
         try { await db.Database.ExecuteSqlRawAsync("ALTER TABLE `users` ADD COLUMN `LicenseId` INT NULL;"); } catch { /* already exists */ }
         try { await db.Database.ExecuteSqlRawAsync("ALTER TABLE `ASSET` ADD COLUMN `LicenseId` INT NULL;"); } catch { /* already exists */ }

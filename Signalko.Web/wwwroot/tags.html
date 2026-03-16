@@ -78,8 +78,8 @@ table.tag-table tbody tr.active-row td{background:var(--high);border-left:2px so
   <aside class="sk-sidebar-col" id="sidebarHost"></aside>
 
   <main class="sk-main">
-    <div class="sk-page-title">RFID Tagi</div>
-    <div class="sk-page-sub">Vsa branja in zgodovina</div>
+    <div class="sk-page-title" data-i18n="page.tags">RFID Tagi</div>
+    <div class="sk-page-sub" data-i18n="page.tags.sub">Vsa branja in zgodovina</div>
 
     <div class="toolbar">
       <button class="sk-btn sk-btn-acc" id="btnExport" onclick="exportCsv()">↓ Izvozi CSV</button>
@@ -142,6 +142,7 @@ table.tag-table tbody tr.active-row td{background:var(--high);border-left:2px so
   </main>
 </div>
 
+<script src="/css/i18n.js"></script>
 <script src="/css/sk.js"></script>
 <script>
 const state = {

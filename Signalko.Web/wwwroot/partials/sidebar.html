@@ -112,57 +112,57 @@
   <nav class="sb-nav" id="sbNav">
     <a class="sb-item" href="/index.html">
       <span class="sb-item-icon">🏠</span>
-      <span class="sb-label">Pregled</span>
+      <span class="sb-label" data-i18n="nav.overview">Pregled</span>
     </a>
     <a class="sb-item" id="sbLoansLink" href="/loans.html">
       <span class="sb-item-icon">🔄</span>
-      <span class="sb-label">Izposoja</span>
+      <span class="sb-label" data-i18n="nav.loans">Izposoja</span>
     </a>
     <a class="sb-item" id="sbAssetsLink" href="/assets.html">
       <span class="sb-item-icon">📦</span>
-      <span class="sb-label">Sredstva</span>
+      <span class="sb-label" data-i18n="nav.assets">Sredstva</span>
     </a>
     <a class="sb-item" id="sbTagsLink" href="/tags.html">
       <span class="sb-item-icon">🏷️</span>
-      <span class="sb-label">RFID Tagi</span>
+      <span class="sb-label" data-i18n="nav.tags">RFID Tagi</span>
     </a>
 
-    <div class="sb-section" id="sbUserSection" style="display:none;">Uporabnik</div>
+    <div class="sb-section" id="sbUserSection" data-i18n="section.user" style="display:none;">Uporabnik</div>
     <a class="sb-item pres-link" id="sbPresLink" href="/presence.html" style="display:none;">
       <span class="sb-item-icon">🟢</span>
-      <span class="sb-label">Prisotnost</span>
+      <span class="sb-label" data-i18n="nav.presence">Prisotnost</span>
     </a>
 
-    <div class="sb-section" id="sbAdminSection" style="display:none;">Admin</div>
+    <div class="sb-section" id="sbAdminSection" data-i18n="section.admin" style="display:none;">Admin</div>
     <a class="sb-item admin-link" id="sbAdminLink" href="/admin.html" style="display:none;">
       <span class="sb-item-icon">👥</span>
-      <span class="sb-label">Uporabniki</span>
+      <span class="sb-label" data-i18n="nav.users">Uporabniki</span>
     </a>
     <a class="sb-item admin-link" id="sbPresAdminLink" href="/presenceadmin.html" style="display:none;">
       <span class="sb-item-icon">🔎</span>
-      <span class="sb-label">Prisotnost — nadzor</span>
+      <span class="sb-label" data-i18n="nav.presence_admin">Prisotnost — nadzor</span>
     </a>
     <a class="sb-item admin-link" id="sbRolesLink" href="/roles.html" style="display:none;">
       <span class="sb-item-icon">🔑</span>
-      <span class="sb-label">Vloge</span>
+      <span class="sb-label" data-i18n="nav.roles">Vloge</span>
     </a>
     <a class="sb-item admin-link" id="sbLicenseLink" href="/license.html" style="display:none;">
       <span class="sb-item-icon">🔐</span>
-      <span class="sb-label">Licenca</span>
+      <span class="sb-label" data-i18n="nav.license">Licenca</span>
     </a>
 
-    <div class="sb-section" id="sbConfigSection" style="display:none;">Konfiguracija</div>
+    <div class="sb-section" id="sbConfigSection" data-i18n="section.config" style="display:none;">Konfiguracija</div>
     <a class="sb-item" id="sbReadersLink"  href="/readers.html"  style="display:none;">
       <span class="sb-item-icon">📡</span>
-      <span class="sb-label">Čitalci</span>
+      <span class="sb-label" data-i18n="nav.readers">Čitalci</span>
     </a>
     <a class="sb-item" id="sbAntennasLink" href="/antennas.html" style="display:none;">
       <span class="sb-item-icon">📶</span>
-      <span class="sb-label">Antene</span>
+      <span class="sb-label" data-i18n="nav.antennas">Antene</span>
     </a>
     <a class="sb-item" id="sbZonesLink"    href="/zones.html"    style="display:none;">
       <span class="sb-item-icon">📍</span>
-      <span class="sb-label">Cone</span>
+      <span class="sb-label" data-i18n="nav.zones">Cone</span>
     </a>
 
     <div class="sb-push"></div>
@@ -210,21 +210,21 @@
         '<button class="smm-close" onclick="skMenuClose()">✕</button>' +
       '</div>' +
       '<div class="smm-nav-wrap">' +
-        '<a class="smm-item" href="/index.html"><span class="smm-item-icon">🏠</span> Pregled</a>' +
-        '<a class="smm-item" id="smmLoansLink" href="/loans.html"><span class="smm-item-icon">🔄</span> Izposoja</a>' +
-        '<a class="smm-item" id="smmAssetsLink" href="/assets.html"><span class="smm-item-icon">📦</span> Sredstva</a>' +
-        '<a class="smm-item" id="smmTagsLink" href="/tags.html"><span class="smm-item-icon">🏷️</span> RFID Tagi</a>' +
-        '<div class="smm-section" id="smmUserSection" style="display:none">Uporabnik</div>' +
-        '<a class="smm-item smm-pres" href="/presence.html" id="smmPresLink" style="display:none"><span class="smm-item-icon">🟢</span> Prisotnost</a>' +
-        '<div class="smm-section" id="smmAdminSection" style="display:none">Admin</div>' +
-        '<a class="smm-item smm-admin" href="/admin.html" id="smmAdminLink" style="display:none"><span class="smm-item-icon">👥</span> Uporabniki</a>' +
-        '<a class="smm-item smm-admin" href="/presenceadmin.html" id="smmPresAdminLink" style="display:none"><span class="smm-item-icon">🔎</span> Prisotnost — nadzor</a>' +
-        '<a class="smm-item smm-admin" href="/roles.html" id="smmRolesLink" style="display:none"><span class="smm-item-icon">🔑</span> Vloge</a>' +
-        '<a class="smm-item smm-admin" href="/license.html" id="smmLicenseLink" style="display:none"><span class="smm-item-icon">🔐</span> Licenca</a>' +
-        '<div class="smm-section" id="smmConfigSection" style="display:none">Konfiguracija</div>' +
-        '<a class="smm-item" href="/readers.html" id="smmReadersLink" style="display:none"><span class="smm-item-icon">📡</span> Čitalci</a>' +
-        '<a class="smm-item" href="/antennas.html" id="smmAntennasLink" style="display:none"><span class="smm-item-icon">📶</span> Antene</a>' +
-        '<a class="smm-item" href="/zones.html" id="smmZonesLink" style="display:none"><span class="smm-item-icon">📍</span> Cone</a>' +
+        '<a class="smm-item" href="/index.html"><span class="smm-item-icon">🏠</span> ' + skT('nav.overview') + '</a>' +
+        '<a class="smm-item" id="smmLoansLink" href="/loans.html"><span class="smm-item-icon">🔄</span> ' + skT('nav.loans') + '</a>' +
+        '<a class="smm-item" id="smmAssetsLink" href="/assets.html"><span class="smm-item-icon">📦</span> ' + skT('nav.assets') + '</a>' +
+        '<a class="smm-item" id="smmTagsLink" href="/tags.html"><span class="smm-item-icon">🏷️</span> ' + skT('nav.tags') + '</a>' +
+        '<div class="smm-section" id="smmUserSection" style="display:none">' + skT('section.user') + '</div>' +
+        '<a class="smm-item smm-pres" href="/presence.html" id="smmPresLink" style="display:none"><span class="smm-item-icon">🟢</span> ' + skT('nav.presence') + '</a>' +
+        '<div class="smm-section" id="smmAdminSection" style="display:none">' + skT('section.admin') + '</div>' +
+        '<a class="smm-item smm-admin" href="/admin.html" id="smmAdminLink" style="display:none"><span class="smm-item-icon">👥</span> ' + skT('nav.users') + '</a>' +
+        '<a class="smm-item smm-admin" href="/presenceadmin.html" id="smmPresAdminLink" style="display:none"><span class="smm-item-icon">🔎</span> ' + skT('nav.presence_admin') + '</a>' +
+        '<a class="smm-item smm-admin" href="/roles.html" id="smmRolesLink" style="display:none"><span class="smm-item-icon">🔑</span> ' + skT('nav.roles') + '</a>' +
+        '<a class="smm-item smm-admin" href="/license.html" id="smmLicenseLink" style="display:none"><span class="smm-item-icon">🔐</span> ' + skT('nav.license') + '</a>' +
+        '<div class="smm-section" id="smmConfigSection" style="display:none">' + skT('section.config') + '</div>' +
+        '<a class="smm-item" href="/readers.html" id="smmReadersLink" style="display:none"><span class="smm-item-icon">📡</span> ' + skT('nav.readers') + '</a>' +
+        '<a class="smm-item" href="/antennas.html" id="smmAntennasLink" style="display:none"><span class="smm-item-icon">📶</span> ' + skT('nav.antennas') + '</a>' +
+        '<a class="smm-item" href="/zones.html" id="smmZonesLink" style="display:none"><span class="smm-item-icon">📍</span> ' + skT('nav.zones') + '</a>' +
       '</div>' +
       '<div class="smm-divider"></div>' +
       '<div class="smm-profile-wrap" id="smmProfile"></div>';
@@ -374,7 +374,7 @@
             '</div>' +
           '</a>' +
           '<a class="smm-item" href="/login.html" onclick="localStorage.removeItem(\'token\');localStorage.removeItem(\'sk_token\');localStorage.removeItem(\'sk_user\');localStorage.removeItem(\'sk_user_perms\');" style="color:var(--sb-red);margin-top:4px;">' +
-            '<span class="smm-item-icon">⟵</span> Odjava' +
+            '<span class="smm-item-icon">⟵</span> ' + skT('nav.logout') +
           '</a>';
       } else {
         smmProfile.innerHTML =
@@ -431,6 +431,7 @@
           roleId:   fresh.roleId   || fresh.RoleId   || null,
           roleName: fresh.roleName || fresh.RoleName || null,
           role:     fresh.role     || fresh.Role     || null,
+          language: fresh.language || fresh.Language || cached.language || 'sl',
         };
         localStorage.setItem('sk_user', JSON.stringify(updatedUser));
       }

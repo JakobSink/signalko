@@ -27,7 +27,7 @@ public class UserController : PermissionedController
             .ToListAsync();
 
         return Ok(users.Select(u => new UserAdminDto(
-            u.id, u.CardID, u.Name, u.Surname, u.Email, u.RoleId, u.Role?.Name, u.CardEpc, u.IsActive
+            u.id, u.CardID, u.Name, u.Surname, u.Email, u.RoleId, u.Role?.Name, u.CardEpc, u.IsActive, u.Language
         )));
     }
 
@@ -48,7 +48,7 @@ public class UserController : PermissionedController
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.id == id && x.LicenseId == licId);
         if (u == null) return NotFound();
-        return Ok(new UserAdminDto(u.id, u.CardID, u.Name, u.Surname, u.Email, u.RoleId, u.Role?.Name, u.CardEpc, u.IsActive));
+        return Ok(new UserAdminDto(u.id, u.CardID, u.Name, u.Surname, u.Email, u.RoleId, u.Role?.Name, u.CardEpc, u.IsActive, u.Language));
     }
 
     // ── GET /api/User/by-card/{cardId} ────────────────────────────────────────
@@ -61,7 +61,7 @@ public class UserController : PermissionedController
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.CardID == cardId);
         if (u == null) return NotFound();
-        return Ok(new UserAdminDto(u.id, u.CardID, u.Name, u.Surname, u.Email, u.RoleId, u.Role?.Name, u.CardEpc, u.IsActive));
+        return Ok(new UserAdminDto(u.id, u.CardID, u.Name, u.Surname, u.Email, u.RoleId, u.Role?.Name, u.CardEpc, u.IsActive, u.Language));
     }
 
     // ── POST /api/User ────────────────────────────────────────────────────────
@@ -103,7 +103,7 @@ public class UserController : PermissionedController
         await _db.SaveChangesAsync();
 
         await _db.Entry(entity).Reference(u => u.Role).LoadAsync();
-        return Ok(new UserAdminDto(entity.id, entity.CardID, entity.Name, entity.Surname, entity.Email, entity.RoleId, entity.Role?.Name, entity.CardEpc, entity.IsActive));
+        return Ok(new UserAdminDto(entity.id, entity.CardID, entity.Name, entity.Surname, entity.Email, entity.RoleId, entity.Role?.Name, entity.CardEpc, entity.IsActive, entity.Language));
     }
 
     // ── PUT /api/User/{id} ────────────────────────────────────────────────────
@@ -144,11 +144,12 @@ public class UserController : PermissionedController
         }
         if (dto.CardEpc != null)                      entity.CardEpc = string.IsNullOrWhiteSpace(dto.CardEpc) ? null : dto.CardEpc.Trim();
         if (dto.IsActive.HasValue) entity.IsActive = dto.IsActive.Value;
+        if (!string.IsNullOrWhiteSpace(dto.Language)) entity.Language = dto.Language;
 
         await _db.SaveChangesAsync();
         await _db.Entry(entity).Reference(u => u.Role).LoadAsync();
 
-        return Ok(new UserAdminDto(entity.id, entity.CardID, entity.Name, entity.Surname, entity.Email, entity.RoleId, entity.Role?.Name, entity.CardEpc, entity.IsActive));
+        return Ok(new UserAdminDto(entity.id, entity.CardID, entity.Name, entity.Surname, entity.Email, entity.RoleId, entity.Role?.Name, entity.CardEpc, entity.IsActive, entity.Language));
     }
 
     // ── DELETE /api/User/{id} ─────────────────────────────────────────────────
