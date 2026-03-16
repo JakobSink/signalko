@@ -6,11 +6,14 @@
 
 let _skLang = {};
 
+const SK_SUPPORTED_LANGS = ['sl', 'en', 'de', 'sr'];
+
 function skGetLang() {
   try {
     const u = JSON.parse(localStorage.getItem('sk_user') || 'null');
-    return u?.language || u?.Language || 'sl';
-  } catch { return 'sl'; }
+    const lang = u?.language || u?.Language || 'en';
+    return SK_SUPPORTED_LANGS.includes(lang) ? lang : 'en';
+  } catch { return 'en'; }
 }
 
 /* Resolves when the language JSON is loaded */
@@ -21,9 +24,9 @@ const SK_I18N_READY = (async () => {
     if (!res.ok) throw new Error();
     _skLang = await res.json();
   } catch {
-    // fallback: try Slovenian
+    // fallback: try English
     try {
-      const res = await fetch('/lang/sl.json?v=1.0.3');
+      const res = await fetch('/lang/en.json?v=1.0.3');
       _skLang = await res.json();
     } catch { _skLang = {}; }
   }

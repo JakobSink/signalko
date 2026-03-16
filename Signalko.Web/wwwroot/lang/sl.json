@@ -82,5 +82,7 @@
 
   "profile.language":       "Jezik vmesnika",
   "profile.lang.sl":        "Slovenščina",
-  "profile.lang.en":        "English"
+  "profile.lang.en":        "English",
+  "profile.lang.de":        "Nemščina",
+  "profile.lang.sr":        "Srbščina"
 }

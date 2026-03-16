@@ -134,8 +134,10 @@
               <div class="sk-field" style="margin-top:6px;">
                 <label data-i18n="profile.language">Jezik vmesnika</label>
                 <select id="selLang" class="sk-input" style="max-width:200px;">
-                  <option value="sl" data-i18n="profile.lang.sl">Slovenščina</option>
                   <option value="en" data-i18n="profile.lang.en">English</option>
+                  <option value="sl" data-i18n="profile.lang.sl">Slovenščina</option>
+                  <option value="de" data-i18n="profile.lang.de">Deutsch</option>
+                  <option value="sr" data-i18n="profile.lang.sr">Srpski</option>
                 </select>
               </div>
               <div id="editErr" class="sk-alert sk-alert-red" style="display:none;"></div>
@@ -209,7 +211,7 @@ function initProfile() {
   document.getElementById('editEmail').value   = email;
 
   // Pre-fill language selector
-  const lang = me.language || me.Language || 'sl';
+  const lang = me.language || me.Language || 'en';
   document.getElementById('selLang').value = lang;
 
   loadLoans();

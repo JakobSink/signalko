@@ -82,5 +82,7 @@
 
   "profile.language":       "Interface language",
   "profile.lang.sl":        "Slovenian",
-  "profile.lang.en":        "English"
+  "profile.lang.en":        "English",
+  "profile.lang.de":        "German",
+  "profile.lang.sr":        "Serbian"
 }
