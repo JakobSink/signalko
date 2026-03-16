@@ -184,10 +184,15 @@ static async Task MigrateAndSeedCoreAsync(WebApplication app)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
         ");
 
-        await db.Database.ExecuteSqlRawAsync(@"
-            ALTER TABLE `users`
-            ADD COLUMN IF NOT EXISTS `IsActive` TINYINT(1) NOT NULL DEFAULT 1;
-        ");
+        // Add IsActive column to users if it doesn't exist yet
+        try
+        {
+            await db.Database.ExecuteSqlRawAsync(@"
+                ALTER TABLE `users` ADD COLUMN `IsActive` TINYINT(1) NOT NULL DEFAULT 1;
+            ");
+            Console.WriteLine("[DB] Added IsActive column to users.");
+        }
+        catch { /* column already exists — safe to ignore */ }
 
         // Seed roles
         if (!await db.Roles.AnyAsync())
