@@ -142,7 +142,7 @@ public sealed record LicenseDto(
     int      MaxUsers,
     int      ActiveUsers,
     int      TotalUsers,
-    string?  Domain,
+    string?  CompanyName,
     DateTime CreatedAt,
     DateTime UpdatedAt
 );

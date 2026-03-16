@@ -110,7 +110,10 @@ public class UserController : PermissionedController
     [HttpPut("{id:int}"), Authorize]
     public async Task<IActionResult> UpdateUser(int id, [FromBody] UserUpdateDto dto)
     {
-        if (!await HasPermAsync("users.manage")) return Forbidden("users.manage");
+        var callerId = GetUserId();
+        var isSelf = callerId.HasValue && callerId.Value == id;
+        // Own profile is always allowed; editing others requires users.manage
+        if (!isSelf && !await HasPermAsync("users.manage")) return Forbidden("users.manage");
         var entity = await _db.users.Include(u => u.Role).FirstOrDefaultAsync(u => u.id == id);
         if (entity == null) return NotFound();
 

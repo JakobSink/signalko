@@ -32,7 +32,7 @@ public class LicenseController : PermissionedController
         return Ok(new LicenseDto(
             lic.id, lic.LicenseKey, lic.MaxUsers,
             activeUsers, totalUsers,
-            lic.Domain, lic.CreatedAt, lic.UpdatedAt
+            lic.CompanyName, lic.CreatedAt, lic.UpdatedAt
         ));
     }
 

@@ -63,6 +63,7 @@ function render(d) {
         <button class="lic-copy-btn" onclick="copyKey()">Kopiraj</button>
       </div>
       <div class="lic-meta" style="margin-top:10px;">
+        ${d.companyName ? `Podjetje: <span>${h(d.companyName)}</span> &nbsp;·&nbsp; ` : ''}
         Ustvarjena: <span>${fmt(d.createdAt)}</span> &nbsp;·&nbsp;
         Posodobljena: <span>${fmt(d.updatedAt)}</span>
       </div>

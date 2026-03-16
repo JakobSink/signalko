@@ -178,11 +178,31 @@ static async Task MigrateAndSeedCoreAsync(WebApplication app)
                 `id`          INT AUTO_INCREMENT PRIMARY KEY,
                 `LicenseKey`  VARCHAR(30)  NOT NULL,
                 `MaxUsers`    INT          NOT NULL DEFAULT 10,
-                `Domain`      VARCHAR(255) NULL,
+                `CompanyName` VARCHAR(255) NULL,
                 `CreatedAt`   DATETIME     NOT NULL,
                 `UpdatedAt`   DATETIME     NOT NULL
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
         ");
+
+        // Rename Domain → CompanyName on licenses if old column exists
+        try
+        {
+            await db.Database.ExecuteSqlRawAsync(@"
+                ALTER TABLE `licenses` CHANGE COLUMN `Domain` `CompanyName` VARCHAR(255) NULL;
+            ");
+            Console.WriteLine("[DB] Renamed licenses.Domain to CompanyName.");
+        }
+        catch { /* already renamed or never existed — safe to ignore */ }
+
+        // Add CompanyName if it doesn't exist yet (fresh installs that skipped Domain)
+        try
+        {
+            await db.Database.ExecuteSqlRawAsync(@"
+                ALTER TABLE `licenses` ADD COLUMN `CompanyName` VARCHAR(255) NULL;
+            ");
+            Console.WriteLine("[DB] Added CompanyName column to licenses.");
+        }
+        catch { /* already exists — safe to ignore */ }
 
         // Add IsActive column to users if it doesn't exist yet
         try
@@ -330,7 +350,7 @@ static async Task MigrateAndSeedCoreAsync(WebApplication app)
             {
                 LicenseKey = LicenseController.GenerateLicenseKey(),
                 MaxUsers   = 10,
-                Domain     = null,
+                CompanyName = null,
                 CreatedAt  = DateTime.UtcNow,
                 UpdatedAt  = DateTime.UtcNow,
             });

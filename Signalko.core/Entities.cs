@@ -285,7 +285,7 @@ public class License
     [Key] public int id { get; set; }
     [Required, MaxLength(30)] public string LicenseKey { get; set; } = "";
     public int MaxUsers { get; set; } = 10;
-    [MaxLength(255)] public string? Domain { get; set; }
+    [MaxLength(255)] public string? CompanyName { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 }
