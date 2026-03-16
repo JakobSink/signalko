@@ -25,6 +25,7 @@ public class AppDbContext : DbContext
     public DbSet<UserPresence>    UserPresences    => Set<UserPresence>();
     public DbSet<Permission>     Permissions     => Set<Permission>();
     public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
+    public DbSet<License>        Licenses        => Set<License>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {

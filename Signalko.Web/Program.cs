@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Signalko.Core;
 using Signalko.Infrastructure;
+using Signalko.Web.Controllers;
 using Signalko.Web.Services;
 using System.Text;
 
@@ -172,6 +173,22 @@ static async Task MigrateAndSeedCoreAsync(WebApplication app)
         ");
         Console.WriteLine("[DB] RBAC tables ensured.");
 
+        await db.Database.ExecuteSqlRawAsync(@"
+            CREATE TABLE IF NOT EXISTS `licenses` (
+                `id`          INT AUTO_INCREMENT PRIMARY KEY,
+                `LicenseKey`  VARCHAR(30)  NOT NULL,
+                `MaxUsers`    INT          NOT NULL DEFAULT 10,
+                `Domain`      VARCHAR(255) NULL,
+                `CreatedAt`   DATETIME     NOT NULL,
+                `UpdatedAt`   DATETIME     NOT NULL
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        ");
+
+        await db.Database.ExecuteSqlRawAsync(@"
+            ALTER TABLE `users`
+            ADD COLUMN IF NOT EXISTS `IsActive` TINYINT(1) NOT NULL DEFAULT 1;
+        ");
+
         // Seed roles
         if (!await db.Roles.AnyAsync())
         {
@@ -230,6 +247,9 @@ static async Task MigrateAndSeedCoreAsync(WebApplication app)
             ("page.zones",      "Stran: Cone",              "Strani (dostop)"),
             ("page.roles",           "Stran: Vloge",                  "Strani (dostop)"),
             ("page.presenceadmin",  "Stran: Prisotnost — nadzor",    "Strani (dostop)"),
+            ("license.view",        "Ogled licence",                 "Sistem"),
+            ("license.manage",      "Upravljanje licence",           "Sistem"),
+            ("page.license",        "Stran: Licenca",                "Strani (dostop)"),
         };
         foreach (var p in allPerms)
         {
@@ -280,6 +300,21 @@ static async Task MigrateAndSeedCoreAsync(WebApplication app)
             {
                 Console.WriteLine($"[Seed] User role: has {existingCount} permissions, skipping seed.");
             }
+        }
+
+        // Seed license if none exists
+        if (!await db.Licenses.AnyAsync())
+        {
+            db.Licenses.Add(new License
+            {
+                LicenseKey = LicenseController.GenerateLicenseKey(),
+                MaxUsers   = 10,
+                Domain     = null,
+                CreatedAt  = DateTime.UtcNow,
+                UpdatedAt  = DateTime.UtcNow,
+            });
+            await db.SaveChangesAsync();
+            Console.WriteLine("[Seed] License created.");
         }
     }
     catch (Exception ex)

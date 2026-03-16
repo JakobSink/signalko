@@ -81,6 +81,8 @@ public class User
     [MaxLength(128)]
     public string? CardEpc { get; set; }
 
+    public bool IsActive { get; set; } = true;
+
     [JsonIgnore]
     public ICollection<AssetLoan> Loans { get; set; } = new List<AssetLoan>();
 }
@@ -261,4 +263,16 @@ public class Tag
 
     [MaxLength(128)]
     public string? EpcAscii { get; set; }
+}
+
+// ============ LICENSE ============
+[Table("licenses")]
+public class License
+{
+    [Key] public int id { get; set; }
+    [Required, MaxLength(30)] public string LicenseKey { get; set; } = "";
+    public int MaxUsers { get; set; } = 10;
+    [MaxLength(255)] public string? Domain { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
 }

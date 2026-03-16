@@ -166,6 +166,12 @@ const PAGE_GROUPS = [
     desc:'Ta stran — upravljanje vlog in pravic. Kdo ima dostop do katerih strani in funkcij.',
     perms:['roles.manage']
   },
+  {
+    label:'Licenca', icon:'🔐', pageCode:'page.license',
+    sidebarLabel:'Licenca', sidebarSection:'Razdelek: Admin',
+    desc:'Stran za upravljanje licenčnega ključa, omejitev uporabnikov in domene.',
+    perms:['license.view','license.manage']
+  },
   // ── Razdelek: Konfiguracija ──────────────────────────────
   {
     label:'Čitalci', icon:'📡', pageCode:'page.readers',
@@ -206,6 +212,8 @@ const PERM_DESC = {
   'zones.view':        'Ogled con — fizičnih lokacij v sistemu.',
   'zones.manage':      'Dodajanje, urejanje in brisanje con.',
   'roles.manage':      'Upravljanje vlog: ustvarjanje, urejanje pravic, brisanje vlog.',
+  'license.view':   'Ogled licenčnih podatkov — ključ, omejitev uporabnikov, domena.',
+  'license.manage': 'Urejanje licence — sprememba omejitev in regeneracija ključa.',
 };
 
 let ALL_PERMS = [];

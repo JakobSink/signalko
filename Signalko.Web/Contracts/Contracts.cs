@@ -79,7 +79,8 @@ public sealed record UserAdminDto(
     string  Email,
     int?    RoleId,
     string? RoleName,
-    string? CardEpc = null
+    string? CardEpc = null,
+    bool    IsActive = true
 );
 
 public sealed record UserCreateDto(
@@ -101,7 +102,8 @@ public sealed record UserUpdateDto(
     string? Email,
     string? Password,
     int?    RoleId,
-    string? CardEpc = null
+    string? CardEpc = null,
+    bool?   IsActive = null
 );
 
 // ── Exchange Request DTOs ─────────────────────────────────────────────────────
@@ -128,4 +130,17 @@ public sealed record ExchangeResponseDto(
     DateTime  CreatedAt,
     DateTime? RespondedAt,
     string?   Message
+);
+
+// ── License DTOs ──────────────────────────────────────────────────────────────
+
+public sealed record LicenseDto(
+    int      Id,
+    string   LicenseKey,
+    int      MaxUsers,
+    int      ActiveUsers,
+    int      TotalUsers,
+    string?  Domain,
+    DateTime CreatedAt,
+    DateTime UpdatedAt
 );

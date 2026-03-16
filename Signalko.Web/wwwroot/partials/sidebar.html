@@ -146,6 +146,10 @@
       <span class="sb-item-icon">🔑</span>
       <span class="sb-label">Vloge</span>
     </a>
+    <a class="sb-item admin-link" id="sbLicenseLink" href="/license.html" style="display:none;">
+      <span class="sb-item-icon">🔐</span>
+      <span class="sb-label">Licenca</span>
+    </a>
 
     <div class="sb-section" id="sbConfigSection" style="display:none;">Konfiguracija</div>
     <a class="sb-item" id="sbReadersLink"  href="/readers.html"  style="display:none;">
@@ -216,6 +220,7 @@
         '<a class="smm-item smm-admin" href="/admin.html" id="smmAdminLink" style="display:none"><span class="smm-item-icon">👥</span> Uporabniki</a>' +
         '<a class="smm-item smm-admin" href="/presenceadmin.html" id="smmPresAdminLink" style="display:none"><span class="smm-item-icon">🔎</span> Prisotnost — nadzor</a>' +
         '<a class="smm-item smm-admin" href="/roles.html" id="smmRolesLink" style="display:none"><span class="smm-item-icon">🔑</span> Vloge</a>' +
+        '<a class="smm-item smm-admin" href="/license.html" id="smmLicenseLink" style="display:none"><span class="smm-item-icon">🔐</span> Licenca</a>' +
         '<div class="smm-section" id="smmConfigSection" style="display:none">Konfiguracija</div>' +
         '<a class="smm-item" href="/readers.html" id="smmReadersLink" style="display:none"><span class="smm-item-icon">📡</span> Čitalci</a>' +
         '<a class="smm-item" href="/antennas.html" id="smmAntennasLink" style="display:none"><span class="smm-item-icon">📶</span> Antene</a>' +
@@ -287,6 +292,7 @@
       sbAdminLink:     ['smmAdminLink',    'page.users',        false],
       sbPresAdminLink: ['smmPresAdminLink','page.presenceadmin',false],
       sbRolesLink:     ['smmRolesLink',    'page.roles',        false],
+      sbLicenseLink:   ['smmLicenseLink', 'page.license',      false],
       sbReadersLink:   ['smmReadersLink',  'page.readers',      false],
       sbAntennasLink:  ['smmAntennasLink', 'page.antennas',     false],
       sbZonesLink:     ['smmZonesLink',    'page.zones',        false],
@@ -303,7 +309,7 @@
 
     // Section headers — show only if at least one link in that section is visible
     var hasUserSec   = canShow('page.presence',     false);
-    var hasAdminSec  = canShow('page.users',        false) || canShow('page.presenceadmin', false) || canShow('page.roles', false);
+    var hasAdminSec  = canShow('page.users', false) || canShow('page.presenceadmin', false) || canShow('page.roles', false) || canShow('page.license', false);
     var hasConfigSec = canShow('page.readers',      false) || canShow('page.antennas',      false) || canShow('page.zones', false);
 
     ['sbUserSection',  'smmUserSection' ].forEach(function(id) { var el=document.getElementById(id);   if(el) el.style.display = hasUserSec   ? '' : 'none'; });

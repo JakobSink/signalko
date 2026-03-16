@@ -25,7 +25,7 @@ public class UserController : PermissionedController
             .ToListAsync();
 
         return Ok(users.Select(u => new UserAdminDto(
-            u.id, u.CardID, u.Name, u.Surname, u.Email, u.RoleId, u.Role?.Name, u.CardEpc
+            u.id, u.CardID, u.Name, u.Surname, u.Email, u.RoleId, u.Role?.Name, u.CardEpc, u.IsActive
         )));
     }
 
@@ -45,7 +45,7 @@ public class UserController : PermissionedController
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.id == id);
         if (u == null) return NotFound();
-        return Ok(new UserAdminDto(u.id, u.CardID, u.Name, u.Surname, u.Email, u.RoleId, u.Role?.Name, u.CardEpc));
+        return Ok(new UserAdminDto(u.id, u.CardID, u.Name, u.Surname, u.Email, u.RoleId, u.Role?.Name, u.CardEpc, u.IsActive));
     }
 
     // ── GET /api/User/by-card/{cardId} ────────────────────────────────────────
@@ -58,7 +58,7 @@ public class UserController : PermissionedController
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.CardID == cardId);
         if (u == null) return NotFound();
-        return Ok(new UserAdminDto(u.id, u.CardID, u.Name, u.Surname, u.Email, u.RoleId, u.Role?.Name, u.CardEpc));
+        return Ok(new UserAdminDto(u.id, u.CardID, u.Name, u.Surname, u.Email, u.RoleId, u.Role?.Name, u.CardEpc, u.IsActive));
     }
 
     // ── POST /api/User ────────────────────────────────────────────────────────
@@ -71,6 +71,15 @@ public class UserController : PermissionedController
         if (await _db.users.AnyAsync(u => u.CardID == dto.CardID))
             return Conflict(new { message = "CardID je že zaseden." });
 
+        // License: check active user limit
+        var lic = await _db.Licenses.AsNoTracking().FirstOrDefaultAsync();
+        if (lic != null)
+        {
+            var activeCount = await _db.users.CountAsync(u => u.IsActive);
+            if (activeCount >= lic.MaxUsers)
+                return Conflict(new { message = $"Dosežena omejitev licence ({lic.MaxUsers} aktivnih uporabnikov). Deaktiviraj obstoječega uporabnika ali nadgradi licenco." });
+        }
+
         var entity = new User
         {
             CardID       = dto.CardID,
@@ -81,12 +90,13 @@ public class UserController : PermissionedController
             RoleId       = dto.RoleId,
             Password     = PasswordHasher.Hash(dto.Password),
             CardEpc      = string.IsNullOrWhiteSpace(dto.CardEpc) ? null : dto.CardEpc.Trim(),
+            IsActive     = true,
         };
         _db.users.Add(entity);
         await _db.SaveChangesAsync();
 
         await _db.Entry(entity).Reference(u => u.Role).LoadAsync();
-        return Ok(new UserAdminDto(entity.id, entity.CardID, entity.Name, entity.Surname, entity.Email, entity.RoleId, entity.Role?.Name, entity.CardEpc));
+        return Ok(new UserAdminDto(entity.id, entity.CardID, entity.Name, entity.Surname, entity.Email, entity.RoleId, entity.Role?.Name, entity.CardEpc, entity.IsActive));
     }
 
     // ── PUT /api/User/{id} ────────────────────────────────────────────────────
@@ -126,11 +136,12 @@ public class UserController : PermissionedController
             entity.RoleId = dto.RoleId;
         }
         if (dto.CardEpc != null)                      entity.CardEpc = string.IsNullOrWhiteSpace(dto.CardEpc) ? null : dto.CardEpc.Trim();
+        if (dto.IsActive.HasValue) entity.IsActive = dto.IsActive.Value;
 
         await _db.SaveChangesAsync();
         await _db.Entry(entity).Reference(u => u.Role).LoadAsync();
 
-        return Ok(new UserAdminDto(entity.id, entity.CardID, entity.Name, entity.Surname, entity.Email, entity.RoleId, entity.Role?.Name, entity.CardEpc));
+        return Ok(new UserAdminDto(entity.id, entity.CardID, entity.Name, entity.Surname, entity.Email, entity.RoleId, entity.Role?.Name, entity.CardEpc, entity.IsActive));
     }
 
     // ── DELETE /api/User/{id} ─────────────────────────────────────────────────

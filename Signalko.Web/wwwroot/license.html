@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="sl">
+<head>
+<meta charset="utf-8"/>
+<title>Signalko · Licenca</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<link rel="stylesheet" href="/css/sk.css"/>
+<style>
+.lic-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+@media(max-width:700px){.lic-grid{grid-template-columns:1fr;}}
+.lic-key-wrap{display:flex;align-items:center;gap:10px;background:var(--up);border:1px solid var(--border);border-radius:10px;padding:14px 16px;}
+.lic-key{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:700;color:var(--acc);letter-spacing:1px;flex:1;word-break:break-all;}
+.lic-copy-btn{background:rgba(79,142,247,.1);border:1px solid rgba(79,142,247,.25);color:var(--acc);font-size:11px;font-weight:700;padding:6px 12px;border-radius:6px;cursor:pointer;font-family:'JetBrains Mono',monospace;transition:background .13s,border-color .13s;flex-shrink:0;}
+.lic-copy-btn:hover{background:rgba(79,142,247,.2);}
+.lic-stat{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;}
+.lic-stat-num{font-size:32px;font-weight:800;font-family:'Syne',sans-serif;color:var(--txt);}
+.lic-stat-label{font-size:10px;color:var(--mut);text-transform:uppercase;letter-spacing:1.5px;margin-top:4px;}
+.lic-bar-wrap{margin-top:12px;}
+.lic-bar-track{height:6px;background:var(--border);border-radius:6px;overflow:hidden;}
+.lic-bar-fill{height:100%;border-radius:6px;background:var(--acc);transition:width .4s;}
+.lic-bar-fill.warn{background:var(--org);}
+.lic-bar-fill.full{background:var(--red);}
+.lic-bar-label{font-size:10px;color:var(--mut);margin-top:5px;}
+.lic-field{margin-bottom:14px;}
+.lic-field label{display:block;font-size:9px;color:var(--mut);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:5px;}
+.lic-regen-btn{background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.25);color:var(--red);font-size:11px;font-weight:700;padding:8px 14px;border-radius:8px;cursor:pointer;font-family:'JetBrains Mono',monospace;transition:background .13s;display:flex;align-items:center;gap:6px;}
+.lic-regen-btn:hover{background:rgba(248,113,113,.15);}
+.lic-meta{font-size:11px;color:var(--mut);}
+.lic-meta span{color:var(--sub);}
+</style>
+</head>
+<body>
+<div class="sk-layout">
+  <aside class="sk-sidebar-col" id="sidebarHost"></aside>
+  <main class="sk-main">
+    <div class="sk-page-title">Licenca</div>
+    <div class="sk-page-sub">Licenčni ključ, omejitve in podatki o namestitvi</div>
+
+    <div id="licContent"><div class="sk-state-loading"><div class="sk-spin"></div>Nalaganje…</div></div>
+  </main>
+</div>
+
+<script src="/css/sk.js"></script>
+<script>
+skRequirePerm('license.view');
+
+async function load() {
+  const r = await skGet('/api/License');
+  if (!r.ok) {
+    document.getElementById('licContent').innerHTML =
+      '<div class="sk-state-empty">Napaka pri nalaganju licence.</div>';
+    return;
+  }
+  render(r.data);
+}
+
+function render(d) {
+  const pct    = Math.min(100, Math.round((d.activeUsers / d.maxUsers) * 100));
+  const fillCls = pct >= 100 ? 'full' : pct >= 80 ? 'warn' : '';
+  const canManage = skHasPerm('license.manage');
+
+  document.getElementById('licContent').innerHTML = `
+    <div class="sk-card sk-card-pad" style="margin-bottom:16px;">
+      <div style="font-size:10px;color:var(--mut);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;">Licenčni ključ</div>
+      <div class="lic-key-wrap">
+        <div class="lic-key" id="licKey">${h(d.licenseKey)}</div>
+        <button class="lic-copy-btn" onclick="copyKey()">Kopiraj</button>
+      </div>
+      <div class="lic-meta" style="margin-top:10px;">
+        Ustvarjena: <span>${fmt(d.createdAt)}</span> &nbsp;·&nbsp;
+        Posodobljena: <span>${fmt(d.updatedAt)}</span>
+        ${d.domain ? ` &nbsp;·&nbsp; Domena: <span>${h(d.domain)}</span>` : ''}
+      </div>
+    </div>
+
+    <div class="lic-grid">
+      <div class="lic-stat">
+        <div class="lic-stat-num">${d.activeUsers}</div>
+        <div class="lic-stat-label">Aktivni uporabniki</div>
+        <div class="lic-bar-wrap">
+          <div class="lic-bar-track"><div class="lic-bar-fill ${fillCls}" style="width:${pct}%"></div></div>
+          <div class="lic-bar-label">${d.activeUsers} / ${d.maxUsers} dovoljenjih &nbsp;·&nbsp; ${d.maxUsers - d.activeUsers} prostih</div>
+        </div>
+      </div>
+      <div class="lic-stat">
+        <div class="lic-stat-num">${d.totalUsers}</div>
+        <div class="lic-stat-label">Vsi uporabniki (skupaj)</div>
+        <div style="font-size:11px;color:var(--mut);margin-top:10px;">Neaktivni: ${d.totalUsers - d.activeUsers}</div>
+      </div>
+    </div>
+
+    ${canManage ? `
+    <div class="sk-card sk-card-pad">
+      <div style="font-size:11px;font-weight:700;color:var(--txt);margin-bottom:14px;">Nastavitve licence</div>
+      <div class="lic-field">
+        <label>Maks. aktivnih uporabnikov</label>
+        <input class="sk-input" id="inpMaxUsers" type="number" min="1" value="${d.maxUsers}" style="max-width:160px;"/>
+      </div>
+      <div class="lic-field">
+        <label>Domena (neobvezno)</label>
+        <input class="sk-input" id="inpDomain" type="text" value="${h(d.domain || '')}" placeholder="npr. signalko.si" style="max-width:320px;"/>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:4px;">
+        <button class="sk-btn sk-btn-acc" id="saveBtn" onclick="save()">✓ Shrani</button>
+        <button class="lic-regen-btn" id="regenBtn" onclick="regen()">↻ Regeneriraj ključ</button>
+      </div>
+    </div>` : ''}
+  `;
+}
+
+async function save() {
+  const btn = document.getElementById('saveBtn');
+  const maxUsers = parseInt(document.getElementById('inpMaxUsers')?.value) || null;
+  const domain   = document.getElementById('inpDomain')?.value.trim() || '';
+  skBtnLoading(btn, true, '✓ Shrani');
+  const r = await skPut('/api/License', { maxUsers, domain });
+  skBtnLoading(btn, false, '✓ Shrani');
+  if (!r.ok) { skToast(r.data?.message || 'Napaka pri shranjevanju.', 'error'); return; }
+  skToast('Licenca shranjena!');
+  render(r.data);
+}
+
+async function regen() {
+  if (!confirm('Regeneriraj licenčni ključ? Stari ključ bo neveljavno.')) return;
+  const btn = document.getElementById('regenBtn');
+  skBtnLoading(btn, true, '↻ Regeneriraj ključ');
+  const r = await skPost('/api/License/regenerate', {});
+  skBtnLoading(btn, false, '↻ Regeneriraj ključ');
+  if (!r.ok) { skToast(r.data?.message || 'Napaka.', 'error'); return; }
+  skToast('Ključ regeneriran!');
+  render(r.data);
+}
+
+function copyKey() {
+  const key = document.getElementById('licKey')?.textContent || '';
+  navigator.clipboard.writeText(key).then(() => skToast('Ključ kopiran!'));
+}
+
+function fmt(dt) { return dt ? new Date(dt).toLocaleString('sl-SI', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—'; }
+function h(s) { return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+load();
+</script>
+</body>
+</html>
