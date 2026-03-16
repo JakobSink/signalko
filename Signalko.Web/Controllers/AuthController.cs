@@ -30,6 +30,19 @@ public class AuthController : ControllerBase
         var email = (req.Email ?? "").Trim().ToLowerInvariant();
         if (string.IsNullOrWhiteSpace(email)) return BadRequest(new { message = "Email je obvezen." });
 
+        // Validate license key
+        var licenseKey = (req.LicenseKey ?? "").Trim();
+        if (string.IsNullOrWhiteSpace(licenseKey))
+            return BadRequest(new { message = "Licenčni ključ je obvezen." });
+
+        var license = await _db.Licenses.FirstOrDefaultAsync(l => l.LicenseKey == licenseKey);
+        if (license == null)
+            return BadRequest(new { message = "Neveljaven licenčni ključ." });
+
+        // If license already has any users → it's activated, block further registrations
+        if (await _db.users.AnyAsync())
+            return Conflict(new { message = "Licenčni ključ je že aktiviran. Obrnite se na administratorja sistema." });
+
         if (await _db.users.AnyAsync(u => u.Email == email))
             return Conflict(new { message = "Email je že registriran." });
 

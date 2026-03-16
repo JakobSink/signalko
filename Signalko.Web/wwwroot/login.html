@@ -129,6 +129,10 @@ html,body{background:var(--bg);color:var(--txt);font-family:'JetBrains Mono',mon
           <div class="field"><label>Email</label><input id="regEmail" type="email" placeholder="admin@signalko.si"/></div>
           <div class="field"><label>Geslo</label>        <input id="regPass"  type="password" placeholder="••••••••"/></div>
           <div class="field"><label>Ponovi geslo</label> <input id="regPass2" type="password" placeholder="••••••••"/></div>
+          <div class="field">
+            <label>Licenčni ključ</label>
+            <input id="regLicKey" placeholder="signal-XXXX-XXXX-XXXX" autocomplete="off" style="font-family:'JetBrains Mono',monospace;letter-spacing:.04em;"/>
+          </div>
           <div class="err" id="regErr"></div>
           <button class="btn-acc" id="regBtn" onclick="doRegister()">Registriraj se</button>
         </div>
@@ -152,7 +156,7 @@ document.querySelectorAll('.tab').forEach(t => {
 ['loginEmail','loginPass'].forEach(id => {
   document.getElementById(id).addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
 });
-['regEmail','regPass','regPass2'].forEach(id => {
+['regEmail','regPass','regPass2','regLicKey'].forEach(id => {
   document.getElementById(id).addEventListener('keydown', e => { if(e.key==='Enter') doRegister(); });
 });
 
@@ -215,7 +219,8 @@ async function doRegister() {
   const email   = document.getElementById('regEmail').value.trim();
   const pass    = document.getElementById('regPass').value;
   const pass2   = document.getElementById('regPass2').value;
-  if (!name || !email || !pass) { showErr('regErr', 'Izpolni vsa polja.'); return; }
+  const licKey  = document.getElementById('regLicKey').value.trim();
+  if (!name || !email || !pass || !licKey) { showErr('regErr', 'Izpolni vsa polja, vključno z licenčnim ključem.'); return; }
   if (pass !== pass2) { showErr('regErr', 'Gesli se ne ujemata.'); return; }
 
   setLoading('regBtn', true);
@@ -223,7 +228,7 @@ async function doRegister() {
     const res  = await fetch('/api/Auth/signup', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-      body: JSON.stringify({ name, surname, email, password: pass }),
+      body: JSON.stringify({ name, surname, email, password: pass, licenseKey: licKey }),
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) { showErr('regErr', data.message || data.title || `Napaka ${res.status}`); return; }

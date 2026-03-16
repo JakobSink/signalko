@@ -93,15 +93,12 @@ function render(d) {
     <div class="sk-card sk-card-pad">
       <div style="font-size:11px;font-weight:700;color:var(--txt);margin-bottom:14px;">Nastavitve licence</div>
       <div class="lic-field">
-        <label>Maks. aktivnih uporabnikov</label>
-        <input class="sk-input" id="inpMaxUsers" type="number" min="1" value="${d.maxUsers}" style="max-width:160px;"/>
-      </div>
-      <div class="lic-field">
         <label>Domena (neobvezno)</label>
         <input class="sk-input" id="inpDomain" type="text" value="${h(d.domain || '')}" placeholder="npr. signalko.si" style="max-width:320px;"/>
       </div>
-      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:4px;">
-        <button class="sk-btn sk-btn-acc" id="saveBtn" onclick="save()">✓ Shrani</button>
+      <div style="font-size:10px;color:var(--mut);margin-bottom:12px;">Omejitev uporabnikov (${d.maxUsers}) se nastavi samo v bazi podatkov.</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="sk-btn sk-btn-acc" id="saveBtn" onclick="save()">✓ Shrani domeno</button>
         <button class="lic-regen-btn" id="regenBtn" onclick="regen()">↻ Regeneriraj ključ</button>
       </div>
     </div>` : ''}
@@ -109,12 +106,11 @@ function render(d) {
 }
 
 async function save() {
-  const btn = document.getElementById('saveBtn');
-  const maxUsers = parseInt(document.getElementById('inpMaxUsers')?.value) || null;
-  const domain   = document.getElementById('inpDomain')?.value.trim() || '';
-  skBtnLoading(btn, true, '✓ Shrani');
-  const r = await skPut('/api/License', { maxUsers, domain });
-  skBtnLoading(btn, false, '✓ Shrani');
+  const btn    = document.getElementById('saveBtn');
+  const domain = document.getElementById('inpDomain')?.value.trim() || '';
+  skBtnLoading(btn, true, '✓ Shrani domeno');
+  const r = await skPut('/api/License', { domain });
+  skBtnLoading(btn, false, '✓ Shrani domeno');
   if (!r.ok) { skToast(r.data?.message || 'Napaka pri shranjevanju.', 'error'); return; }
   skToast('Licenca shranjena!');
   render(r.data);
