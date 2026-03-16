@@ -694,5 +694,13 @@
   "loans.err.card_mismatch2": "Ta CardID ne pripada imetniku tega sredstva.",
   "loans.err.user_not_identified": "Uporabnik ni identificiran. Pojdi nazaj in skeniraj kartico.",
   "loans.err.send_failed": "Napaka pri pošiljanju:",
-  "loans.err.generic": "Napaka:"
+  "loans.err.generic": "Napaka:",
+  "kiosk.title": "Izposojevalnica",
+  "kiosk.sub": "Prisloni ali vnesi svojo kartico za dostop do izposoje",
+  "kiosk.card_ph": "CardID kartica…",
+  "kiosk.btn": "Vstopi →",
+  "kiosk.err_not_found": "Kartica ni bila najdena ali uporabnik ni aktiven.",
+  "kiosk.logging_out": "Odjava…",
+  "kiosk.thankyou_title": "Hvala!",
+  "kiosk.thankyou_sub": "Seja se zaključuje…"
 }

@@ -694,5 +694,13 @@
   "loans.err.card_mismatch2": "This CardID does not belong to the asset holder.",
   "loans.err.user_not_identified": "User not identified. Go back and scan the card.",
   "loans.err.send_failed": "Error sending request:",
-  "loans.err.generic": "Error:"
+  "loans.err.generic": "Error:",
+  "kiosk.title": "Loan Kiosk",
+  "kiosk.sub": "Scan or enter your card to access the loan system",
+  "kiosk.card_ph": "Card ID…",
+  "kiosk.btn": "Enter →",
+  "kiosk.err_not_found": "Card not found or user inactive.",
+  "kiosk.logging_out": "Logging out…",
+  "kiosk.thankyou_title": "Thank you!",
+  "kiosk.thankyou_sub": "Session ending…"
 }

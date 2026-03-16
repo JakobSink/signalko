@@ -116,6 +116,39 @@ public class AuthController : ControllerBase
         });
     }
 
+    // POST /api/Auth/login-by-card  (kiosk flow — no password required)
+    [HttpPost("login-by-card")]
+    public async Task<IActionResult> LoginByCard([FromBody] CardLoginRequest req)
+    {
+        var cardId = (req.CardId ?? "").Trim();
+        if (string.IsNullOrWhiteSpace(cardId))
+            return BadRequest(new { message = "CardID je obvezen." });
+
+        var user = await _db.users
+            .Include(u => u.Role)
+            .FirstOrDefaultAsync(u => u.CardID == cardId && u.IsActive);
+
+        if (user == null)
+            return Unauthorized(new { message = "Uporabnik s to kartico ni bil najden." });
+
+        // Issue a short-lived kiosk token (30 min)
+        var token = _jwt.CreateToken(user, user.Role?.Name, expiresMinutesOverride: 30, kiosk: true);
+
+        return Ok(new AuthResponse
+        {
+            token     = token,
+            id        = user.id,
+            cardID    = user.CardID ?? "",
+            name      = user.Name ?? "",
+            surname   = user.Surname,
+            email     = user.Email,
+            roleId    = user.RoleId,
+            role      = user.Role?.Name,
+            licenseId = user.LicenseId,
+            language  = user.Language
+        });
+    }
+
     // ── 6-digit CardID generator ──────────────────────────────────────────────
     private async Task<string> GenerateUniqueCardIdAsync()
     {

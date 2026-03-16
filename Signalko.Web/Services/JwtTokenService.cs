@@ -13,12 +13,13 @@ public class JwtTokenService
 
     public JwtTokenService(IConfiguration cfg) => _cfg = cfg;
 
-    public string CreateToken(User u, string? roleName = null)
+    public string CreateToken(User u, string? roleName = null, int? expiresMinutesOverride = null, bool kiosk = false)
     {
         var key            = _cfg["Jwt:Key"]      ?? throw new Exception("Jwt:Key manjka v appsettings.json");
         var issuer         = _cfg["Jwt:Issuer"]   ?? "Signalko";
         var audience       = _cfg["Jwt:Audience"] ?? "Signalko";
-        var expiresMinutes = int.TryParse(_cfg["Jwt:ExpiresMinutes"], out var m) ? m : 240;
+        var expiresMinutes = expiresMinutesOverride
+                             ?? (int.TryParse(_cfg["Jwt:ExpiresMinutes"], out var m) ? m : 240);
 
         var claims = new List<Claim>
         {
@@ -35,6 +36,8 @@ public class JwtTokenService
             claims.Add(new Claim("role", role));
         if (u.RoleId.HasValue)
             claims.Add(new Claim("roleId", u.RoleId.Value.ToString()));
+        if (kiosk)
+            claims.Add(new Claim("kiosk", "true"));
 
         var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));
         var creds      = new SigningCredentials(signingKey, SecurityAlgorithms.HmacSha256);

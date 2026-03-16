@@ -695,5 +695,13 @@
   "loans.err.card_mismatch2": "Ovaj CardID ne pripada vlasniku ove imovine.",
   "loans.err.user_not_identified": "Korisnik nije identifikovan. Vrati se i skeniraj karticu.",
   "loans.err.send_failed": "Greška pri slanju:",
-  "loans.err.generic": "Greška:"
+  "loans.err.generic": "Greška:",
+  "kiosk.title": "Kiosk za posudbu",
+  "kiosk.sub": "Prislonite ili unesite svoju karticu za pristup posudbi",
+  "kiosk.card_ph": "ID kartice…",
+  "kiosk.btn": "Ulaz →",
+  "kiosk.err_not_found": "Kartica nije pronađena ili korisnik nije aktivan.",
+  "kiosk.logging_out": "Odjava…",
+  "kiosk.thankyou_title": "Hvala!",
+  "kiosk.thankyou_sub": "Sesija se završava…"
 }

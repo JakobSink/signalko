@@ -19,6 +19,11 @@ public class LoginRequest
     [Required] public string Password { get; set; } = "";
 }
 
+public class CardLoginRequest
+{
+    [Required] public string CardId { get; set; } = "";
+}
+
 public class AuthResponse
 {
     public string  token     { get; set; } = "";

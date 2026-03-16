@@ -694,5 +694,13 @@
   "loans.err.card_mismatch2": "Diese CardID gehört nicht dem Besitzer dieses Inventars.",
   "loans.err.user_not_identified": "Benutzer nicht identifiziert. Zurückgehen und Karte scannen.",
   "loans.err.send_failed": "Fehler beim Senden:",
-  "loans.err.generic": "Fehler:"
+  "loans.err.generic": "Fehler:",
+  "kiosk.title": "Ausleihkiosk",
+  "kiosk.sub": "Legen Sie Ihre Karte auf oder geben Sie Ihre Karten-ID ein",
+  "kiosk.card_ph": "Karten-ID…",
+  "kiosk.btn": "Eintreten →",
+  "kiosk.err_not_found": "Karte nicht gefunden oder Benutzer inaktiv.",
+  "kiosk.logging_out": "Abmeldung…",
+  "kiosk.thankyou_title": "Danke!",
+  "kiosk.thankyou_sub": "Sitzung wird beendet…"
 }
