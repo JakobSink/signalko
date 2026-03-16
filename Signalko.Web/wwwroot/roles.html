@@ -228,7 +228,11 @@ async function load() {
   const [pr, rr] = await Promise.all([skGet('/api/Role/permissions'), skGet('/api/Role')]);
   if (pr.ok) {
     ALL_PERMS = pr.data || [];
-    ALL_PERMS.forEach(p => { LABEL[p.code||p.Code] = p.label||p.Label||p.code||p.Code; });
+    ALL_PERMS.forEach(p => {
+      const code = p.code||p.Code;
+      const t = skT('perm.' + code);
+      LABEL[code] = (t && t !== 'perm.' + code) ? t : (p.label||p.Label||code);
+    });
   }
   if (rr.ok) ALL_ROLES = rr.data || [];
   renderList();

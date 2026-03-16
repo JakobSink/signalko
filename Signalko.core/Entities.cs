@@ -18,6 +18,9 @@ public class UserRole
     [Key] public int id { get; set; }
     public string? Name { get; set; }
 
+    /// <summary>null = system role (visible to all tenants); set = custom role scoped to this license</summary>
+    public int? LicenseId { get; set; }
+
     [JsonIgnore]
     public ICollection<RolePermission> RolePermissions { get; set; } = new List<RolePermission>();
 }

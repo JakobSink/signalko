@@ -162,10 +162,6 @@ html,body{background:var(--bg);color:var(--txt);font-family:'JetBrains Mono',mon
 <script src="/css/i18n.js"></script>
 <script src="/css/sk.js"></script>
 <script>
-// Date
-document.getElementById('dateSub').textContent =
-  new Date().toLocaleDateString('sl-SI', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
-
 // EPC → asset name cache
 let _assetMap = {}; // epc → name
 
@@ -188,6 +184,7 @@ async function loadStats() {
 }
 
 async function loadTags() {
+  const locale = skGetLang ? skGetLang() : 'sl-SI';
   const r = await skGet('/api/Tag/latest?take=15');
   const body = document.getElementById('tagsBody');
   if (!r.ok || !r.data?.length) {
@@ -211,15 +208,20 @@ async function loadTags() {
           <div style="font-size:10px;color:var(--mut);">${location}</div>
         </div>
         <div style="font-size:10px;color:var(--mut);">
-          ${(t.time || t.lastTime) ? new Date(t.time || t.lastTime).toLocaleTimeString('sl-SI') : '—'}
+          ${(t.time || t.lastTime) ? new Date(t.time || t.lastTime).toLocaleTimeString(locale) : '—'}
         </div>
         ${rssi != null ? `<span class="badge" style="color:${rssiColor};border-color:${rssiColor}40;background:${rssiColor}15;">${rssi} dBm</span>` : '<span></span>'}
       </div>`;
   }).join('');
 }
 
-loadStats().then(loadTags);
-setInterval(loadTags, 10000);
+SK_I18N_READY.then(() => {
+  const locale = skGetLang ? skGetLang() : 'sl-SI';
+  document.getElementById('dateSub').textContent =
+    new Date().toLocaleDateString(locale, { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+  loadStats().then(loadTags);
+  setInterval(loadTags, 10000);
+});
 </script>
 </body>
 </html>

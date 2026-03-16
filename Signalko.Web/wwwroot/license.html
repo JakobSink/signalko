@@ -32,7 +32,7 @@
     <div class="sk-page-title" data-i18n="page.license">Licenca</div>
     <div class="sk-page-sub" data-i18n="page.license.sub">Licenčni ključ, omejitve in podatki o namestitvi</div>
 
-    <div id="licContent"><div class="sk-state-loading"><div class="sk-spin"></div>Nalaganje…</div></div>
+    <div id="licContent"><div class="sk-state-loading"><div class="sk-spin"></div><span data-i18n="lbl.loading">Nalaganje…</span></div></div>
   </main>
 </div>
 
@@ -45,7 +45,7 @@ async function load() {
   const r = await skGet('/api/License');
   if (!r.ok) {
     document.getElementById('licContent').innerHTML =
-      '<div class="sk-state-empty">Napaka pri nalaganju licence.</div>';
+      `<div class="sk-state-empty">${skT('license.error')}</div>`;
     return;
   }
   render(r.data);
@@ -59,38 +59,38 @@ function render(d) {
 
   document.getElementById('licContent').innerHTML = `
     <div class="sk-card sk-card-pad" style="margin-bottom:16px;">
-      <div style="font-size:10px;color:var(--mut);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;">Licenčni ključ</div>
+      <div style="font-size:10px;color:var(--mut);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;">${skT('license.key_lbl')}</div>
       <div class="lic-key-wrap">
         <div class="lic-key" id="licKey">${h(d.licenseKey)}</div>
-        <button class="lic-copy-btn" onclick="copyKey()">Kopiraj</button>
+        <button class="lic-copy-btn" onclick="copyKey()">${skT('license.copy')}</button>
       </div>
       <div class="lic-meta" style="margin-top:10px;">
-        ${d.companyName ? `Podjetje: <span>${h(d.companyName)}</span> &nbsp;·&nbsp; ` : ''}
-        Ustvarjena: <span>${fmt(d.createdAt)}</span> &nbsp;·&nbsp;
-        Posodobljena: <span>${fmt(d.updatedAt)}</span>
+        ${d.companyName ? `${skT('license.company')}: <span>${h(d.companyName)}</span> &nbsp;·&nbsp; ` : ''}
+        ${skT('license.created')}: <span>${fmt(d.createdAt)}</span> &nbsp;·&nbsp;
+        ${skT('license.updated')}: <span>${fmt(d.updatedAt)}</span>
       </div>
     </div>
 
     <div class="lic-grid">
       <div class="lic-stat">
         <div class="lic-stat-num">${d.activeUsers}</div>
-        <div class="lic-stat-label">Aktivni uporabniki</div>
+        <div class="lic-stat-label">${skT('license.active_users')}</div>
         <div class="lic-bar-wrap">
           <div class="lic-bar-track"><div class="lic-bar-fill ${clsU}" style="width:${pctU}%"></div></div>
-          <div class="lic-bar-label">${d.activeUsers} / ${d.maxUsers} &nbsp;·&nbsp; ${d.maxUsers - d.activeUsers} prostih</div>
+          <div class="lic-bar-label">${d.activeUsers} / ${d.maxUsers} &nbsp;·&nbsp; ${d.maxUsers - d.activeUsers} ${skT('license.free')}</div>
         </div>
       </div>
       <div class="lic-stat">
         <div class="lic-stat-num">${d.totalUsers}</div>
-        <div class="lic-stat-label">Vsi uporabniki (skupaj)</div>
-        <div style="font-size:11px;color:var(--mut);margin-top:10px;">Neaktivni: ${d.totalUsers - d.activeUsers}</div>
+        <div class="lic-stat-label">${skT('license.total_users')}</div>
+        <div style="font-size:11px;color:var(--mut);margin-top:10px;">${skT('license.inactive_users')}: ${d.totalUsers - d.activeUsers}</div>
       </div>
       <div class="lic-stat">
         <div class="lic-stat-num">${d.activeReadingPoints}</div>
-        <div class="lic-stat-label">Aktivni reading pointi</div>
+        <div class="lic-stat-label">${skT('license.reading_points')}</div>
         <div class="lic-bar-wrap">
           <div class="lic-bar-track"><div class="lic-bar-fill ${clsR}" style="width:${pctR}%"></div></div>
-          <div class="lic-bar-label">${d.activeReadingPoints} / ${d.maxReadingPoints} &nbsp;·&nbsp; ${d.maxReadingPoints - d.activeReadingPoints} prostih</div>
+          <div class="lic-bar-label">${d.activeReadingPoints} / ${d.maxReadingPoints} &nbsp;·&nbsp; ${d.maxReadingPoints - d.activeReadingPoints} ${skT('license.free')}</div>
         </div>
       </div>
     </div>
@@ -99,13 +99,16 @@ function render(d) {
 
 function copyKey() {
   const key = document.getElementById('licKey')?.textContent || '';
-  navigator.clipboard.writeText(key).then(() => skToast('Ključ kopiran!'));
+  navigator.clipboard.writeText(key).then(() => skToast(skT('license.key_copied')));
 }
 
-function fmt(dt) { return dt ? new Date(dt).toLocaleString('sl-SI', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—'; }
+function fmt(dt) {
+  const locale = skGetLang ? skGetLang() : 'sl-SI';
+  return dt ? new Date(dt).toLocaleString(locale, {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
+}
 function h(s) { return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
-load();
+SK_I18N_READY.then(load);
 </script>
 </body>
 </html>
