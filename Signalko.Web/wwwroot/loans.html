@@ -49,36 +49,34 @@
   .wizard-grid { grid-template-columns:1fr; }
 }
 
-/* ── Kiosk overlay ────────────────────────────────────── */
-#kioskOverlay {
-  position: fixed;
-  inset: 0;
-  background: var(--bg);
-  z-index: 9999;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.kiosk-box {
-  width: 100%;
-  max-width: 420px;
-  padding: 0 20px;
+/* ── Kiosk panel (inside main, sidebar stays visible) ──── */
+#kioskContent {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0;
+  justify-content: center;
+  min-height: 70vh;
+  animation: fadeUp .25s ease;
 }
-.kiosk-logo {
-  font-family: 'Syne', sans-serif;
-  font-size: 26px;
-  font-weight: 800;
-  letter-spacing: -1px;
-  color: var(--acc);
-  margin-bottom: 8px;
+.kiosk-box {
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.kiosk-card-icon {
+  font-size: 56px;
+  margin-bottom: 18px;
+  animation: pulse-soft 2.2s ease-in-out infinite;
+}
+@keyframes pulse-soft {
+  0%,100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: .65; transform: scale(.93); }
 }
 .kiosk-title {
   font-family: 'Syne', sans-serif;
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 700;
   color: var(--txt);
   margin-bottom: 6px;
@@ -89,16 +87,7 @@
   color: var(--mut);
   text-align: center;
   margin-bottom: 28px;
-  line-height: 1.6;
-}
-.kiosk-card-icon {
-  font-size: 52px;
-  margin-bottom: 20px;
-  animation: pulse-soft 2s ease-in-out infinite;
-}
-@keyframes pulse-soft {
-  0%,100% { opacity: 1; transform: scale(1); }
-  50%      { opacity: .7; transform: scale(.95); }
+  line-height: 1.65;
 }
 .kiosk-input-wrap {
   width: 100%;
@@ -112,52 +101,89 @@
   text-align: center;
   min-height: 18px;
 }
-.kiosk-thankyou {
+
+/* ── Kiosk result card ─────────────────────────────────── */
+.kiosk-result {
+  width: 100%;
+  max-width: 420px;
+  border-radius: 16px;
+  padding: 36px 28px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
-  animation: fadeUp .3s ease;
+  gap: 10px;
+  text-align: center;
+  animation: kiosk-pop .4s cubic-bezier(.175,.885,.32,1.275);
 }
-.kiosk-thankyou .ico { font-size: 52px; }
-.kiosk-thankyou .ttl {
+@keyframes kiosk-pop {
+  0%   { opacity: 0; transform: scale(.85) translateY(20px); }
+  100% { opacity: 1; transform: scale(1)   translateY(0); }
+}
+.kiosk-result .kr-ico  { font-size: 60px; line-height: 1; margin-bottom: 4px; }
+.kiosk-result .kr-ttl  {
   font-family: 'Syne', sans-serif;
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--grn);
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.2;
 }
-.kiosk-thankyou .sub { font-size: 12px; color: var(--mut); }
+.kiosk-result .kr-asset {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--txt);
+  margin-top: 4px;
+}
+.kiosk-result .kr-user  { font-size: 12px; color: var(--sub); margin-top: 2px; }
+.kiosk-result .kr-bye   {
+  font-size: 11px;
+  color: var(--mut);
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.kiosk-result .kr-bar {
+  width: 180px;
+  height: 3px;
+  background: var(--border);
+  border-radius: 99px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+.kiosk-result .kr-fill {
+  height: 100%;
+  border-radius: 99px;
+  animation: kr-drain 3s linear forwards;
+}
+@keyframes kr-drain { from { width: 100%; } to { width: 0%; } }
 </style>
 </head>
 <body>
-<!-- ══ Kiosk overlay (shown when not logged in) ═══════════════ -->
-<div id="kioskOverlay" style="display:none;">
-  <div class="kiosk-box">
-    <div class="kiosk-logo">Signalko</div>
-    <div id="kioskScanView">
-      <div class="kiosk-card-icon">💳</div>
-      <div class="kiosk-title" data-i18n="kiosk.title">Izposojevalnica</div>
-      <div class="kiosk-sub" data-i18n="kiosk.sub">Prisloni ali vnesi svojo kartico za dostop do izposoje</div>
-      <div class="kiosk-input-wrap">
-        <input class="sk-input" id="kioskCardInput" type="text"
-          data-i18n-placeholder="kiosk.card_ph" placeholder="CardID kartica…"
-          onkeydown="if(event.key==='Enter')kioskLogin()"
-          style="text-align:center;font-size:16px;letter-spacing:2px;"/>
-        <button class="sk-btn sk-btn-acc" id="kioskLoginBtn" onclick="kioskLogin()" data-i18n="kiosk.btn">Vstopi →</button>
-        <div class="kiosk-err" id="kioskErr"></div>
-      </div>
-    </div>
-    <div id="kioskThankView" class="kiosk-thankyou" style="display:none;">
-      <div class="ico">✅</div>
-      <div class="ttl" data-i18n="kiosk.thankyou_title">Hvala!</div>
-      <div class="sub" data-i18n="kiosk.thankyou_sub">Seja se zaključuje…</div>
-    </div>
-  </div>
-</div>
-
 <div class="sk-layout">
   <aside class="sk-sidebar-col" id="sidebarHost"></aside>
   <main class="sk-main">
+
+    <!-- ══ Kiosk panel (visible when not logged in) ══════════ -->
+    <div id="kioskContent" style="display:none;">
+      <div class="kiosk-box">
+        <div id="kioskScanView">
+          <div class="kiosk-card-icon">💳</div>
+          <div class="kiosk-title" data-i18n="kiosk.title">Izposojevalnica</div>
+          <div class="kiosk-sub" data-i18n="kiosk.sub">Prisloni ali vnesi svojo kartico za dostop do izposoje</div>
+          <div class="kiosk-input-wrap">
+            <input class="sk-input" id="kioskCardInput" type="text"
+              data-i18n-placeholder="kiosk.card_ph" placeholder="CardID kartica…"
+              onkeydown="if(event.key==='Enter')kioskLogin()"
+              style="text-align:center;font-size:16px;letter-spacing:2px;"/>
+            <button class="sk-btn sk-btn-acc" id="kioskLoginBtn" onclick="kioskLogin()" data-i18n="kiosk.btn">Vstopi →</button>
+            <div class="kiosk-err" id="kioskErr"></div>
+          </div>
+        </div>
+        <div id="kioskResultView" style="display:none;width:100%;"></div>
+      </div>
+    </div>
+
+    <!-- ══ Normal page content (hidden during kiosk scan) ════ -->
+    <div id="pageContent">
 
     <div class="sk-page-title" data-i18n="page.loans">Izposoja</div>
     <div class="sk-page-sub" data-i18n="page.loans.sub">Izposoja, vrnitev in menjava sredstev</div>
@@ -214,7 +240,8 @@
       <div class="sk-card" id="tabHistoryCard">
         <div class="sk-state-loading"><div class="sk-spin"></div><span data-i18n="lbl.loading">Nalaganje…</span></div>
       </div>
-    </div>
+    </div><!-- /tab-zgodovina -->
+    </div><!-- /pageContent -->
   </main>
 </div>
 
@@ -356,12 +383,16 @@ function kioskResetTimer() {
 
 function kioskShow() {
   _kioskMode = true;
-  document.getElementById('kioskOverlay').style.display = 'flex';
+  document.getElementById('kioskContent').style.display = 'flex';
+  document.getElementById('pageContent').style.display  = 'none';
+  document.getElementById('kioskScanView').style.display   = '';
+  document.getElementById('kioskResultView').style.display = 'none';
   setTimeout(() => document.getElementById('kioskCardInput')?.focus(), 200);
 }
 
 function kioskHide() {
-  document.getElementById('kioskOverlay').style.display = 'none';
+  document.getElementById('kioskContent').style.display = 'none';
+  document.getElementById('pageContent').style.display  = '';
 }
 
 async function kioskLogin() {
@@ -413,7 +444,8 @@ async function kioskLogin() {
   await init();
 }
 
-function kioskLogout() {
+// result = { type:'borrow'|'return'|'exchange', assetName, userName }
+function kioskLogout(result) {
   clearTimeout(_kioskTimer);
   _kioskTimer = null;
 
@@ -423,20 +455,42 @@ function kioskLogout() {
   sessionStorage.removeItem('sk_kiosk_token');
   sessionStorage.removeItem('sk_kiosk_user');
 
-  // Show thank-you screen, then reset to card scan
-  document.getElementById('kioskScanView').style.display = 'none';
-  document.getElementById('kioskThankView').style.display = 'flex';
-  document.getElementById('kioskOverlay').style.display = 'flex';
+  // Build result card content
+  const RESULTS = {
+    borrow:   { ico: '✅', color: 'var(--grn)', get ttl(){ return skT('kiosk.result.borrowed'); }, get bye(){ return skT('kiosk.result.goodbye'); } },
+    return:   { ico: '↩', color: 'var(--org)', get ttl(){ return skT('kiosk.result.returned'); }, get bye(){ return skT('kiosk.result.goodbye'); } },
+    exchange: { ico: '🔄', color: 'var(--acc)', get ttl(){ return skT('kiosk.result.exchange'); }, get bye(){ return skT('kiosk.result.goodbye'); } },
+    default:  { ico: '👋', color: 'var(--acc)', get ttl(){ return skT('kiosk.result.done');     }, get bye(){ return skT('kiosk.result.goodbye'); } },
+  };
+  const r   = RESULTS[result?.type] || RESULTS.default;
+  const asset = result?.assetName ? `<div class="kr-asset">${h(result.assetName)}</div>` : '';
+  const user  = result?.userName  ? `<div class="kr-user">👤 ${h(result.userName)}</div>` : '';
+
+  const resultEl = document.getElementById('kioskResultView');
+  resultEl.innerHTML = `
+    <div class="kiosk-result" style="background:color-mix(in srgb,${r.color} 6%,var(--surface));border:1px solid color-mix(in srgb,${r.color} 30%,transparent);">
+      <div class="kr-ico">${r.ico}</div>
+      <div class="kr-ttl" style="color:${r.color};">${r.ttl}</div>
+      ${asset}${user}
+      <div class="kr-bye">${r.bye}</div>
+      <div class="kr-bar"><div class="kr-fill" style="background:${r.color};"></div></div>
+    </div>`;
+
+  // Show result inside kiosk panel (sidebar stays visible)
+  document.getElementById('kioskContent').style.display  = 'flex';
+  document.getElementById('pageContent').style.display   = 'none';
+  document.getElementById('kioskScanView').style.display  = 'none';
+  resultEl.style.display = 'block';
+  resetWizard();
+  skLoadSidebar();
 
   setTimeout(() => {
-    resetWizard();
-    skLoadSidebar();  // reset sidebar to guest state
-    document.getElementById('kioskThankView').style.display = 'none';
+    resultEl.style.display = 'none';
     document.getElementById('kioskScanView').style.display = '';
     document.getElementById('kioskCardInput').value = '';
     document.getElementById('kioskErr').textContent = '';
     setTimeout(() => document.getElementById('kioskCardInput')?.focus(), 100);
-  }, 2500);
+  }, 3200);
 }
 
 /* ════════════════════════════════════════════════════════════
@@ -800,20 +854,15 @@ function renderStepDone() {
   const u  = ST.currentUser;
   const d  = mk('div', 'sk-card anim-r');
 
-  // In kiosk mode: auto-logout after brief delay instead of showing "new action" button
-  if (_kioskMode || sessionStorage.getItem('kiosk_mode')) {
-    d.innerHTML = `
-      <div class="sk-done">
-        <span class="ico">${isReturn ? '↩' : '✅'}</span>
-        <div class="sk-done-title" style="color:${isReturn ? 'var(--org)' : 'var(--grn)'};">
-          ${isReturn ? skT('loans.step.done_returned') : skT('loans.step.done_borrowed')}
-        </div>
-        <div style="font-size:12px;color:var(--sub);margin-bottom:20px;">
-          ${a?.Name||a?.name||''} · ${skUserName(u)}
-        </div>
-        <div style="font-size:11px;color:var(--mut);" data-i18n="kiosk.logging_out">Odjava…</div>
-      </div>`;
-    setTimeout(() => kioskLogout(), 2000);
+  // In kiosk mode: immediately trigger logout with result info
+  if (isKioskSession()) {
+    const type = isReturn ? 'return' : (ST.scenario === 'exchange_done' ? 'exchange' : 'borrow');
+    setTimeout(() => kioskLogout({
+      type,
+      assetName: a?.Name || a?.name || '',
+      userName:  skUserName(u),
+    }), 0);
+    d.innerHTML = `<div class="sk-done"><div class="sk-spin"></div></div>`;
     return d;
   }
 
