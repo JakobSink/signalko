@@ -143,7 +143,7 @@
           data-i18n-placeholder="kiosk.card_ph" placeholder="CardID kartica…"
           onkeydown="if(event.key==='Enter')kioskLogin()"
           style="text-align:center;font-size:16px;letter-spacing:2px;"/>
-        <button class="sk-btn sk-btn-acc" onclick="kioskLogin()" data-i18n="kiosk.btn">Vstopi →</button>
+        <button class="sk-btn sk-btn-acc" id="kioskLoginBtn" onclick="kioskLogin()" data-i18n="kiosk.btn">Vstopi →</button>
         <div class="kiosk-err" id="kioskErr"></div>
       </div>
     </div>
@@ -365,28 +365,36 @@ function kioskHide() {
 }
 
 async function kioskLogin() {
-  const cardId = (document.getElementById('kioskCardInput')?.value || '').trim();
+  const input  = document.getElementById('kioskCardInput');
   const errEl  = document.getElementById('kioskErr');
+  const btn    = document.getElementById('kioskLoginBtn');
+  const cardId = (input?.value || '').trim();
+
   errEl.textContent = '';
   if (!cardId) return;
 
-  const btn = document.querySelector('#kioskOverlay .sk-btn-acc');
-  skBtnLoading(btn, true, skT('kiosk.btn'));
+  if (btn) { btn.disabled = true; btn.textContent = '…'; }
 
-  const r = await fetch('/api/Auth/login-by-card', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-    body: JSON.stringify({ cardId }),
-  });
-  skBtnLoading(btn, false, skT('kiosk.btn'));
-
-  if (!r.ok) {
-    const data = await r.json().catch(() => ({}));
-    errEl.textContent = data.message || skT('kiosk.err_not_found');
+  let r, data;
+  try {
+    r = await fetch('/api/Auth/login-by-card', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({ cardId }),
+    });
+    data = await r.json().catch(() => ({}));
+  } catch (e) {
+    errEl.textContent = 'Napaka povezave: ' + e.message;
+    if (btn) { btn.disabled = false; btn.textContent = skT('kiosk.btn') || 'Vstopi →'; }
     return;
   }
 
-  const data = await r.json();
+  if (btn) { btn.disabled = false; btn.textContent = skT('kiosk.btn') || 'Vstopi →'; }
+
+  if (!r.ok) {
+    errEl.textContent = data?.message || skT('kiosk.err_not_found') || 'Kartica ni bila najdena.';
+    return;
+  }
 
   // Store token ONLY in memory — never in localStorage.
   // This means other tabs/pages cannot read it and it disappears on page reload.
