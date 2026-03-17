@@ -51,6 +51,20 @@ public class PermissionedController : ControllerBase
             .AnyAsync(rp => rp.RoleId == roleId && rp.Permission!.Code == code);
     }
 
+    /// <summary>
+    /// Checks if the current license has a specific module enabled.
+    /// </summary>
+    protected async Task<bool> HasModuleAsync(string moduleCode)
+    {
+        var licId = GetLicenseId();
+        if (licId == null) return false;
+        return await _db.LicenseModules
+            .AnyAsync(lm => lm.LicenseId == licId && lm.ModuleCode == moduleCode);
+    }
+
     protected IActionResult Forbidden(string code) =>
         StatusCode(403, new { message = $"Nimaš dovoljenja: {code}" });
+
+    protected IActionResult ModuleDisabled(string code) =>
+        StatusCode(403, new { message = $"Modul '{code}' ni aktiviran za to licenco." });
 }

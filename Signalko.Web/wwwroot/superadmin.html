@@ -1,0 +1,584 @@
+<!doctype html>
+<html lang="sl">
+<head>
+<meta charset="utf-8"/>
+<title>Signalko · SuperAdmin</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+  --bg:      #090b0f;
+  --surface: #10131a;
+  --up:      #161b25;
+  --high:    #1c2230;
+  --border:  #1e2535;
+  --bordM:   #263045;
+  --acc:   #4f8ef7;
+  --accD:  rgba(79,142,247,.09);
+  --grn:   #34d399;
+  --grnD:  rgba(52,211,153,.09);
+  --org:   #fb923c;
+  --orgD:  rgba(251,146,60,.09);
+  --red:   #f87171;
+  --redD:  rgba(248,113,113,.09);
+  --txt:  #e8edf5;
+  --sub:  #8897b0;
+  --mut:  #4a5568;
+  --radius: 12px;
+  --radius-sm: 8px;
+}
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+html, body { background:var(--bg); color:var(--txt); font-family:'JetBrains Mono',monospace; font-size:13px; min-height:100vh; }
+
+/* ── Login ── */
+.sa-login {
+  display:flex; align-items:center; justify-content:center; min-height:100vh; padding:24px;
+}
+.sa-login-box {
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+  padding:36px 40px; width:100%; max-width:380px;
+}
+.sa-logo { font-family:'Syne',sans-serif; font-size:22px; font-weight:800; color:var(--txt); margin-bottom:6px; }
+.sa-logo span { color:var(--acc); }
+.sa-login-sub { font-size:11px; color:var(--mut); margin-bottom:28px; }
+
+/* ── App shell ── */
+.sa-shell { display:none; flex-direction:column; min-height:100vh; }
+.sa-topbar {
+  background:var(--surface); border-bottom:1px solid var(--border);
+  padding:12px 24px; display:flex; align-items:center; gap:16px;
+}
+.sa-topbar-title { font-family:'Syne',sans-serif; font-weight:800; font-size:16px; flex:1; }
+.sa-topbar-title span { color:var(--acc); }
+.sa-content { padding:24px; max-width:1200px; margin:0 auto; width:100%; }
+
+/* ── Cards ── */
+.sa-card {
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+  margin-bottom:20px; overflow:hidden;
+}
+.sa-card-head {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:16px 20px; border-bottom:1px solid var(--border);
+}
+.sa-card-title { font-size:14px; font-weight:700; color:var(--txt); }
+.sa-card-body { padding:20px; }
+
+/* ── Inputs ── */
+.sa-field { display:flex; flex-direction:column; gap:5px; margin-bottom:14px; }
+.sa-field label { font-size:10px; color:var(--mut); text-transform:uppercase; letter-spacing:1px; }
+.sa-input {
+  background:var(--up); border:1px solid var(--border); border-radius:var(--radius-sm);
+  color:var(--txt); padding:9px 12px; font-size:13px; font-family:inherit;
+  outline:none; transition:border-color .15s; width:100%;
+}
+.sa-input:focus { border-color:var(--acc); }
+
+/* ── Buttons ── */
+.sa-btn {
+  background:var(--up); border:1px solid var(--border); border-radius:var(--radius-sm);
+  color:var(--txt); padding:8px 16px; font-size:12px; font-family:inherit; cursor:pointer;
+  transition:border-color .15s, background .15s; white-space:nowrap;
+}
+.sa-btn:hover { border-color:var(--bordM); }
+.sa-btn-acc { background:var(--acc); border-color:var(--acc); color:#fff; }
+.sa-btn-acc:hover { background:#3d7de8; border-color:#3d7de8; }
+.sa-btn-grn { background:var(--grnD); border-color:rgba(52,211,153,.3); color:var(--grn); }
+.sa-btn-red { background:var(--redD); border-color:rgba(248,113,113,.3); color:var(--red); }
+.sa-btn-sm { padding:5px 10px; font-size:11px; }
+.sa-btn-full { width:100%; }
+
+/* ── Table ── */
+.sa-table { width:100%; border-collapse:collapse; }
+.sa-table th, .sa-table td { padding:10px 14px; text-align:left; border-bottom:1px solid var(--border); font-size:12px; }
+.sa-table th { font-size:10px; color:var(--mut); text-transform:uppercase; letter-spacing:1px; font-weight:600; }
+.sa-table tr:last-child td { border-bottom:none; }
+.sa-table tr:hover td { background:var(--up); }
+
+/* ── Badges ── */
+.sa-badge {
+  display:inline-flex; align-items:center; gap:4px; font-size:10px; font-weight:700;
+  padding:2px 8px; border-radius:99px; letter-spacing:.5px;
+}
+.sa-badge-grn { background:var(--grnD); color:var(--grn); }
+.sa-badge-mut { background:var(--border); color:var(--mut); }
+.sa-badge-acc { background:var(--accD); color:var(--acc); }
+.sa-badge-org { background:var(--orgD); color:var(--org); }
+
+/* ── Modal ── */
+.sa-overlay {
+  position:fixed; inset:0; background:rgba(0,0,0,.6); display:flex;
+  align-items:center; justify-content:center; z-index:100; padding:20px;
+}
+.sa-modal {
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+  width:100%; max-width:520px; max-height:90vh; display:flex; flex-direction:column;
+  animation:pop .15s ease;
+}
+@keyframes pop { from{opacity:0;transform:scale(.96)} to{opacity:1;transform:none} }
+.sa-modal-head {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:16px 20px; border-bottom:1px solid var(--border); flex-shrink:0;
+}
+.sa-modal-body { padding:20px; overflow-y:auto; flex:1; }
+.sa-modal-foot {
+  display:flex; justify-content:flex-end; gap:8px;
+  padding:14px 20px; border-top:1px solid var(--border); flex-shrink:0;
+}
+.sa-modal-close { background:none; border:none; color:var(--mut); cursor:pointer; font-size:18px; }
+.sa-modal-close:hover { color:var(--txt); }
+
+/* ── Module chips ── */
+.sa-mods { display:flex; flex-wrap:wrap; gap:6px; }
+.sa-mod-chip {
+  display:inline-flex; align-items:center; gap:5px;
+  padding:4px 10px; border-radius:99px; font-size:10px; font-weight:700;
+  border:1px solid; cursor:pointer; transition:all .13s; user-select:none;
+}
+.sa-mod-chip.on  { background:rgba(52,211,153,.1); border-color:rgba(52,211,153,.35); color:var(--grn); }
+.sa-mod-chip.off { background:var(--border); border-color:transparent; color:var(--mut); }
+.sa-mod-chip:hover.on  { background:rgba(248,113,113,.1); border-color:rgba(248,113,113,.35); color:var(--red); }
+.sa-mod-chip:hover.off { background:var(--accD); border-color:rgba(79,142,247,.35); color:var(--acc); }
+
+/* ── Alert ── */
+.sa-alert { border-radius:var(--radius-sm); padding:10px 14px; font-size:12px; }
+.sa-alert-red { background:var(--redD); color:var(--red); border:1px solid rgba(248,113,113,.25); }
+
+/* ── Spinner ── */
+.sa-spin { width:16px; height:16px; border:2px solid var(--border); border-top-color:var(--acc);
+  border-radius:50%; animation:spin .6s linear infinite; display:inline-block; }
+@keyframes spin { to { transform:rotate(360deg); } }
+
+/* ── Toast ── */
+#sa-toasts { position:fixed; bottom:24px; right:24px; display:flex; flex-direction:column; gap:8px; z-index:200; }
+.sa-toast {
+  background:var(--high); border:1px solid var(--bordM); border-radius:var(--radius-sm);
+  padding:10px 16px; font-size:12px; color:var(--txt); animation:tslide .2s ease;
+  max-width:320px;
+}
+@keyframes tslide { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+.sa-toast.err { border-color:rgba(248,113,113,.4); color:var(--red); }
+.sa-toast.ok  { border-color:rgba(52,211,153,.4);  color:var(--grn); }
+
+/* ── Edit inline row ── */
+.sa-edit-row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+.sa-edit-row .sa-input { max-width:180px; }
+.sa-edit-row .sa-input.narrow { max-width:80px; }
+
+/* ── Expand row ── */
+.sa-lic-detail { background:var(--up); border-top:1px solid var(--border); }
+.sa-lic-detail-inner { padding:16px 20px; display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+@media(max-width:700px){ .sa-lic-detail-inner{grid-template-columns:1fr;} }
+</style>
+</head>
+<body>
+
+<!-- ══ Login screen ═══════════════════════════════════════════ -->
+<div class="sa-login" id="loginScreen">
+  <div class="sa-login-box">
+    <div class="sa-logo"><span>Signalko</span> · SuperAdmin</div>
+    <div class="sa-login-sub">Dostop samo za Signalko osebje</div>
+    <div class="sa-field">
+      <label>SuperAdmin geslo</label>
+      <input class="sa-input" id="secretInput" type="password" placeholder="Vnesi geslo…"
+        autocomplete="off" onkeydown="if(event.key==='Enter')doLogin()"/>
+    </div>
+    <div id="loginErr" class="sa-alert sa-alert-red" style="display:none;margin-bottom:12px;"></div>
+    <button class="sa-btn sa-btn-acc sa-btn-full" onclick="doLogin()">Prijava →</button>
+  </div>
+</div>
+
+<!-- ══ App shell ════════════════════════════════════════════ -->
+<div class="sa-shell" id="appShell">
+  <div class="sa-topbar">
+    <div class="sa-topbar-title"><span>Signalko</span> · SuperAdmin Panel</div>
+    <button class="sa-btn sa-btn-sm" onclick="logout()">Odjava</button>
+  </div>
+  <div class="sa-content">
+
+    <!-- Stats row -->
+    <div id="statsRow" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;margin-bottom:20px;"></div>
+
+    <!-- Licenses -->
+    <div class="sa-card">
+      <div class="sa-card-head">
+        <span class="sa-card-title">Licence</span>
+        <button class="sa-btn sa-btn-acc sa-btn-sm" onclick="openCreateModal()">+ Nova licenca</button>
+      </div>
+      <div id="licTable" style="overflow-x:auto;">
+        <div style="padding:24px;text-align:center;color:var(--mut);">Nalaganje…</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══ Modal: Create license ════════════════════════════════ -->
+<div class="sa-overlay" id="createModal" style="display:none;">
+  <div class="sa-modal">
+    <div class="sa-modal-head">
+      <span style="font-weight:700;">Nova licenca</span>
+      <button class="sa-modal-close" onclick="closeModal('createModal')">×</button>
+    </div>
+    <div class="sa-modal-body">
+      <div class="sa-field">
+        <label>Ime stranke</label>
+        <input class="sa-input" id="cName" placeholder="npr. Hotel Slon d.o.o."/>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="sa-field">
+          <label>Maks. uporabnikov</label>
+          <input class="sa-input" id="cMaxUsers" type="number" value="10" min="1"/>
+        </div>
+        <div class="sa-field">
+          <label>Maks. točk čitanja</label>
+          <input class="sa-input" id="cMaxRP" type="number" value="5" min="1"/>
+        </div>
+      </div>
+      <div id="cErr" class="sa-alert sa-alert-red" style="display:none;margin-top:4px;"></div>
+    </div>
+    <div class="sa-modal-foot">
+      <button class="sa-btn" onclick="closeModal('createModal')">Prekliči</button>
+      <button class="sa-btn sa-btn-acc" id="cSaveBtn" onclick="createLicense()">Ustvari</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ Modal: Edit license ═══════════════════════════════════ -->
+<div class="sa-overlay" id="editModal" style="display:none;">
+  <div class="sa-modal">
+    <div class="sa-modal-head">
+      <span style="font-weight:700;" id="editModalTitle">Uredi licenco</span>
+      <button class="sa-modal-close" onclick="closeModal('editModal')">×</button>
+    </div>
+    <div class="sa-modal-body">
+      <input type="hidden" id="eLicId"/>
+      <div class="sa-field">
+        <label>Ime stranke</label>
+        <input class="sa-input" id="eName" placeholder="Ime podjetja"/>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="sa-field">
+          <label>Maks. uporabnikov</label>
+          <input class="sa-input" id="eMaxUsers" type="number" min="1"/>
+        </div>
+        <div class="sa-field">
+          <label>Maks. točk čitanja</label>
+          <input class="sa-input" id="eMaxRP" type="number" min="1"/>
+        </div>
+      </div>
+
+      <div style="margin-top:8px;margin-bottom:10px;border-top:1px solid var(--border);padding-top:16px;">
+        <div style="font-size:10px;color:var(--mut);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">Moduli</div>
+        <div id="editModules" class="sa-mods"></div>
+      </div>
+      <div id="eErr" class="sa-alert sa-alert-red" style="display:none;margin-top:4px;"></div>
+    </div>
+    <div class="sa-modal-foot">
+      <button class="sa-btn" onclick="closeModal('editModal')">Zapri</button>
+      <button class="sa-btn sa-btn-acc" id="eSaveBtn" onclick="saveLicense()">Shrani</button>
+    </div>
+  </div>
+</div>
+
+<div id="sa-toasts"></div>
+
+<script>
+/* ══════════════════════════════════════════════════════════════
+   Auth
+══════════════════════════════════════════════════════════════ */
+let _secret = sessionStorage.getItem('sk_sa_secret') || '';
+let _allModules = [];
+
+async function doLogin() {
+  const s = document.getElementById('secretInput').value.trim();
+  if (!s) return;
+  // Test the secret by hitting a lightweight endpoint
+  const r = await saFetch('GET', '/api/SuperAdmin/modules');
+  if (r.ok) {
+    _secret = s;
+    sessionStorage.setItem('sk_sa_secret', s);
+    showApp();
+  } else {
+    document.getElementById('loginErr').textContent = 'Napačno geslo';
+    document.getElementById('loginErr').style.display = '';
+  }
+}
+
+// Pre-fill secret from storage and auto-enter app if valid
+(async () => {
+  if (_secret) {
+    const r = await saFetch('GET', '/api/SuperAdmin/modules');
+    if (r.ok) { showApp(); return; }
+    else sessionStorage.removeItem('sk_sa_secret');
+  }
+})();
+
+function logout() {
+  sessionStorage.removeItem('sk_sa_secret');
+  _secret = '';
+  document.getElementById('appShell').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Fetch helper
+══════════════════════════════════════════════════════════════ */
+async function saFetch(method, url, body) {
+  const s = _secret || document.getElementById('secretInput')?.value.trim() || '';
+  try {
+    const res = await fetch(url, {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        'X-SK-Secret': s,
+      },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    let data;
+    try { data = await res.json(); } catch { data = null; }
+    return { ok: res.ok, status: res.status, data };
+  } catch {
+    return { ok: false, status: 0, data: null };
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   App init
+══════════════════════════════════════════════════════════════ */
+async function showApp() {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('appShell').style.display = 'flex';
+  await loadModulesCatalog();
+  await loadLicenses();
+}
+
+async function loadModulesCatalog() {
+  const r = await saFetch('GET', '/api/SuperAdmin/modules');
+  if (r.ok) _allModules = r.data || [];
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Licenses list
+══════════════════════════════════════════════════════════════ */
+let _licenses = [];
+
+async function loadLicenses() {
+  document.getElementById('licTable').innerHTML =
+    '<div style="padding:24px;text-align:center;"><span class="sa-spin"></span></div>';
+  const r = await saFetch('GET', '/api/SuperAdmin/licenses');
+  if (!r.ok) {
+    document.getElementById('licTable').innerHTML =
+      '<div style="padding:24px;text-align:center;color:var(--red);">Napaka pri nalaganju</div>';
+    return;
+  }
+  _licenses = r.data || [];
+  renderStats();
+  renderLicTable();
+}
+
+function renderStats() {
+  const total = _licenses.length;
+  const active = _licenses.filter(l => l.isActivated).length;
+  const totalUsers = _licenses.reduce((s, l) => s + (l.activeUsers || 0), 0);
+  document.getElementById('statsRow').innerHTML = [
+    { num: total,      lbl: 'Skupaj licenc',    color: '' },
+    { num: active,     lbl: 'Aktiviranih',       color: 'var(--grn)' },
+    { num: total-active, lbl: 'Neaktivnih',      color: 'var(--mut)' },
+    { num: totalUsers, lbl: 'Aktivnih uporab.',  color: 'var(--acc)' },
+  ].map(s => `
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;">
+      <div style="font-size:26px;font-weight:800;font-family:'Syne',sans-serif;${s.color?`color:${s.color}`:''};">${s.num}</div>
+      <div style="font-size:10px;color:var(--mut);margin-top:4px;">${s.lbl}</div>
+    </div>`).join('');
+}
+
+function renderLicTable() {
+  if (!_licenses.length) {
+    document.getElementById('licTable').innerHTML =
+      '<div style="padding:32px;text-align:center;color:var(--mut);">Ni licenc</div>';
+    return;
+  }
+  document.getElementById('licTable').innerHTML = `
+    <table class="sa-table">
+      <thead><tr>
+        <th>#</th><th>Stranka</th><th>Licenčni ključ</th>
+        <th>Uporabniki</th><th>Točke čitanja</th><th>Moduli</th>
+        <th>Status</th><th></th>
+      </tr></thead>
+      <tbody>
+        ${_licenses.map(l => `
+          <tr>
+            <td style="color:var(--mut);">${l.id}</td>
+            <td><strong>${h(l.companyName || '—')}</strong></td>
+            <td style="font-family:monospace;font-size:11px;color:var(--acc);">${h(l.licenseKey || '')}</td>
+            <td>${l.activeUsers}/${l.maxUsers}</td>
+            <td>${l.maxReadingPoints}</td>
+            <td>
+              <div class="sa-mods">
+                ${(l.enabledModules || []).map(code => {
+                  const m = _allModules.find(x => x.code === code);
+                  return `<span class="sa-badge sa-badge-acc">${h(m?.icon||'')} ${h(m?.name||code)}</span>`;
+                }).join('')}
+              </div>
+            </td>
+            <td>
+              ${l.isActivated
+                ? `<span class="sa-badge sa-badge-grn">✓ Aktivna</span>`
+                : `<span class="sa-badge sa-badge-mut">Neaktivna</span>`}
+            </td>
+            <td>
+              <button class="sa-btn sa-btn-sm" onclick="openEditModal(${l.id})">Uredi</button>
+            </td>
+          </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Create license
+══════════════════════════════════════════════════════════════ */
+function openCreateModal() {
+  document.getElementById('cName').value = '';
+  document.getElementById('cMaxUsers').value = '10';
+  document.getElementById('cMaxRP').value = '5';
+  document.getElementById('cErr').style.display = 'none';
+  showModal('createModal');
+}
+
+async function createLicense() {
+  const btn = document.getElementById('cSaveBtn');
+  const errEl = document.getElementById('cErr');
+  errEl.style.display = 'none';
+  btn.disabled = true; btn.textContent = '…';
+  const r = await saFetch('POST', '/api/SuperAdmin/licenses', {
+    companyName:      document.getElementById('cName').value.trim() || null,
+    maxUsers:         parseInt(document.getElementById('cMaxUsers').value) || 10,
+    maxReadingPoints: parseInt(document.getElementById('cMaxRP').value) || 5,
+  });
+  btn.disabled = false; btn.textContent = 'Ustvari';
+  if (r.ok) {
+    saToast(`Licenca ustvarjena: ${r.data.licenseKey}`, 'ok');
+    closeModal('createModal');
+    await loadLicenses();
+  } else {
+    errEl.textContent = r.data?.message || 'Napaka';
+    errEl.style.display = '';
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Edit license + module toggles
+══════════════════════════════════════════════════════════════ */
+let _editLic = null;
+
+function openEditModal(id) {
+  _editLic = _licenses.find(l => l.id === id);
+  if (!_editLic) return;
+  document.getElementById('eLicId').value = id;
+  document.getElementById('editModalTitle').textContent = `Uredi licenco — ${_editLic.companyName || '#' + id}`;
+  document.getElementById('eName').value = _editLic.companyName || '';
+  document.getElementById('eMaxUsers').value = _editLic.maxUsers;
+  document.getElementById('eMaxRP').value = _editLic.maxReadingPoints;
+  document.getElementById('eErr').style.display = 'none';
+  renderEditModules();
+  showModal('editModal');
+}
+
+function renderEditModules() {
+  if (!_editLic) return;
+  const enabledSet = new Set(_editLic.enabledModules || []);
+  document.getElementById('editModules').innerHTML = _allModules.map(m => {
+    const on = enabledSet.has(m.code);
+    const core = m.isCore ? ' · jedro' : '';
+    return `<span class="sa-mod-chip ${on ? 'on' : 'off'}"
+        onclick="toggleEditModule('${m.code}', ${on})"
+        title="${h(m.description||'')}">
+        ${m.icon ? h(m.icon)+' ' : ''}${h(m.name)}${core}
+      </span>`;
+  }).join('');
+}
+
+async function toggleEditModule(code, currentlyEnabled) {
+  if (!_editLic) return;
+  const id = _editLic.id;
+  const method = currentlyEnabled ? 'DELETE' : 'POST';
+  const url = `/api/SuperAdmin/licenses/${id}/modules/${encodeURIComponent(code)}`;
+  const r = await saFetch(method, url);
+  if (r.ok) {
+    if (currentlyEnabled) {
+      _editLic.enabledModules = (_editLic.enabledModules || []).filter(c => c !== code);
+    } else {
+      _editLic.enabledModules = [...(_editLic.enabledModules || []), code];
+    }
+    renderEditModules();
+    // Update the licenses table row without full reload
+    const lic = _licenses.find(l => l.id === id);
+    if (lic) lic.enabledModules = [..._editLic.enabledModules];
+    renderLicTable();
+    saToast(currentlyEnabled ? `Modul '${code}' deaktiviran` : `Modul '${code}' aktiviran`, 'ok');
+  } else {
+    saToast(r.data?.message || 'Napaka pri modulu', 'err');
+  }
+}
+
+async function saveLicense() {
+  const id = parseInt(document.getElementById('eLicId').value);
+  const btn = document.getElementById('eSaveBtn');
+  const errEl = document.getElementById('eErr');
+  errEl.style.display = 'none';
+  btn.disabled = true; btn.textContent = '…';
+  const r = await saFetch('PUT', `/api/SuperAdmin/licenses/${id}`, {
+    companyName:      document.getElementById('eName').value.trim() || null,
+    maxUsers:         parseInt(document.getElementById('eMaxUsers').value) || 0,
+    maxReadingPoints: parseInt(document.getElementById('eMaxRP').value) || 0,
+  });
+  btn.disabled = false; btn.textContent = 'Shrani';
+  if (r.ok) {
+    saToast('Licenca posodobljena', 'ok');
+    // Update local cache
+    const lic = _licenses.find(l => l.id === id);
+    if (lic) {
+      lic.companyName      = r.data.companyName;
+      lic.maxUsers         = r.data.maxUsers;
+      lic.maxReadingPoints = r.data.maxReadingPoints;
+    }
+    renderStats();
+    renderLicTable();
+    closeModal('editModal');
+  } else {
+    errEl.textContent = r.data?.message || 'Napaka';
+    errEl.style.display = '';
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Modal helpers
+══════════════════════════════════════════════════════════════ */
+function showModal(id) { document.getElementById(id).style.display = 'flex'; }
+function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+document.querySelectorAll('.sa-overlay').forEach(el => {
+  el.addEventListener('click', e => { if (e.target === el) el.style.display = 'none'; });
+});
+
+/* ══════════════════════════════════════════════════════════════
+   Toast
+══════════════════════════════════════════════════════════════ */
+function saToast(msg, type = '') {
+  const el = document.createElement('div');
+  el.className = `sa-toast${type ? ' ' + type : ''}`;
+  el.textContent = msg;
+  document.getElementById('sa-toasts').appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Utils
+══════════════════════════════════════════════════════════════ */
+function h(s) {
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+</body>
+</html>

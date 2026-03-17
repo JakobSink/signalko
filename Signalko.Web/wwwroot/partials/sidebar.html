@@ -283,28 +283,31 @@
   try { cachedPerms = JSON.parse(localStorage.getItem('sk_user_perms') || 'null'); } catch {}
 
   // ── Render both desktop sidebar + mobile menu ──
-  function render(user, userPerms) {
+  function render(user, userPerms, enabledModules) {
     var loggedIn = !!(token && user);
     var isAdmin  = loggedIn && (
       user.role === 'Admin' || user.roleName === 'Admin' || user.RoleName === 'Admin'
     );
     var permsLoaded = Array.isArray(userPerms);
     var permSet = new Set(permsLoaded ? userPerms : []);
+    var modSet  = Array.isArray(enabledModules) ? new Set(enabledModules.map(function(m){ return typeof m === 'string' ? m : m.code; })) : null;
 
     // canShow: decides if a link should be visible
     // guestOk=true  → visible for guests; hidden for logged-in users without the perm
     // guestOk=false → only visible when logged in AND has the perm (or is admin)
-    function canShow(perm, guestOk) {
+    // moduleCode    → if set, also requires that module to be enabled for this license
+    function canShow(perm, guestOk, moduleCode) {
       if (!loggedIn) return !!guestOk;
+      if (moduleCode && modSet && !modSet.has(moduleCode)) return false; // module disabled
       if (isAdmin) return true;
       if (!permsLoaded) return !!guestOk; // perms loading, use default
       return permSet.has(perm);
     }
 
-    // Map: { desktopId: [mobileId, permCode, guestOk] }
+    // Map: { desktopId: [mobileId, permCode, guestOk, moduleCode?] }
     var linkMap = {
       sbLoansLink:     ['smmLoansLink',    'page.loans',        true ],
-      sbLaundryLink:   [null,             'page.laundry',      false],
+      sbLaundryLink:   [null,             'page.laundry',      false, 'laundry'],
       sbAssetsLink:    ['smmAssetsLink',   'page.assets',       true ],
       sbTagsLink:      ['smmTagsLink',     'page.tags',         true ],
       sbPresLink:      ['smmPresLink',     'page.presence',     false],
@@ -319,7 +322,7 @@
 
     Object.keys(linkMap).forEach(function(dId) {
       var cfg  = linkMap[dId];
-      var show = canShow(cfg[1], cfg[2]);
+      var show = canShow(cfg[1], cfg[2], cfg[3]);
       var d = document.getElementById(dId);
       var m = document.getElementById(cfg[0]);
       if (d) d.style.display = show ? '' : 'none';
@@ -425,9 +428,16 @@
     }).then(function(r) { return r.ok ? r.json() : []; })
       .catch(function() { return null; }); // null = network error; keep cachedPerms
 
-    Promise.all([userFetch, permFetch]).then(function(results) {
+    var modFetch = fetch('/api/Module/my', {
+      cache: 'no-store',
+      headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' }
+    }).then(function(r) { return r.ok ? r.json() : null; })
+      .catch(function() { return null; });
+
+    Promise.all([userFetch, permFetch, modFetch]).then(function(results) {
       var fresh = results[0];
       var perms = results[1];
+      var mods  = results[2];
 
       console.log('[SK sidebar] my-permissions from server:', perms);
       console.log('[SK sidebar] has page.presenceadmin:', Array.isArray(perms) && perms.includes('page.presenceadmin'));
@@ -438,6 +448,11 @@
         localStorage.setItem('sk_user_perms', JSON.stringify(perms));
         cachedPerms = perms;
       }
+
+      // Build enabled module codes list
+      var enabledModCodes = Array.isArray(mods)
+        ? mods.filter(function(m){ return m.enabled; }).map(function(m){ return m.code; })
+        : null;
 
       var updatedUser = cached;
       if (fresh) {
@@ -459,7 +474,7 @@
           return;
         }
       }
-      render(updatedUser, Array.isArray(perms) ? perms : cachedPerms);
+      render(updatedUser, Array.isArray(perms) ? perms : cachedPerms, enabledModCodes);
     });
   }
 })();

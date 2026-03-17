@@ -13,6 +13,13 @@ public class LaundryController : PermissionedController
 {
     public LaundryController(AppDbContext db) : base(db) { }
 
+    private async Task<IActionResult?> RequireLaundryAsync(string perm)
+    {
+        if (!await HasModuleAsync("laundry")) return ModuleDisabled("laundry");
+        if (!await HasPermAsync(perm)) return Forbidden(perm);
+        return null;
+    }
+
     // ══════════════════════════════════════════════════════════════════════
     // ITEMS
     // ══════════════════════════════════════════════════════════════════════
@@ -21,7 +28,7 @@ public class LaundryController : PermissionedController
     [HttpGet("items")]
     public async Task<IActionResult> GetItems()
     {
-        if (!await HasPermAsync("laundry.view")) return Forbidden("laundry.view");
+        if (await RequireLaundryAsync("laundry.view") is { } errV) return errV;
         var licId = GetLicenseId();
 
         var items = await _db.LaundryItems
@@ -36,10 +43,22 @@ public class LaundryController : PermissionedController
     }
 
     // GET /api/Laundry/items/by-epc/{epc}
+    [HttpGet("items/{id:int}")]
+    public async Task<IActionResult> GetItemById(int id)
+    {
+        if (await RequireLaundryAsync("laundry.view") is { } errV) return errV;
+        var licId = GetLicenseId();
+        var item = await _db.LaundryItems.AsNoTracking()
+            .Include(i => i.Owner).Include(i => i.Tag)
+            .FirstOrDefaultAsync(i => i.id == id && i.LicenseId == licId);
+        if (item == null) return NotFound(new { message = "Artikel ni najden." });
+        return Ok(MapItem(item));
+    }
+
     [HttpGet("items/by-epc/{epc}")]
     public async Task<IActionResult> GetItemByEpc(string epc)
     {
-        if (!await HasPermAsync("laundry.view")) return Forbidden("laundry.view");
+        if (await RequireLaundryAsync("laundry.view") is { } errV) return errV;
         var licId = GetLicenseId();
 
         var tag = await _db.TAG.AsNoTracking()
@@ -59,7 +78,7 @@ public class LaundryController : PermissionedController
     [HttpPost("items")]
     public async Task<IActionResult> CreateItem([FromBody] LaundryItemCreateDto dto)
     {
-        if (!await HasPermAsync("laundry.manage")) return Forbidden("laundry.manage");
+        if (await RequireLaundryAsync("laundry.manage") is { } errM) return errM;
         var licId = GetLicenseId();
         if (!licId.HasValue) return Unauthorized();
 
@@ -93,7 +112,7 @@ public class LaundryController : PermissionedController
     [HttpGet("items/{id}/events")]
     public async Task<IActionResult> GetItemEvents(int id)
     {
-        if (!await HasPermAsync("laundry.view")) return Forbidden("laundry.view");
+        if (await RequireLaundryAsync("laundry.view") is { } errV) return errV;
         var licId = GetLicenseId();
 
         if (!await _db.LaundryItems.AnyAsync(i => i.id == id && i.LicenseId == licId))
@@ -117,7 +136,7 @@ public class LaundryController : PermissionedController
     [HttpPost("items/{id}/event")]
     public async Task<IActionResult> AddEvent(int id, [FromBody] LaundryEventDto dto)
     {
-        if (!await HasPermAsync("laundry.process")) return Forbidden("laundry.process");
+        if (await RequireLaundryAsync("laundry.process") is { } errP) return errP;
         var licId = GetLicenseId();
 
         var item = await _db.LaundryItems.FirstOrDefaultAsync(i => i.id == id && i.LicenseId == licId);
@@ -150,7 +169,7 @@ public class LaundryController : PermissionedController
     [HttpGet("bins")]
     public async Task<IActionResult> GetBins()
     {
-        if (!await HasPermAsync("laundry.view")) return Forbidden("laundry.view");
+        if (await RequireLaundryAsync("laundry.view") is { } errV) return errV;
         var licId = GetLicenseId();
 
         var bins = await _db.LaundryBins
@@ -173,7 +192,7 @@ public class LaundryController : PermissionedController
     [HttpPost("bins")]
     public async Task<IActionResult> CreateBin([FromBody] LaundryBinCreateDto dto)
     {
-        if (!await HasPermAsync("laundry.deposit")) return Forbidden("laundry.deposit");
+        if (await RequireLaundryAsync("laundry.deposit") is { } errD) return errD;
         var licId = GetLicenseId();
         if (!licId.HasValue) return Unauthorized();
 
@@ -194,21 +213,31 @@ public class LaundryController : PermissionedController
     [HttpPost("bins/{id}/scan")]
     public async Task<IActionResult> ScanIntoBin(int id, [FromBody] LaundryScanDto dto)
     {
-        if (!await HasPermAsync("laundry.deposit")) return Forbidden("laundry.deposit");
+        if (await RequireLaundryAsync("laundry.deposit") is { } errD) return errD;
         var licId = GetLicenseId();
 
         var bin = await _db.LaundryBins.FirstOrDefaultAsync(b => b.id == id && b.LicenseId == licId);
         if (bin == null) return NotFound(new { message = "Zabojnik ni najden." });
         if (bin.Status != "open") return BadRequest(new { message = "Zabojnik ni odprt." });
 
-        // Resolve item by EPC
-        var tag = await _db.TAG.AsNoTracking()
-            .FirstOrDefaultAsync(t => (t.Epc == dto.Epc || t.EpcAscii == dto.Epc) && t.LicenseId == licId);
-        if (tag == null) return NotFound(new { message = "Tag ni najden." });
-
-        var item = await _db.LaundryItems
-            .FirstOrDefaultAsync(i => i.TagId == tag.id && i.LicenseId == licId);
-        if (item == null) return NotFound(new { message = "Artikel pralnice ni registriran za ta tag." });
+        // Resolve item by EPC or by ItemId
+        LaundryItem? item;
+        if (dto.ItemId.HasValue)
+        {
+            item = await _db.LaundryItems
+                .FirstOrDefaultAsync(i => i.id == dto.ItemId.Value && i.LicenseId == licId);
+            if (item == null) return NotFound(new { message = "Artikel ni najden." });
+        }
+        else if (!string.IsNullOrWhiteSpace(dto.Epc))
+        {
+            var tag = await _db.TAG.AsNoTracking()
+                .FirstOrDefaultAsync(t => (t.Epc == dto.Epc || t.EpcAscii == dto.Epc) && t.LicenseId == licId);
+            if (tag == null) return NotFound(new { message = "Tag ni najden." });
+            item = await _db.LaundryItems
+                .FirstOrDefaultAsync(i => i.TagId == tag.id && i.LicenseId == licId);
+            if (item == null) return NotFound(new { message = "Artikel pralnice ni registriran za ta tag." });
+        }
+        else return BadRequest(new { message = "Vnesi EPC ali ID artikla." });
 
         // Avoid duplicates in same bin
         if (await _db.LaundryBinItems.AnyAsync(bi => bi.BinId == id && bi.ItemId == item.id))
@@ -239,7 +268,7 @@ public class LaundryController : PermissionedController
     [HttpPost("bins/{id}/send-to-wash")]
     public async Task<IActionResult> SendToWash(int id)
     {
-        if (!await HasPermAsync("laundry.process")) return Forbidden("laundry.process");
+        if (await RequireLaundryAsync("laundry.process") is { } errP) return errP;
         var licId = GetLicenseId();
 
         var bin = await _db.LaundryBins
@@ -276,7 +305,7 @@ public class LaundryController : PermissionedController
     [HttpPost("process")]
     public async Task<IActionResult> Process([FromBody] LaundryProcessDto dto)
     {
-        if (!await HasPermAsync("laundry.process")) return Forbidden("laundry.process");
+        if (await RequireLaundryAsync("laundry.process") is { } errP) return errP;
         var licId = GetLicenseId();
 
         LaundryItem? item = null;
@@ -329,7 +358,7 @@ public class LaundryController : PermissionedController
     [HttpGet("sets")]
     public async Task<IActionResult> GetSets([FromQuery] string? status = null)
     {
-        if (!await HasPermAsync("laundry.view")) return Forbidden("laundry.view");
+        if (await RequireLaundryAsync("laundry.view") is { } errV) return errV;
         var licId = GetLicenseId();
 
         var q = _db.LaundrySets.AsNoTracking()
@@ -357,7 +386,7 @@ public class LaundryController : PermissionedController
     [HttpPost("sets")]
     public async Task<IActionResult> CreateSet([FromBody] LaundrySetCreateDto dto)
     {
-        if (!await HasPermAsync("laundry.process")) return Forbidden("laundry.process");
+        if (await RequireLaundryAsync("laundry.process") is { } errP) return errP;
         var licId = GetLicenseId();
         if (!licId.HasValue) return Unauthorized();
 
@@ -393,7 +422,7 @@ public class LaundryController : PermissionedController
     [HttpPost("sets/{id}/pickup")]
     public async Task<IActionResult> Pickup(int id)
     {
-        if (!await HasPermAsync("laundry.deposit")) return Forbidden("laundry.deposit");
+        if (await RequireLaundryAsync("laundry.deposit") is { } errD) return errD;
         var licId = GetLicenseId();
 
         var set = await _db.LaundrySets
@@ -429,7 +458,7 @@ public class LaundryController : PermissionedController
     [HttpGet("dashboard")]
     public async Task<IActionResult> Dashboard()
     {
-        if (!await HasPermAsync("laundry.view")) return Forbidden("laundry.view");
+        if (await RequireLaundryAsync("laundry.view") is { } errV) return errV;
         var licId = GetLicenseId();
 
         var latestStatuses = await _db.LaundryItemEvents
@@ -468,7 +497,7 @@ public class LaundryController : PermissionedController
 // ── DTOs ───────────────────────────────────────────────────────────────────
 public record LaundryItemCreateDto(string Name, string? Category, int? OwnerId, int? TagId, string? Notes);
 public record LaundryBinCreateDto(string Label);
-public record LaundryScanDto(string Epc);
+public record LaundryScanDto(string? Epc, int? ItemId);
 public record LaundryEventDto(string ToStatus, string? Notes);
 public record LaundryProcessDto(string ToStatus, string? Epc, int? ItemId, string? Notes);
 public record LaundrySetCreateDto(int OwnerId, List<int> ItemIds);
