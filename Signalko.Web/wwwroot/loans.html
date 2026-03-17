@@ -346,7 +346,7 @@ function setState(updates, skipRender) {
 ════════════════════════════════════════════════════════════ */
 let _kioskMode  = false;
 let _kioskTimer = null;        // inactivity auto-logout timer
-const KIOSK_TIMEOUT_MS = 3 * 60 * 1000;  // 3 minutes
+const KIOSK_TIMEOUT_MS = 1 * 60 * 1000;  // 1 minute
 
 function kioskResetTimer() {
   if (!_kioskMode) return;
@@ -398,6 +398,7 @@ async function kioskLogin() {
   };
 
   kioskHide();
+  skLoadSidebar();    // reload sidebar so it picks up kiosk user
   kioskResetTimer();  // start inactivity countdown
   await init();
 }
@@ -417,6 +418,7 @@ function kioskLogout() {
 
   setTimeout(() => {
     resetWizard();
+    skLoadSidebar();  // reset sidebar to guest state
     document.getElementById('kioskThankView').style.display = 'none';
     document.getElementById('kioskScanView').style.display = '';
     document.getElementById('kioskCardInput').value = '';
