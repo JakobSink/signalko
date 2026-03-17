@@ -122,7 +122,7 @@ skRequirePerm('roles.manage');
 // ── Page groups ────────────────────────────────────────────────────────────
 const PAGE_GROUPS = [
   {
-    get label(){ return skT('page.loans'); }, icon:'🔄', pageCode:'page.loans',
+    get label(){ return skT('page.loans'); }, icon:'🔄', pageCode:'page.loans', moduleCode:'loans',
     get sidebarLabel(){ return skT('page.loans'); },
     get sidebarSection(){ return skT('roles.section.main'); },
     get desc(){ return skT('roles.pg.loans.desc'); },
@@ -143,7 +143,7 @@ const PAGE_GROUPS = [
     perms:['tags.view']
   },
   {
-    get label(){ return skT('page.presence'); }, icon:'🟢', pageCode:'page.presence',
+    get label(){ return skT('page.presence'); }, icon:'🟢', pageCode:'page.presence', moduleCode:'presence',
     get sidebarLabel(){ return skT('page.presence'); },
     get sidebarSection(){ return skT('roles.section.user'); },
     get desc(){ return skT('roles.pg.presence.desc'); },
@@ -157,11 +157,18 @@ const PAGE_GROUPS = [
     perms:['users.view','users.manage']
   },
   {
-    get label(){ return skT('page.presenceadmin'); }, icon:'🔎', pageCode:'page.presenceadmin',
+    get label(){ return skT('page.presenceadmin'); }, icon:'🔎', pageCode:'page.presenceadmin', moduleCode:'presence',
     get sidebarLabel(){ return skT('page.presenceadmin'); },
     get sidebarSection(){ return skT('roles.section.admin'); },
     get desc(){ return skT('roles.pg.presenceadmin.desc'); },
     perms:['presence.manage']
+  },
+  {
+    label:'Pralnica', icon:'👕', pageCode:'page.laundry', moduleCode:'laundry',
+    sidebarLabel:'Pralnica',
+    sidebarSection:'Modul',
+    desc:'Dostop do modula pralnice — sprejem, obdelava, kompleti',
+    perms:['laundry.view','laundry.deposit','laundry.process','laundry.manage']
   },
   {
     get label(){ return skT('page.roles'); }, icon:'🔑', pageCode:'page.roles',
@@ -204,12 +211,19 @@ const PAGE_GROUPS = [
 let ALL_PERMS = [];
 let ALL_ROLES = [];
 let SEL       = null;
+let _enabledMods = null; // Set of enabled module codes
 
 // Build label lookup from API
 let LABEL = {};  // code -> label
 
+function activeGroups() {
+  if (!_enabledMods) return PAGE_GROUPS; // not loaded yet — show all
+  return PAGE_GROUPS.filter(g => !g.moduleCode || _enabledMods.has(g.moduleCode));
+}
+
 async function load() {
-  const [pr, rr] = await Promise.all([skGet('/api/Role/permissions'), skGet('/api/Role')]);
+  const [pr, rr, modR] = await Promise.all([skGet('/api/Role/permissions'), skGet('/api/Role'), skGet('/api/Module/my')]);
+  if (modR.ok) _enabledMods = new Set((modR.data||[]).filter(m=>m.enabled).map(m=>m.code));
   if (pr.ok) {
     ALL_PERMS = pr.data || [];
     ALL_PERMS.forEach(p => {
@@ -288,7 +302,7 @@ function renderEditor() {
   const mySet    = new Set((r.permissions||r.Permissions||[]).map(String));
   const isSystem = isSystemRole(r);
 
-  const groups = PAGE_GROUPS.map(g => buildGroup(g, mySet)).join('');
+  const groups = activeGroups().map(g => buildGroup(g, mySet)).join('');
 
   el.innerHTML = `<div class="sk-card-pad">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;gap:12px;">

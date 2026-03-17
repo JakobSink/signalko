@@ -854,6 +854,20 @@ async function init() {
   // Kiosk: asset-scan view is already shown by kioskLogin() — don't init wizard
   if (isKioskSession()) return;
 
+  // Check loans module enabled for this license
+  const modR = await skGet('/api/Module/my');
+  if (modR.ok) {
+    const enabled = (modR.data || []).some(m => m.code === 'loans' && m.enabled);
+    if (!enabled) {
+      document.getElementById('pageContent').innerHTML =
+        '<div class="sk-state-empty" style="margin-top:60px;">' +
+        '<span class="ico">🔒</span>' +
+        '<span>Modul Izposoja ni aktiviran za to licenco.</span>' +
+        '</div>';
+      return;
+    }
+  }
+
   const [antR, zoneR] = await Promise.all([lGet('/api/Antenna'), lGet('/api/Zone')]);
   if (antR.ok)  ST.stations = (antR.data || []).filter(a => (a.RoleID||a.roleID) === 1 || (a.RoleName||a.roleName||'').toLowerCase() === 'loan');
   if (zoneR.ok) (zoneR.data||[]).forEach(z => { ST.zones[z.id||z.Id] = z.Name||z.name||`Cona ${z.id}`; });

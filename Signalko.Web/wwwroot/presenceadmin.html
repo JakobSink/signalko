@@ -265,6 +265,17 @@ function clearF() {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
+  const modR = await skGet('/api/Module/my');
+  if (modR.ok) {
+    const enabled = (modR.data || []).some(m => m.code === 'presence' && m.enabled);
+    if (!enabled) {
+      document.querySelector('.sk-main').innerHTML =
+        '<div class="sk-page-title">Prisotnost — nadzor</div>' +
+        '<div class="sk-state-empty" style="margin-top:60px;">' +
+        '<span class="ico">🔒</span><span>Modul Prisotnost ni aktiviran za to licenco.</span></div>';
+      return;
+    }
+  }
   // loadCurrent already redirects to /presence.html on 403/401
   await Promise.all([ loadCurrent(), loadLog(1), loadStats() ]);
 });

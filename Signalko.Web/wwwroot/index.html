@@ -215,10 +215,26 @@ async function loadTags() {
   }).join('');
 }
 
-SK_I18N_READY.then(() => {
+SK_I18N_READY.then(async () => {
   const locale = skGetLang ? skGetLang() : 'sl-SI';
   document.getElementById('dateSub').textContent =
     new Date().toLocaleDateString(locale, { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+
+  // Hide sections for disabled modules
+  const modR = await skGet('/api/Module/my');
+  if (modR.ok) {
+    const enabled = new Set((modR.data || []).filter(m => m.enabled).map(m => m.code));
+    if (!enabled.has('loans')) {
+      // Hide loans stat card and loans quick-nav card
+      document.querySelectorAll('.stat-card').forEach(el => {
+        if (el.querySelector('#statLoans')) el.style.display = 'none';
+      });
+      document.querySelectorAll('.mod-card').forEach(el => {
+        if (el.getAttribute('href') === '/loans.html') el.style.display = 'none';
+      });
+    }
+  }
+
   loadStats().then(loadTags);
   setInterval(loadTags, 10000);
 });
