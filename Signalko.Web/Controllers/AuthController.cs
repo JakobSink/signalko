@@ -64,6 +64,14 @@ public class AuthController : ControllerBase
         };
 
         _db.users.Add(user);
+
+        // Mark license as activated on first signup
+        if (license.ActivatedAt == null)
+        {
+            license.ActivatedAt = DateTime.UtcNow;
+            license.UpdatedAt   = DateTime.UtcNow;
+        }
+
         await _db.SaveChangesAsync();
 
         var token = _jwt.CreateToken(user, assignedRole?.Name);

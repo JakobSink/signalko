@@ -137,14 +137,15 @@ public sealed record ExchangeResponseDto(
 // ── License DTOs ──────────────────────────────────────────────────────────────
 
 public sealed record LicenseDto(
-    int      Id,
-    string   LicenseKey,
-    int      MaxUsers,
-    int      ActiveUsers,
-    int      TotalUsers,
-    int      MaxReadingPoints,
-    int      ActiveReadingPoints,
-    string?  CompanyName,
-    DateTime CreatedAt,
-    DateTime UpdatedAt
+    int       Id,
+    string    LicenseKey,
+    int       MaxUsers,
+    int       ActiveUsers,
+    int       TotalUsers,
+    int       MaxReadingPoints,
+    int       ActiveReadingPoints,
+    string?   CompanyName,
+    DateTime  CreatedAt,
+    DateTime  UpdatedAt,
+    DateTime? ActivatedAt
 );

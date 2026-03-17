@@ -35,7 +35,7 @@ public class LicenseController : PermissionedController
             lic.id, lic.LicenseKey, lic.MaxUsers,
             activeUsers, totalUsers,
             lic.MaxReadingPoints, activeReadingPoints,
-            lic.CompanyName, lic.CreatedAt, lic.UpdatedAt
+            lic.CompanyName, lic.CreatedAt, lic.UpdatedAt, lic.ActivatedAt
         ));
     }
 

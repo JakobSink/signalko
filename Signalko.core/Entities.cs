@@ -292,6 +292,7 @@ public class License
     public int MaxUsers { get; set; } = 10;
     public int MaxReadingPoints { get; set; } = 5;
     [MaxLength(255)] public string? CompanyName { get; set; }
-    public DateTime CreatedAt { get; set; }
-    public DateTime UpdatedAt { get; set; }
+    public DateTime  CreatedAt   { get; set; }
+    public DateTime  UpdatedAt   { get; set; }
+    public DateTime? ActivatedAt { get; set; }  // set on first user signup
 }
