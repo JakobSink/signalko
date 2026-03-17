@@ -155,6 +155,94 @@
   animation: kr-drain 3s linear forwards;
 }
 @keyframes kr-drain { from { width: 100%; } to { width: 0%; } }
+
+/* ── Kiosk: multi-asset scan ────────────────────────────── */
+#kioskAssetWrap {
+  display: flex;
+  flex-direction: column;
+}
+.ka-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--up);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 14px;
+}
+.ka-scan-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.ka-scan-row .sk-input {
+  flex: 1;
+  font-family: monospace;
+  letter-spacing: 1px;
+}
+.ka-hint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 260px;
+  gap: 12px;
+  text-align: center;
+}
+.ka-hint .ka-hint-ico { font-size: 52px; animation: pulse-soft 2.2s ease-in-out infinite; }
+.ka-hint .ka-hint-lbl { font-size: 16px; font-weight: 700; color: var(--sub); font-family: 'Syne', sans-serif; }
+.ka-hint .ka-hint-sub { font-size: 11px; color: var(--mut); }
+.ka-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.ka-card {
+  border-radius: 10px;
+  padding: 14px 16px 14px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  position: relative;
+  animation: kiosk-pop .3s cubic-bezier(.175,.885,.32,1.275);
+}
+.ka-card.borrow   { background: rgba(34,197,94,.07);  border: 1.5px solid rgba(34,197,94,.4);   }
+.ka-card.return   { background: rgba(251,146,60,.07);  border: 1.5px solid rgba(251,146,60,.4); }
+.ka-card.conflict { background: rgba(239,68,68,.07);   border: 1.5px solid rgba(239,68,68,.35); }
+.ka-card .ka-x {
+  position: absolute; top: 8px; right: 8px;
+  width: 20px; height: 20px;
+  background: var(--border); border: none; border-radius: 50%;
+  cursor: pointer; font-size: 13px; color: var(--sub);
+  display: flex; align-items: center; justify-content: center;
+  transition: background .15s, color .15s;
+}
+.ka-card .ka-x:hover { background: var(--red); color: #fff; }
+.ka-card .ka-badge {
+  font-size: 9px; font-weight: 700;
+  letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 2px;
+}
+.ka-card.borrow   .ka-badge { color: var(--grn); }
+.ka-card.return   .ka-badge { color: var(--org); }
+.ka-card.conflict .ka-badge { color: var(--red); }
+.ka-card .ka-name { font-size: 13px; font-weight: 600; color: var(--txt); padding-right: 22px; }
+.ka-card .ka-epc  { font-size: 10px; color: var(--mut); font-family: monospace; }
+.ka-card .ka-who  { font-size: 11px; color: var(--sub); margin-top: 2px; }
+.ka-card .ka-conflict-wrap { margin-top: 8px; }
+.ka-card .ka-conflict-wrap label { font-size: 9px; color: var(--mut); letter-spacing: 1px; text-transform: uppercase; display: block; margin-bottom: 4px; }
+.ka-finish-bar {
+  position: sticky; bottom: 0;
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  padding: 12px 0 4px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
 </style>
 </head>
 <body>
@@ -200,6 +288,26 @@
 
     <!-- ══ Tab: Nova ══════════════════════════════════════════ -->
     <div class="sk-tab-pane active" id="tab-nova">
+
+    <!-- ── Kiosk: multi-asset scan (visible only in kiosk mode) ── -->
+    <div id="kioskAssetWrap" style="display:none;">
+      <div class="ka-header">
+        <div id="kaUserChip" class="sk-user-chip" style="margin:0;font-size:13px;"></div>
+        <button class="sk-btn sk-btn-sm" style="color:var(--red);border-color:var(--red);" onclick="kioskLogout(null)" data-i18n="kiosk.logout">Odjava</button>
+      </div>
+      <div class="ka-scan-row">
+        <input class="sk-input" id="kioskEpcInput"
+          data-i18n-placeholder="kiosk.epc_ph" placeholder="Skenirajte ali vnesite EPC…"
+          autocomplete="off"
+          onkeydown="if(event.key==='Enter'){kioskScanEpc();event.preventDefault();}"/>
+        <button class="sk-btn sk-btn-acc" onclick="kioskScanEpc()" data-i18n="loans.btn.check">Preveri</button>
+      </div>
+      <div id="kaCards"></div>
+      <div class="ka-finish-bar">
+        <button class="sk-btn sk-btn-acc" id="kioskFinishBtn" onclick="kioskAssetFinish()" data-i18n="kiosk.finish">Zaključek →</button>
+      </div>
+    </div>
+
       <div class="wizard-grid">
 
         <!-- LEFT: Wizard -->
@@ -406,15 +514,17 @@ const lPatch = (p,b) => lApi('PATCH',  p, b);
 /* ════════════════════════════════════════════════════════════
    Kiosk mode
 ════════════════════════════════════════════════════════════ */
-let _kioskTimer = null;        // inactivity auto-logout timer
-const KIOSK_TIMEOUT_MS = 1 * 60 * 1000;  // 1 minute
+let _kioskTimer  = null;   // inactivity auto-logout timer
+let _kioskAssets = [];     // { epc, asset, status:'borrow'|'return'|'conflict', loan, ownerCardId }
+const KIOSK_TIMEOUT_MS = 2 * 60 * 1000;  // 2 minutes
 
 function kioskResetTimer() {
   if (!isKioskSession()) return;
   clearTimeout(_kioskTimer);
-  _kioskTimer = setTimeout(() => kioskLogout(), KIOSK_TIMEOUT_MS);
+  _kioskTimer = setTimeout(() => kioskLogout(null), KIOSK_TIMEOUT_MS);
 }
 
+/* ── Show/hide card-scan screen ────────────────────────── */
 function kioskShow() {
   document.getElementById('kioskContent').style.display = 'flex';
   document.getElementById('pageContent').style.display  = 'none';
@@ -423,11 +533,186 @@ function kioskShow() {
   setTimeout(() => document.getElementById('kioskCardInput')?.focus(), 200);
 }
 
-function kioskHide() {
+/* ── Show kiosk asset-scan view (after login) ───────────── */
+function kioskAssetViewShow() {
+  // Hide kiosk overlay, show page content (so tabs are visible)
   document.getElementById('kioskContent').style.display = 'none';
   document.getElementById('pageContent').style.display  = '';
+
+  // Activate "Nova" tab
+  document.querySelectorAll('.sk-tab').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.sk-tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelector('.sk-tab[data-tab="nova"]').classList.add('active');
+  document.getElementById('tab-nova').classList.add('active');
+
+  // Hide wizard, show kiosk asset wrap
+  document.getElementById('wizardWrap').style.display = 'none';
+  document.getElementById('loansPanel').style.display = 'none';
+  document.getElementById('kioskAssetWrap').style.display = '';
+
+  // Populate user chip
+  const u = _kioskUser;
+  const ini = skInitials(u?.name||u?.Name, u?.surname||u?.Surname);
+  const nm  = skUserName(u);
+  document.getElementById('kaUserChip').innerHTML =
+    `<div class="sk-avatar">${ini}</div><span>${nm}</span>`;
+
+  // Reset asset list and render empty state
+  _kioskAssets = [];
+  kaRender();
+  setTimeout(() => document.getElementById('kioskEpcInput')?.focus(), 200);
 }
 
+/* ── Scan a single asset EPC ────────────────────────────── */
+async function kioskScanEpc() {
+  const input = document.getElementById('kioskEpcInput');
+  const epc   = (input?.value || '').trim();
+  if (!epc) return;
+
+  // Duplicate check
+  if (_kioskAssets.some(a => a.epc === epc)) {
+    input.value = '';
+    input.focus();
+    skToast(skT('kiosk.already_scanned') || 'Že skenirano', 'info');
+    return;
+  }
+
+  input.value = '';
+  input.disabled = true;
+
+  const r = await lGet(`/api/Asset/by-epc/${encodeURIComponent(epc)}`);
+  if (!r.ok || !r.data) {
+    input.disabled = false;
+    input.focus();
+    skToast(skT('loans.err.asset_not_found') || 'Sredstvo ni najdeno', 'error');
+    return;
+  }
+
+  const asset   = r.data;
+  const assetId = asset.id || asset.Id;
+  const uid     = _kioskUser?.id || _kioskUser?.Id;
+
+  // Check active loans
+  const loanR      = await lGet('/api/Loan');
+  const activeLoans = loanR.ok
+    ? (Array.isArray(loanR.data) ? loanR.data : []).filter(isActive)
+    : [];
+
+  const myLoan    = activeLoans.find(l => (l.AssetId||l.assetId) === assetId && (l.UserId||l.userId) === uid);
+  const otherLoan = !myLoan && activeLoans.find(l => (l.AssetId||l.assetId) === assetId);
+
+  const status = myLoan ? 'return' : otherLoan ? 'conflict' : 'borrow';
+  const loan   = myLoan || otherLoan || null;
+
+  _kioskAssets.push({ epc, asset, status, loan, ownerCardId: '' });
+
+  input.disabled = false;
+  input.focus();
+  kaRender();
+  kioskResetTimer();
+}
+
+/* ── Render asset cards ─────────────────────────────────── */
+function kaRender() {
+  const container = document.getElementById('kaCards');
+  if (!container) return;
+
+  if (_kioskAssets.length === 0) {
+    container.innerHTML = `
+      <div class="ka-hint">
+        <div class="ka-hint-ico">📦</div>
+        <div class="ka-hint-lbl" data-i18n="kiosk.scan_assets">Skenirajte sredstva</div>
+        <div class="ka-hint-sub" data-i18n="kiosk.scan_assets_sub">Prislonite RFID tag ali ročno vnesite EPC kodo</div>
+      </div>`;
+    if (typeof skApplyI18n === 'function') skApplyI18n();
+    return;
+  }
+
+  const badges = {
+    borrow:   skT('kiosk.badge.borrow')   || 'Izposodi',
+    return:   skT('kiosk.badge.return')   || 'Vrni',
+    conflict: skT('kiosk.badge.conflict') || 'Zahteva menjave',
+  };
+
+  container.innerHTML = '<div class="ka-grid">' +
+    _kioskAssets.map((item, idx) => {
+      const name = item.asset?.Name || item.asset?.name || item.epc;
+      const conflictWho = item.loan ? (item.loan.UserName || item.loan.userName || '') : '';
+      const conflictBlock = item.status === 'conflict' ? `
+        <div class="ka-conflict-wrap">
+          <div class="ka-who">👤 ${h(conflictWho)}</div>
+          <label>${skT('kiosk.conflict_card') || 'CardID imetnika za zahtevo menjave'}</label>
+          <input class="sk-input" style="font-size:12px;" placeholder="CardID…"
+            data-ka-idx="${idx}" value="${h(item.ownerCardId || '')}"
+            onkeydown="if(event.key==='Enter')document.getElementById('kioskEpcInput')?.focus()"/>
+        </div>` : '';
+      return `
+        <div class="ka-card ${item.status}">
+          <button class="ka-x" onclick="kaRemove(${idx})" title="Odstrani">×</button>
+          <div class="ka-badge">${badges[item.status] || ''}</div>
+          <div class="ka-name">${h(name)}</div>
+          <div class="ka-epc">${h(item.epc)}</div>
+          ${conflictBlock}
+        </div>`;
+    }).join('') + '</div>';
+
+  // Attach oninput to conflict CardID inputs (safe, no inline event)
+  container.querySelectorAll('[data-ka-idx]').forEach(inp => {
+    inp.addEventListener('input', () => {
+      const i = parseInt(inp.dataset.kaIdx);
+      if (_kioskAssets[i]) _kioskAssets[i].ownerCardId = inp.value;
+    });
+  });
+}
+
+function kaRemove(idx) {
+  _kioskAssets.splice(idx, 1);
+  kaRender();
+  document.getElementById('kioskEpcInput')?.focus();
+  kioskResetTimer();
+}
+
+/* ── Process all queued assets (Zaključek) ──────────────── */
+async function kioskAssetFinish() {
+  if (_kioskAssets.length === 0) return;
+  const btn = document.getElementById('kioskFinishBtn');
+  if (btn) { btn.disabled = true; btn.innerHTML = skSpinner(); }
+
+  const uid = _kioskUser?.id || _kioskUser?.Id;
+  const res = { borrowed: 0, returned: 0, requested: 0, errors: 0 };
+
+  for (const item of _kioskAssets) {
+    if (item.status === 'borrow') {
+      const r = await lPost('/api/Loan', {
+        UserId: uid, AssetId: item.asset?.id || item.asset?.Id, ZoneId: null,
+      });
+      if (r.ok) res.borrowed++; else res.errors++;
+
+    } else if (item.status === 'return') {
+      const loanId = item.loan?.Id || item.loan?.id;
+      const r = await lPost('/api/Loan/return', { LoanId: loanId });
+      if (r.ok) res.returned++; else res.errors++;
+
+    } else if (item.status === 'conflict' && item.ownerCardId.trim()) {
+      // Verify owner card matches actual loan holder
+      const userR = await lGet(`/api/User/by-card/${encodeURIComponent(item.ownerCardId.trim())}`);
+      if (!userR.ok || !userR.data) { res.errors++; continue; }
+      const owner    = userR.data;
+      const ownerId  = owner.Id || owner.id;
+      const clUserId = item.loan?.UserId || item.loan?.userId;
+      if (String(ownerId) !== String(clUserId)) { res.errors++; continue; }
+      const r = await lPost('/api/Exchange', {
+        fromUserId: uid, toUserId: ownerId,
+        assetId: item.asset?.id || item.asset?.Id, message: '',
+      });
+      if (r.ok) res.requested++; else res.errors++;
+    }
+  }
+
+  kioskLogout({ type: 'batch', results: res });
+}
+
+/* ── Login via card ID ──────────────────────────────────── */
 async function kioskLogin() {
   const input  = document.getElementById('kioskCardInput');
   const errEl  = document.getElementById('kioskErr');
@@ -436,7 +721,6 @@ async function kioskLogin() {
 
   errEl.textContent = '';
   if (!cardId) return;
-
   if (btn) { btn.disabled = true; btn.textContent = '…'; }
 
   let r, data;
@@ -461,7 +745,7 @@ async function kioskLogin() {
   }
 
   // Store token ONLY in local vars — never in localStorage/sessionStorage/window globals.
-  // skIsLoggedIn() stays false, sidebar remains as guest, other pages stay protected.
+  // skIsLoggedIn() stays false, sidebar stays as guest, other pages stay protected.
   _kioskToken = data.token;
   _kioskUser  = {
     id: data.id, name: data.name, surname: data.surname,
@@ -469,48 +753,84 @@ async function kioskLogin() {
     role: data.role, roleId: data.roleId, licenseId: data.licenseId,
   };
 
-  kioskHide();
-  kioskResetTimer();  // start inactivity countdown
-  await init();
+  kioskResetTimer();
+  kioskAssetViewShow();
+
+  // Load loan data in background (for Aktivne/Zgodovina tabs)
+  const loanR = await lGet('/api/Loan');
+  if (loanR.ok) {
+    ST.allLoans = Array.isArray(loanR.data) ? loanR.data : [];
+    renderLoansPanel();
+  }
 }
 
-// result = { type:'borrow'|'return'|'exchange', assetName, userName }
+/* ── End kiosk session & show result ────────────────────── */
+// result = null (silent logout) | { type:'batch', results:{...} }
 function kioskLogout(result) {
   clearTimeout(_kioskTimer);
-  _kioskTimer = null;
-
-  // Wipe kiosk session (local vars only)
   _kioskToken = null;
   _kioskUser  = null;
+  _kioskAssets = [];
 
-  // Build result card content
-  const RESULTS = {
-    borrow:   { ico: '✅', color: 'var(--grn)', get ttl(){ return skT('kiosk.result.borrowed'); }, get bye(){ return skT('kiosk.result.goodbye'); } },
-    return:   { ico: '↩', color: 'var(--org)', get ttl(){ return skT('kiosk.result.returned'); }, get bye(){ return skT('kiosk.result.goodbye'); } },
-    exchange: { ico: '🔄', color: 'var(--acc)', get ttl(){ return skT('kiosk.result.exchange'); }, get bye(){ return skT('kiosk.result.goodbye'); } },
-    default:  { ico: '👋', color: 'var(--acc)', get ttl(){ return skT('kiosk.result.done');     }, get bye(){ return skT('kiosk.result.goodbye'); } },
-  };
-  const r   = RESULTS[result?.type] || RESULTS.default;
-  const asset = result?.assetName ? `<div class="kr-asset">${h(result.assetName)}</div>` : '';
-  const user  = result?.userName  ? `<div class="kr-user">👤 ${h(result.userName)}</div>` : '';
+  // Restore normal wizard layout
+  const ww = document.getElementById('wizardWrap');
+  const lp = document.getElementById('loansPanel');
+  const kw = document.getElementById('kioskAssetWrap');
+  if (ww) ww.style.display = '';
+  if (lp) lp.style.display = '';
+  if (kw) kw.style.display = 'none';
+  resetWizard();
+  skLoadSidebar();
+
+  if (!result) {
+    // Cancelled — just go back to card scan
+    kioskShow();
+    return;
+  }
+
+  // Build summary text
+  let ico, color, ttl, desc;
+  if (result.type === 'batch') {
+    const { borrowed, returned, requested, errors } = result.results;
+    const anyOk = borrowed + returned + requested > 0;
+    ico   = borrowed > 0 ? '✅' : returned > 0 ? '↩' : requested > 0 ? '🔄' : '❌';
+    color = borrowed > 0 ? 'var(--grn)' : returned > 0 ? 'var(--org)' : requested > 0 ? 'var(--acc)' : 'var(--red)';
+    ttl   = anyOk ? (skT('kiosk.result.done') || 'Zaključeno!') : (skT('kiosk.result.error') || 'Napaka');
+    const parts = [];
+    if (borrowed  > 0) parts.push(`${borrowed}× ${skT('kiosk.result.borrowed_x') || 'izposojeno'}`);
+    if (returned  > 0) parts.push(`${returned}× ${skT('kiosk.result.returned_x') || 'vrnjeno'}`);
+    if (requested > 0) parts.push(`${requested}× ${skT('kiosk.result.requested_x') || 'zahteva poslana'}`);
+    if (errors    > 0) parts.push(`${errors}× ${skT('kiosk.result.errors_x') || 'napaka'}`);
+    desc = parts.join(' · ');
+  } else {
+    const RESULTS = {
+      borrow:   { ico:'✅', color:'var(--grn)', get ttl(){ return skT('kiosk.result.borrowed'); } },
+      return:   { ico:'↩',  color:'var(--org)', get ttl(){ return skT('kiosk.result.returned'); } },
+      exchange: { ico:'🔄', color:'var(--acc)', get ttl(){ return skT('kiosk.result.exchange'); } },
+      default:  { ico:'👋', color:'var(--acc)', get ttl(){ return skT('kiosk.result.done');     } },
+    };
+    const r2 = RESULTS[result?.type] || RESULTS.default;
+    ico = r2.ico; color = r2.color; ttl = r2.ttl;
+    const parts = [];
+    if (result.assetName) parts.push(result.assetName);
+    if (result.userName)  parts.push(`👤 ${result.userName}`);
+    desc = parts.join(' · ');
+  }
 
   const resultEl = document.getElementById('kioskResultView');
   resultEl.innerHTML = `
-    <div class="kiosk-result" style="background:color-mix(in srgb,${r.color} 6%,var(--surface));border:1px solid color-mix(in srgb,${r.color} 30%,transparent);">
-      <div class="kr-ico">${r.ico}</div>
-      <div class="kr-ttl" style="color:${r.color};">${r.ttl}</div>
-      ${asset}${user}
-      <div class="kr-bye">${r.bye}</div>
-      <div class="kr-bar"><div class="kr-fill" style="background:${r.color};"></div></div>
+    <div class="kiosk-result" style="background:color-mix(in srgb,${color} 6%,var(--surface));border:1px solid color-mix(in srgb,${color} 30%,transparent);">
+      <div class="kr-ico">${ico}</div>
+      <div class="kr-ttl" style="color:${color};">${ttl}</div>
+      ${desc ? `<div class="kr-asset">${h(desc)}</div>` : ''}
+      <div class="kr-bye">${skT('kiosk.result.goodbye') || 'Nasvidenje!'}</div>
+      <div class="kr-bar"><div class="kr-fill" style="background:${color};"></div></div>
     </div>`;
 
-  // Show result inside kiosk panel (sidebar stays visible)
   document.getElementById('kioskContent').style.display  = 'flex';
   document.getElementById('pageContent').style.display   = 'none';
   document.getElementById('kioskScanView').style.display  = 'none';
   resultEl.style.display = 'block';
-  resetWizard();
-  skLoadSidebar();
 
   setTimeout(() => {
     resultEl.style.display = 'none';
@@ -525,11 +845,14 @@ function kioskLogout(result) {
    Init
 ════════════════════════════════════════════════════════════ */
 async function init() {
-  // If not logged in and no kiosk token, show kiosk card-scan overlay
-  if (!skIsLoggedIn() && !_kioskToken) {
+  // No session (not logged in, no kiosk token) → show card-scan screen
+  if (!skIsLoggedIn() && !isKioskSession()) {
     kioskShow();
     return;
   }
+
+  // Kiosk: asset-scan view is already shown by kioskLogin() — don't init wizard
+  if (isKioskSession()) return;
 
   const [antR, zoneR] = await Promise.all([lGet('/api/Antenna'), lGet('/api/Zone')]);
   if (antR.ok)  ST.stations = (antR.data || []).filter(a => (a.RoleID||a.roleID) === 1 || (a.RoleName||a.roleName||'').toLowerCase() === 'loan');
@@ -636,14 +959,6 @@ function isKioskSession() {
 }
 
 function renderWizard() {
-  // Kiosk: auto-skip 'user' step — user is already identified via card scan
-  if (ST.step === 'user' && isKioskSession()) {
-    const me = getMeUser();
-    if (me) {
-      Object.assign(ST, { currentUser: me, step: 'asset' });
-    }
-  }
-
   const wrap = document.getElementById('wizardWrap');
 
   // Steps card (create once)
@@ -881,18 +1196,6 @@ function renderStepDone() {
   const a  = ST.scannedAsset;
   const u  = ST.currentUser;
   const d  = mk('div', 'sk-card anim-r');
-
-  // In kiosk mode: immediately trigger logout with result info
-  if (isKioskSession()) {
-    const type = isReturn ? 'return' : (ST.scenario === 'exchange_done' ? 'exchange' : 'borrow');
-    setTimeout(() => kioskLogout({
-      type,
-      assetName: a?.Name || a?.name || '',
-      userName:  skUserName(u),
-    }), 0);
-    d.innerHTML = `<div class="sk-done"><div class="sk-spin"></div></div>`;
-    return d;
-  }
 
   d.innerHTML = `
     <div class="sk-done">
@@ -1337,6 +1640,14 @@ document.querySelectorAll('.sk-tab').forEach(btn => {
     btn.classList.add('active');
     const id = 'tab-' + btn.dataset.tab;
     document.getElementById(id).classList.add('active');
+    if (btn.dataset.tab === 'nova') {
+      // In kiosk mode: keep asset scan view; in normal mode: keep wizard
+      const kiosk = isKioskSession();
+      document.getElementById('wizardWrap').style.display     = kiosk ? 'none' : '';
+      document.getElementById('loansPanel').style.display     = kiosk ? 'none' : '';
+      document.getElementById('kioskAssetWrap').style.display = kiosk ? '' : 'none';
+      if (kiosk) setTimeout(() => document.getElementById('kioskEpcInput')?.focus(), 100);
+    }
     if (btn.dataset.tab === 'aktivne')   loadTabActive();
     if (btn.dataset.tab === 'zgodovina') loadTabHistory();
   });
@@ -1347,6 +1658,7 @@ document.querySelectorAll('.sk-tab').forEach(btn => {
 ════════════════════════════════════════════════════════════ */
 function mk(tag, cls) { const e = document.createElement(tag); e.className = cls; return e; }
 function esc(s) { return String(s).replace(/'/g, "\\'"); }
+function h(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function emptyState(ico, msg) {
   return `<div class="sk-state-empty"><span class="ico">${ico}</span><span>${msg}</span></div>`;
 }
