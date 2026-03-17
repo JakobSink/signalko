@@ -120,102 +120,86 @@
 skRequirePerm('roles.manage');
 
 // ── Page groups ────────────────────────────────────────────────────────────
-// Vrstni red enak kot v stranskem meniju
 const PAGE_GROUPS = [
-  // ── Glavni meni ──────────────────────────────────────────
   {
-    label:'Izposoja', icon:'🔄', pageCode:'page.loans',
-    sidebarLabel:'Izposoja', sidebarSection:'Glavni meni',
-    desc:'Stran za izposojo, vrnitev in menjavo sredstev prek RFID wizarda. Deluje kot kiosk — osnovna funkcija je dostopna brez prijave.',
+    get label(){ return skT('page.loans'); }, icon:'🔄', pageCode:'page.loans',
+    get sidebarLabel(){ return skT('page.loans'); },
+    get sidebarSection(){ return skT('roles.section.main'); },
+    get desc(){ return skT('roles.pg.loans.desc'); },
     perms:['loans.view','loans.create','loans.return']
   },
   {
-    label:'Sredstva', icon:'📦', pageCode:'page.assets',
-    sidebarLabel:'Sredstva', sidebarSection:'Glavni meni',
-    desc:'Pregled inventarja — seznam vseh sredstev (naprav, opreme) z detajli, ikono in dodeljenim RFID tagom.',
+    get label(){ return skT('page.assets'); }, icon:'📦', pageCode:'page.assets',
+    get sidebarLabel(){ return skT('page.assets'); },
+    get sidebarSection(){ return skT('roles.section.main'); },
+    get desc(){ return skT('roles.pg.assets.desc'); },
     perms:['assets.view','assets.edit']
   },
   {
-    label:'RFID Tagi', icon:'🏷️', pageCode:'page.tags',
-    sidebarLabel:'RFID Tagi', sidebarSection:'Glavni meni',
-    desc:'Pregled vseh RFID tagov v sistemu in njihove dodelitve sredstvom.',
+    get label(){ return skT('page.tags'); }, icon:'🏷️', pageCode:'page.tags',
+    get sidebarLabel(){ return skT('page.tags'); },
+    get sidebarSection(){ return skT('roles.section.main'); },
+    get desc(){ return skT('roles.pg.tags.desc'); },
     perms:['tags.view']
   },
-  // ── Razdelek: Uporabnik ──────────────────────────────────
   {
-    label:'Prisotnost', icon:'🟢', pageCode:'page.presence',
-    sidebarLabel:'Prisotnost', sidebarSection:'Razdelek: Uporabnik',
-    desc:'Osebna stran prisotnosti — uporabnik vidi kdaj in kje je bil prisoten (IN/OUT evidenca).',
+    get label(){ return skT('page.presence'); }, icon:'🟢', pageCode:'page.presence',
+    get sidebarLabel(){ return skT('page.presence'); },
+    get sidebarSection(){ return skT('roles.section.user'); },
+    get desc(){ return skT('roles.pg.presence.desc'); },
     perms:['presence.view']
   },
-  // ── Razdelek: Admin ──────────────────────────────────────
   {
-    label:'Uporabniki', icon:'👥', pageCode:'page.users',
-    sidebarLabel:'Uporabniki', sidebarSection:'Razdelek: Admin',
-    desc:'Upravljanje uporabnikov — dodajanje, urejanje, brisanje in dodelitev vloge.',
+    get label(){ return skT('page.users'); }, icon:'👥', pageCode:'page.users',
+    get sidebarLabel(){ return skT('page.users'); },
+    get sidebarSection(){ return skT('roles.section.admin'); },
+    get desc(){ return skT('roles.pg.users.desc'); },
     perms:['users.view','users.manage']
   },
   {
-    label:'Prisotnost — nadzor', icon:'🔎', pageCode:'page.presenceadmin',
-    sidebarLabel:'Prisotnost — nadzor', sidebarSection:'Razdelek: Admin',
-    desc:'Admin pogled prisotnosti — kdo je trenutno znotraj, celotna evidenca vseh uporabnikov z filtri in izvozom.',
+    get label(){ return skT('page.presenceadmin'); }, icon:'🔎', pageCode:'page.presenceadmin',
+    get sidebarLabel(){ return skT('page.presenceadmin'); },
+    get sidebarSection(){ return skT('roles.section.admin'); },
+    get desc(){ return skT('roles.pg.presenceadmin.desc'); },
     perms:['presence.manage']
   },
   {
-    label:'Vloge', icon:'🔑', pageCode:'page.roles',
-    sidebarLabel:'Vloge', sidebarSection:'Razdelek: Admin',
-    desc:'Ta stran — upravljanje vlog in pravic. Kdo ima dostop do katerih strani in funkcij.',
+    get label(){ return skT('page.roles'); }, icon:'🔑', pageCode:'page.roles',
+    get sidebarLabel(){ return skT('page.roles'); },
+    get sidebarSection(){ return skT('roles.section.admin'); },
+    get desc(){ return skT('roles.pg.roles.desc'); },
     perms:['roles.manage']
   },
   {
-    label:'Licenca', icon:'🔐', pageCode:'page.license',
-    sidebarLabel:'Licenca', sidebarSection:'Razdelek: Admin',
-    desc:'Stran za upravljanje licenčnega ključa, omejitev uporabnikov in domene.',
+    get label(){ return skT('page.license'); }, icon:'🔐', pageCode:'page.license',
+    get sidebarLabel(){ return skT('page.license'); },
+    get sidebarSection(){ return skT('roles.section.admin'); },
+    get desc(){ return skT('roles.pg.license.desc'); },
     perms:['license.view','license.manage']
   },
-  // ── Razdelek: Konfiguracija ──────────────────────────────
   {
-    label:'Čitalci', icon:'📡', pageCode:'page.readers',
-    sidebarLabel:'Čitalci', sidebarSection:'Razdelek: Konfiguracija',
-    desc:'Konfiguracija RFID čitalcev (IP naslov, port) in nadzor njihovega statusa (online/offline).',
+    get label(){ return skT('page.readers'); }, icon:'📡', pageCode:'page.readers',
+    get sidebarLabel(){ return skT('page.readers'); },
+    get sidebarSection(){ return skT('roles.section.config'); },
+    get desc(){ return skT('roles.pg.readers.desc'); },
     perms:['readers.view','readers.manage']
   },
   {
-    label:'Antene', icon:'📶', pageCode:'page.antennas',
-    sidebarLabel:'Antene', sidebarSection:'Razdelek: Konfiguracija',
-    desc:'Konfiguracija anten — dodelitev coni, vlogi (LOAN = izposojevalnica, PRESENCE = prisotnost) in portu čitalca.',
+    get label(){ return skT('page.antennas'); }, icon:'📶', pageCode:'page.antennas',
+    get sidebarLabel(){ return skT('page.antennas'); },
+    get sidebarSection(){ return skT('roles.section.config'); },
+    get desc(){ return skT('roles.pg.antennas.desc'); },
     perms:['antennas.view','antennas.manage']
   },
   {
-    label:'Cone', icon:'📍', pageCode:'page.zones',
-    sidebarLabel:'Cone', sidebarSection:'Razdelek: Konfiguracija',
-    desc:'Upravljanje con — fizičnih lokacij (sob, prostorov), ki jim so dodeljene antene.',
+    get label(){ return skT('page.zones'); }, icon:'📍', pageCode:'page.zones',
+    get sidebarLabel(){ return skT('page.zones'); },
+    get sidebarSection(){ return skT('roles.section.config'); },
+    get desc(){ return skT('roles.pg.zones.desc'); },
     perms:['zones.view','zones.manage']
   },
 ];
 
-// ── Opisi posameznih pravic ─────────────────────────────────────────────────
-const PERM_DESC = {
-  'loans.view':        'Ogled tabele vseh izposoj in zgodovine vračil v sistemu.',
-  'loans.create':      'Ustvarjanje novih izposoj prek wizarda (skeniranje kartice + sredstva).',
-  'loans.return':      'Vrnitev izposojenega sredstva — zaključitev izposoje.',
-  'assets.view':       'Ogled seznama vseh sredstev s podrobnostmi (serijska, EPC, ikona…).',
-  'assets.edit':       'Dodajanje, urejanje in brisanje sredstev; uvoz/izvoz Excel.',
-  'tags.view':         'Ogled vseh RFID tagov in njihove dodelitve sredstvom.',
-  'presence.view':     'Ogled lastne prisotnosti — kdaj in kje je bil uporabnik prisoten.',
-  'presence.manage':   'Admin pregled prisotnosti: kdo je trenutno znotraj, filter po uporabniku/datumu, celotna evidenca.',
-  'users.view':        'Ogled seznama vseh uporabnikov in njihovih profilov.',
-  'users.manage':      'Dodajanje novih uporabnikov, urejanje podatkov in brisanje računov.',
-  'readers.view':      'Ogled RFID čitalcev, njihovega IP naslova in statusa (online/offline).',
-  'readers.manage':    'Dodajanje, urejanje in brisanje RFID čitalcev.',
-  'antennas.view':     'Ogled anten, dodeljenih con in vlog (LOAN / PRESENCE).',
-  'antennas.manage':   'Dodajanje, urejanje in brisanje anten ter dodelitev vlog in con.',
-  'zones.view':        'Ogled con — fizičnih lokacij v sistemu.',
-  'zones.manage':      'Dodajanje, urejanje in brisanje con.',
-  'roles.manage':      'Upravljanje vlog: ustvarjanje, urejanje pravic, brisanje vlog.',
-  'license.view':   'Ogled licenčnih podatkov — ključ, omejitev uporabnikov, domena.',
-  'license.manage': 'Urejanje licence — sprememba omejitev in regeneracija ključa.',
-};
 
 let ALL_PERMS = [];
 let ALL_ROLES = [];
@@ -353,7 +337,7 @@ function buildGroup(g, mySet) {
   const rows = g.perms.map(code => {
     const on  = mySet.has(code);
     const lbl = LABEL[code] || code;
-    const permKey = regInfo({ title: lbl, desc: PERM_DESC[code] || '', code });
+    const permKey = regInfo({ title: lbl, desc: skT('perm_desc.' + code) || '', code });
     return `<div class="perm-row">
       <div class="perm-info">
         <div class="perm-label">${h(lbl)}</div>

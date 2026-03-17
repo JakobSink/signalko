@@ -176,7 +176,7 @@ public class UserController : PermissionedController
             var adminRole = await _db.Roles.AsNoTracking().FirstOrDefaultAsync(r => r.Name == "Admin");
             if (adminRole != null && entity.RoleId == adminRole.id)
             {
-                var otherActiveAdmins = await _db.users.CountAsync(u => u.RoleId == adminRole.id && u.IsActive && u.id != id);
+                var otherActiveAdmins = await _db.users.CountAsync(u => u.RoleId == adminRole.id && u.IsActive && u.id != id && u.LicenseId == licId);
                 if (otherActiveAdmins == 0)
                     return Conflict(new { message = "Vsaj en Admin mora ostati aktiven." });
             }

@@ -344,7 +344,15 @@ function setState(updates, skipRender) {
 /* ════════════════════════════════════════════════════════════
    Kiosk mode
 ════════════════════════════════════════════════════════════ */
-let _kioskMode = false;
+let _kioskMode  = false;
+let _kioskTimer = null;        // inactivity auto-logout timer
+const KIOSK_TIMEOUT_MS = 3 * 60 * 1000;  // 3 minutes
+
+function kioskResetTimer() {
+  if (!_kioskMode) return;
+  clearTimeout(_kioskTimer);
+  _kioskTimer = setTimeout(() => kioskLogout(), KIOSK_TIMEOUT_MS);
+}
 
 function kioskShow() {
   _kioskMode = true;
@@ -379,34 +387,36 @@ async function kioskLogin() {
   }
 
   const data = await r.json();
-  // Store as regular session (sessionStorage so it clears when tab closes)
-  sessionStorage.setItem('kiosk_mode', '1');
-  localStorage.setItem('sk_token', data.token);
-  localStorage.setItem('sk_user', JSON.stringify({
+
+  // Store token ONLY in memory — never in localStorage.
+  // This means other tabs/pages cannot read it and it disappears on page reload.
+  window.SK_KIOSK_TOKEN = data.token;
+  window._kioskUser = {
     id: data.id, name: data.name, surname: data.surname,
     email: data.email, cardID: data.cardID,
     role: data.role, roleId: data.roleId, licenseId: data.licenseId,
-  }));
+  };
 
   kioskHide();
+  kioskResetTimer();  // start inactivity countdown
   await init();
 }
 
 function kioskLogout() {
-  // Show thank-you screen for 2.5s, then clear and return to kiosk
+  clearTimeout(_kioskTimer);
+  _kioskTimer = null;
+
+  // Wipe in-memory kiosk session
+  window.SK_KIOSK_TOKEN = null;
+  window._kioskUser     = null;
+
+  // Show thank-you screen, then reset to card scan
   document.getElementById('kioskScanView').style.display = 'none';
   document.getElementById('kioskThankView').style.display = 'flex';
   document.getElementById('kioskOverlay').style.display = 'flex';
 
   setTimeout(() => {
-    // Clear session
-    localStorage.removeItem('sk_token');
-    localStorage.removeItem('sk_user');
-    localStorage.removeItem('sk_user_perms');
-    sessionStorage.removeItem('kiosk_mode');
-    // Reset wizard
     resetWizard();
-    // Reset kiosk overlay to scan view
     document.getElementById('kioskThankView').style.display = 'none';
     document.getElementById('kioskScanView').style.display = '';
     document.getElementById('kioskCardInput').value = '';
@@ -1238,12 +1248,17 @@ function emptyState(ico, msg) {
   return `<div class="sk-state-empty"><span class="ico">${ico}</span><span>${msg}</span></div>`;
 }
 function getMeUser() {
+  if (window._kioskUser) return window._kioskUser;
   try { return JSON.parse(localStorage.getItem('sk_user') || 'null'); } catch { return null; }
 }
 function getMeId() {
   const u = getMeUser();
   return u?.id || u?.Id || u?.userId || 0;
 }
+
+// Reset inactivity timer on any click/keypress when in kiosk mode
+document.addEventListener('click',   () => kioskResetTimer());
+document.addEventListener('keydown',  () => kioskResetTimer());
 
 init();
 </script>
