@@ -221,6 +221,20 @@ function activeGroups() {
   return PAGE_GROUPS.filter(g => !g.moduleCode || _enabledMods.has(g.moduleCode));
 }
 
+// Total possible permissions across active groups only
+function activePermsTotal() {
+  let n = 0;
+  activeGroups().forEach(g => { n += 1 + g.perms.length; }); // +1 for pageCode
+  return n;
+}
+
+// How many of a role's permissions belong to active groups
+function activePermsInRole(permList) {
+  const activeSet = new Set();
+  activeGroups().forEach(g => { activeSet.add(g.pageCode); g.perms.forEach(p => activeSet.add(p)); });
+  return permList.filter(p => activeSet.has(p)).length;
+}
+
 async function load() {
   const [pr, rr, modR] = await Promise.all([skGet('/api/Role/permissions'), skGet('/api/Role'), skGet('/api/Module/my')]);
   if (modR.ok) _enabledMods = new Set((modR.data||[]).filter(m=>m.enabled).map(m=>m.code));
@@ -245,7 +259,7 @@ function renderList() {
   if (!ALL_ROLES.length) { el.innerHTML = `<div style="color:var(--mut);font-size:12px;padding:8px 0;">${skT('roles.no_roles')}</div>`; return; }
   el.innerHTML = ALL_ROLES.map(r => {
     const perms = r.permissions||r.Permissions||[];
-    const total = ALL_PERMS.length;
+    const total = activePermsTotal();
     const color = isAdminRole(r) ? 'var(--grn)' : isSystemRole(r) ? 'var(--acc)' : 'var(--org)';
     const sel   = SEL?.id === r.id;
     if (isAdminRole(r)) {
@@ -258,7 +272,7 @@ function renderList() {
     return `<div class="role-item${sel?' active':''}" onclick="selectRole(${r.id})">
       <div class="role-dot" style="background:${color};"></div>
       <div class="role-name">${h(r.name||r.Name)}</div>
-      <span class="role-count">${perms.length}${total?'/'+total:''}</span>
+      <span class="role-count">${activePermsInRole(perms)}${total?'/'+total:''}</span>
     </div>`;
   }).join('');
 }
@@ -313,8 +327,8 @@ function renderEditor() {
            </div>`
         : `<div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:800;">${h(r.name||r.Name)}</div>`}
       <div class="cnt-badge" style="flex-shrink:0;text-align:right;">
-        <span class="cnt-num" id="cntNum">${mySet.size}</span>
-        <span class="cnt-total">/ ${ALL_PERMS.length}</span>
+        <span class="cnt-num" id="cntNum">${activePermsInRole([...mySet])}</span>
+        <span class="cnt-total">/ ${activePermsTotal()}</span>
       </div>
     </div>
     ${groups}
@@ -421,7 +435,7 @@ function togglePage(cb) {
     });
   }
 
-  updateCounter(perms.size);
+  updateCounter(activePermsInRole([...perms]));
   renderList();
 }
 
@@ -439,7 +453,7 @@ function togglePerm(cb) {
     if (st) { st.textContent = cb.checked?skT('lbl.yes'):skT('lbl.no'); st.className = 'perm-state '+(cb.checked?'on':'off'); }
   }
 
-  updateCounter(perms.size);
+  updateCounter(activePermsInRole([...perms]));
   renderList();
 }
 
