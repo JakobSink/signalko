@@ -550,7 +550,7 @@ static async Task MigrateAndSeedCoreAsync(WebApplication app)
         // Seed modules
         var moduleSeeds = new (string Code, string Name, string Desc, string Icon, bool IsCore)[]
         {
-            ("loans",    "Izposoja",   "Izposoja in vrnitev sredstev z RFID sledenjem",           "📦", true),
+            ("loans",    "Izposoja",   "Izposoja in vrnitev sredstev z RFID sledenjem",           "🔄", true),
             ("presence", "Prisotnost", "Evidenca prisotnosti zaposlenih z RFID karticami",         "🕐", true),
             ("laundry",  "Pralnica",   "Sledenje perilom skozi pranje, šivanje in kompletiranje",  "👕", false),
         };
@@ -560,6 +560,10 @@ static async Task MigrateAndSeedCoreAsync(WebApplication app)
                 db.Modules.Add(new Module { Code = m.Code, Name = m.Name, Description = m.Desc, Icon = m.Icon, IsCore = m.IsCore });
         }
         await db.SaveChangesAsync();
+        // Sync icons for existing rows (seed above only inserts new ones)
+        await db.Database.ExecuteSqlRawAsync("UPDATE modules SET Icon='🔄' WHERE Code='loans'");
+        await db.Database.ExecuteSqlRawAsync("UPDATE modules SET Icon='🕐' WHERE Code='presence'");
+        await db.Database.ExecuteSqlRawAsync("UPDATE modules SET Icon='👕' WHERE Code='laundry'");
         Console.WriteLine("[Seed] Modules seeded.");
 
         // Auto-enable core modules for every license that doesn't have them yet

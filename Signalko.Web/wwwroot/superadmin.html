@@ -533,11 +533,10 @@ function renderEditModules() {
   const enabledSet = new Set(_editLic.enabledModules || []);
   document.getElementById('editModules').innerHTML = _allModules.map(m => {
     const on = enabledSet.has(m.code);
-    const core = m.isCore ? ' · jedro' : '';
     return `<span class="sa-mod-chip ${on ? 'on' : 'off'}"
         onclick="toggleEditModule('${m.code}', ${on})"
         title="${h(m.description||'')}">
-        ${m.icon ? h(m.icon)+' ' : ''}${h(m.name)}${core}
+        ${m.icon ? h(m.icon)+' ' : ''}${h(m.name)}
       </span>`;
   }).join('');
 }
