@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="sl">
+<head>
+<meta charset="utf-8"/>
+<title>Signalko · Changelog</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/css/sk.css"/>
+<style>
+.cl-list { display: flex; flex-direction: column; gap: 24px; max-width: 720px; }
+.cl-entry {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px 24px;
+  border-left: 3px solid var(--border);
+  transition: border-left-color .15s;
+}
+.cl-entry.latest { border-left-color: var(--acc); }
+.cl-ver-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; flex-wrap: wrap; }
+.cl-ver {
+  font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 800;
+  color: var(--txt); letter-spacing: -.3px;
+}
+.cl-entry.latest .cl-ver { color: var(--acc); }
+.cl-date { font-size: 10px; color: var(--mut); font-family: 'JetBrains Mono', monospace; }
+.cl-badge {
+  font-size: 9px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+  padding: 2px 8px; border-radius: 99px;
+  background: rgba(79,142,247,.12); color: var(--acc); border: 1px solid rgba(79,142,247,.25);
+}
+.cl-items { list-style: none; display: flex; flex-direction: column; gap: 5px; }
+.cl-items li {
+  font-size: 12px; color: var(--sub); padding-left: 18px; position: relative; line-height: 1.6;
+}
+.cl-items li::before { content: '—'; position: absolute; left: 0; color: var(--mut); }
+.cl-items li strong { color: var(--txt); font-weight: 600; }
+.cl-section-lbl {
+  font-size: 9px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--mut); margin-top: 12px; margin-bottom: 4px;
+}
+</style>
+</head>
+<body>
+<div class="sk-layout">
+  <aside class="sk-sidebar-col" id="sidebarHost"></aside>
+  <main class="sk-main">
+    <div class="sk-page-title">Changelog</div>
+    <div class="sk-page-sub">Zgodovina sprememb sistema Signalko</div>
+
+    <div class="cl-list">
+
+      <!-- v1.0.5 -->
+      <div class="cl-entry latest">
+        <div class="cl-ver-row">
+          <span class="cl-ver">v1.0.5</span>
+          <span class="cl-badge">Najnovejša</span>
+          <span class="cl-date">Marec 2025</span>
+        </div>
+        <div class="cl-section-lbl">SuperAdmin</div>
+        <ul class="cl-items">
+          <li><strong>SuperAdmin panel</strong> — upravljanje licenc s prijavo prek e-pošte in gesla</li>
+          <li>Ustvarjanje, urejanje in deaktivacija licenc</li>
+          <li>Trajni izbris vseh podatkov licence po 7 dneh od deaktivacije</li>
+          <li>Iskanje licenc po imenu podjetja ali ključu</li>
+        </ul>
+        <div class="cl-section-lbl">Moduli</div>
+        <ul class="cl-items">
+          <li>Vklop/izklop modulov po licenci — samo prek SuperAdmin panela</li>
+          <li><strong>Uveljavljanje modulov</strong> — ob deaktiviranem modulu vsebina izgine povsod (stranska vrstica, strani, API)</li>
+          <li>Stran Vloge prikazuje le dovoljenja aktivnih modulov</li>
+          <li>Stran Licenca prikazuje module samo za branje (brez gumbov za aktivacijo)</li>
+        </ul>
+        <div class="cl-section-lbl">Splošno</div>
+        <ul class="cl-items">
+          <li>Popravek prikaza "Neaktivna" pri obstoječih licencah (retroaktivna nastavitev ActivatedAt)</li>
+          <li>Pralnica: dovoljenja dodana v upravljanje vlog</li>
+          <li>Odstranjena oznaka "Jedro" pri modulih — vsi moduli so enakovredni</li>
+        </ul>
+      </div>
+
+      <!-- v1.0.4 -->
+      <div class="cl-entry">
+        <div class="cl-ver-row">
+          <span class="cl-ver">v1.0.4</span>
+          <span class="cl-date">Februar 2025</span>
+        </div>
+        <div class="cl-section-lbl">Modul: Prisotnost</div>
+        <ul class="cl-items">
+          <li><strong>Evidenca prisotnosti</strong> zaposlenih z RFID karticami</li>
+          <li>Pogled za zaposlenega: lastna evidenca prihodov in odhodov</li>
+          <li>Administratorski pogled: pregled prisotnosti vseh zaposlenih s filtriranjem in paginacijo</li>
+          <li>Stranska vrstica: ločeni linki za Moja prisotnost in Prisotnost nadzor</li>
+        </ul>
+        <div class="cl-section-lbl">Splošno</div>
+        <ul class="cl-items">
+          <li>Večjezična podpora (slovenščina / angleščina) razširjena za modul Prisotnost</li>
+          <li>Iskanje in filtriranje po datumu in tipu (prihod/odhod)</li>
+        </ul>
+      </div>
+
+      <!-- v1.0.3 -->
+      <div class="cl-entry">
+        <div class="cl-ver-row">
+          <span class="cl-ver">v1.0.3</span>
+          <span class="cl-date">Januar 2025</span>
+        </div>
+        <div class="cl-section-lbl">Modul: Pralnica</div>
+        <ul class="cl-items">
+          <li><strong>Sledenje perilom</strong> skozi pranje, šivanje in kompletiranje</li>
+          <li>Depozitno skeniranje: kartični vmesnik za množično skeniranje (EPC ali numerični ID)</li>
+          <li>Paketno potrjevanje — vse uspešno skenirane enote se oddajo naenkrat</li>
+          <li>Obdelava oddanega perila in označevanje kot kompletno</li>
+        </ul>
+        <div class="cl-section-lbl">Splošno</div>
+        <ul class="cl-items">
+          <li>Povečana robustnost pri napakah skeniranja</li>
+          <li>Izboljšan UX pri kiosknem načinu dela</li>
+        </ul>
+      </div>
+
+      <!-- v1.0.2 -->
+      <div class="cl-entry">
+        <div class="cl-ver-row">
+          <span class="cl-ver">v1.0.2</span>
+          <span class="cl-date">December 2024</span>
+        </div>
+        <div class="cl-section-lbl">Modul: Izposoja</div>
+        <ul class="cl-items">
+          <li><strong>Izposoja in vrnitev sredstev</strong> z RFID sledenjem</li>
+          <li>Čarovnik za izposojo: iskanje sredstev, izbira uporabnika, potrditev</li>
+          <li><strong>Kioski način</strong> — samozaposlujna odjava z RFID kartico in skeniranjem sredstev</li>
+          <li>Upravljanje zahtev za menjavo/servis</li>
+          <li>Pregled aktivnih in zgodovinskih izposoj z naprednim filtriranjem</li>
+        </ul>
+        <div class="cl-section-lbl">Splošno</div>
+        <ul class="cl-items">
+          <li>Sistem dovoljenj razširjen za upravljanje izposoj</li>
+          <li>Mejniki in opomniki za pretekle izposoje</li>
+        </ul>
+      </div>
+
+      <!-- v1.0.1 -->
+      <div class="cl-entry">
+        <div class="cl-ver-row">
+          <span class="cl-ver">v1.0.1</span>
+          <span class="cl-date">November 2024</span>
+        </div>
+        <div class="cl-section-lbl">Osnovna platforma</div>
+        <ul class="cl-items">
+          <li><strong>Upravljanje sredstev</strong> — katalog z RFID tagi, kategorijami in lokacijami</li>
+          <li><strong>RFID čitalci</strong> — pregled in upravljanje bralnikov ter anten</li>
+          <li><strong>Cone</strong> — fizične lokacije za razvrščanje čitalcev in sredstev</li>
+          <li><strong>RFID Tagi</strong> — seznam vseh branj, zgodovina z realnim časom</li>
+          <li><strong>Pregled</strong> — nadzorna plošča z zadnjimi RFID dogodki in statistiko</li>
+        </ul>
+        <div class="cl-section-lbl">Sistem</div>
+        <ul class="cl-items">
+          <li>Večnajemniška arhitektura z licenčnimi ključi</li>
+          <li>Sistem vlog in dovoljenj (RBAC)</li>
+          <li>Prijava z JWT avtentikacijo</li>
+          <li>Večjezičnost: slovenščina in angleščina</li>
+          <li>Temni UI z monospace estetiko</li>
+        </ul>
+      </div>
+
+    </div>
+  </main>
+</div>
+<script src="/css/i18n.js"></script>
+<script src="/css/sk.js"></script>
+<script>
+skRequireLogin();
+</script>
+</body>
+</html>

@@ -138,15 +138,8 @@ async function loadModules() {
   if (!el) return;
   if (!r.ok) { el.innerHTML = '<span style="color:var(--mut);font-size:12px;">Napaka pri nalaganju modulov</span>'; return; }
 
-  const isAdmin = skIsAdmin();
   el.innerHTML = (r.data || []).map(m => {
     const enabled = m.enabled;
-    const toggleBtn = isAdmin
-      ? `<button class="sk-btn sk-btn-sm ${enabled ? '' : 'sk-btn-acc'}"
-           onclick="toggleModule('${m.code}', ${enabled})">
-           ${enabled ? 'Deaktiviraj' : 'Aktiviraj'}
-         </button>`
-      : '';
     return `
       <div class="mod-card ${enabled ? 'enabled' : 'disabled'}">
         <div class="mc-head">
@@ -156,22 +149,10 @@ async function loadModules() {
         <div class="mc-desc">${h(m.description || '')}</div>
         <div class="mc-foot">
           <span class="sk-badge ${enabled ? 'sk-badge-grn' : 'sk-badge-mut'}">${enabled ? '✓ Aktiven' : 'Neaktiven'}</span>
-          ${toggleBtn}
+          ${!enabled ? `<span style="font-size:10px;color:var(--mut);">Kontaktirajte ekipo Signalko</span>` : ''}
         </div>
       </div>`;
   }).join('');
-}
-
-async function toggleModule(code, currentlyEnabled) {
-  const r = currentlyEnabled
-    ? await skDel(`/api/Module/${code}`)
-    : await skPost(`/api/Module/${code}/enable`);
-  if (r.ok) {
-    skToast(currentlyEnabled ? `Modul '${code}' deaktiviran` : `Modul '${code}' aktiviran`);
-    loadModules();
-  } else {
-    skToast(r.data?.message || 'Napaka', 'error');
-  }
 }
 
 SK_I18N_READY.then(async () => { await load(); loadModules(); });

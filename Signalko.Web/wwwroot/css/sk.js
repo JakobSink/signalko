@@ -166,7 +166,7 @@ function skUserName(u) {
 }
 
 /* ── Sidebar loader ─────────────────────────────────────────── */
-const SK_VERSION = '1.0.3';
+const SK_VERSION = '1.0.5';
 function skLoadSidebar() {
   const host = document.getElementById('sidebarHost');
   if (!host) return;

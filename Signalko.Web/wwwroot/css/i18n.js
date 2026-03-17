@@ -20,13 +20,13 @@ function skGetLang() {
 const SK_I18N_READY = (async () => {
   const code = skGetLang();
   try {
-    const res = await fetch(`/lang/${code}.json?v=1.0.3`);
+    const res = await fetch(`/lang/${code}.json?v=1.0.5`);
     if (!res.ok) throw new Error();
     _skLang = await res.json();
   } catch {
     // fallback: try English
     try {
-      const res = await fetch('/lang/en.json?v=1.0.3');
+      const res = await fetch('/lang/en.json?v=1.0.5');
       _skLang = await res.json();
     } catch { _skLang = {}; }
   }

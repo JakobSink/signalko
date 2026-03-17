@@ -171,6 +171,12 @@
 
     <div class="sb-push"></div>
     <div class="sb-divider"></div>
+    <a class="sb-item" href="/changelog.html" style="font-size:10px;color:var(--sb-muted);">
+      <span class="sb-item-icon" style="font-size:12px;">📋</span>
+      <span class="sb-label">Changelog</span>
+      <span id="sbVerChip" style="font-size:8px;color:var(--sb-muted);"></span>
+    </a>
+    <div class="sb-divider"></div>
     <div id="sbProfileLabel"></div>
     <div id="sbProfile"></div>
   </nav>
@@ -184,6 +190,8 @@
   // Version — defined once in sk.js
   const vEl = document.getElementById('sbVersion');
   if (vEl && typeof SK_VERSION !== 'undefined') vEl.textContent = 'v' + SK_VERSION;
+  const vcEl = document.getElementById('sbVerChip');
+  if (vcEl && typeof SK_VERSION !== 'undefined') vcEl.textContent = 'v' + SK_VERSION;
 
   // Translate all data-i18n elements inside sidebar (sidebar is injected AFTER DOMContentLoaded,
   // so the global skApplyI18n() already ran and missed these elements)
@@ -243,6 +251,7 @@
         '<a class="smm-item" href="/readers.html" id="smmReadersLink" style="display:none"><span class="smm-item-icon">📡</span> ' + skT('nav.readers') + '</a>' +
         '<a class="smm-item" href="/antennas.html" id="smmAntennasLink" style="display:none"><span class="smm-item-icon">📶</span> ' + skT('nav.antennas') + '</a>' +
         '<a class="smm-item" href="/zones.html" id="smmZonesLink" style="display:none"><span class="smm-item-icon">📍</span> ' + skT('nav.zones') + '</a>' +
+        '<a class="smm-item" href="/changelog.html" style="color:var(--sb-muted);font-size:11px;"><span class="smm-item-icon">📋</span> Changelog</a>' +
       '</div>' +
       '<div class="smm-divider"></div>' +
       '<div class="smm-profile-wrap" id="smmProfile"></div>';
@@ -319,6 +328,10 @@
       sbAntennasLink:  ['smmAntennasLink', 'page.antennas',     false],
       sbZonesLink:     ['smmZonesLink',    'page.zones',        false],
     };
+    // Changelog active state (not in linkMap since it's always visible)
+    document.querySelectorAll('a[href="/changelog.html"]').forEach(function(a) {
+      if (path.endsWith('/changelog.html')) a.classList.add('active');
+    });
 
     Object.keys(linkMap).forEach(function(dId) {
       var cfg  = linkMap[dId];
