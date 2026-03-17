@@ -118,6 +118,10 @@
       <span class="sb-item-icon">🔄</span>
       <span class="sb-label" data-i18n="nav.loans">Izposoja</span>
     </a>
+    <a class="sb-item" id="sbLaundryLink" href="/laundry.html" style="display:none;">
+      <span class="sb-item-icon">👕</span>
+      <span class="sb-label" data-i18n="nav.laundry">Pralnica</span>
+    </a>
     <a class="sb-item" id="sbAssetsLink" href="/assets.html">
       <span class="sb-item-icon">📦</span>
       <span class="sb-label" data-i18n="nav.assets">Sredstva</span>
@@ -300,6 +304,7 @@
     // Map: { desktopId: [mobileId, permCode, guestOk] }
     var linkMap = {
       sbLoansLink:     ['smmLoansLink',    'page.loans',        true ],
+      sbLaundryLink:   [null,             'page.laundry',      false],
       sbAssetsLink:    ['smmAssetsLink',   'page.assets',       true ],
       sbTagsLink:      ['smmTagsLink',     'page.tags',         true ],
       sbPresLink:      ['smmPresLink',     'page.presence',     false],

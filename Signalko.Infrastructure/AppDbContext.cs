@@ -26,6 +26,16 @@ public class AppDbContext : DbContext
     public DbSet<Permission>     Permissions     => Set<Permission>();
     public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
     public DbSet<License>        Licenses        => Set<License>();
+    public DbSet<Module>         Modules         => Set<Module>();
+    public DbSet<LicenseModule>  LicenseModules  => Set<LicenseModule>();
+
+    // Laundry
+    public DbSet<LaundryItem>      LaundryItems      => Set<LaundryItem>();
+    public DbSet<LaundryBin>       LaundryBins       => Set<LaundryBin>();
+    public DbSet<LaundryBinItem>   LaundryBinItems   => Set<LaundryBinItem>();
+    public DbSet<LaundryItemEvent> LaundryItemEvents => Set<LaundryItemEvent>();
+    public DbSet<LaundrySet>       LaundrySets       => Set<LaundrySet>();
+    public DbSet<LaundrySetItem>   LaundrySetItems   => Set<LaundrySetItem>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -97,6 +107,57 @@ public class AppDbContext : DbContext
              .WithMany()
              .HasForeignKey(x => x.TagId)
              .IsRequired(false);
+        });
+
+        b.Entity<LicenseModule>(e =>
+        {
+            e.HasIndex(x => new { x.LicenseId, x.ModuleCode }).IsUnique();
+            e.HasOne(x => x.License)  .WithMany().HasForeignKey(x => x.LicenseId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.EnabledBy).WithMany().HasForeignKey(x => x.EnabledByUserId).IsRequired(false);
+        });
+
+        b.Entity<LaundryItem>(e =>
+        {
+            e.Property(x => x.CreatedAt).HasColumnType("datetime");
+            e.HasOne(x => x.Owner).WithMany().HasForeignKey(x => x.OwnerId).IsRequired(false);
+            e.HasOne(x => x.Tag)  .WithMany().HasForeignKey(x => x.TagId)  .IsRequired(false);
+        });
+
+        b.Entity<LaundryBin>(e =>
+        {
+            e.Property(x => x.OpenedAt).HasColumnType("datetime");
+            e.Property(x => x.ClosedAt).HasColumnType("datetime");
+            e.HasOne(x => x.OpenedBy).WithMany().HasForeignKey(x => x.OpenedByUserId).IsRequired(false);
+        });
+
+        b.Entity<LaundryBinItem>(e =>
+        {
+            e.Property(x => x.ScannedAt).HasColumnType("datetime");
+            e.HasOne(x => x.Bin)      .WithMany(b => b.Items).HasForeignKey(x => x.BinId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.Item)     .WithMany()             .HasForeignKey(x => x.ItemId);
+            e.HasOne(x => x.ScannedBy).WithMany()             .HasForeignKey(x => x.ScannedByUserId).IsRequired(false);
+        });
+
+        b.Entity<LaundryItemEvent>(e =>
+        {
+            e.Property(x => x.CreatedAt).HasColumnType("datetime");
+            e.HasOne(x => x.Item)  .WithMany(i => i.Events).HasForeignKey(x => x.ItemId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.Worker).WithMany()              .HasForeignKey(x => x.WorkerId).IsRequired(false);
+        });
+
+        b.Entity<LaundrySet>(e =>
+        {
+            e.Property(x => x.AssembledAt).HasColumnType("datetime");
+            e.Property(x => x.PickedUpAt) .HasColumnType("datetime");
+            e.HasOne(x => x.Owner)      .WithMany().HasForeignKey(x => x.OwnerId);
+            e.HasOne(x => x.AssembledBy).WithMany().HasForeignKey(x => x.AssembledByUserId).IsRequired(false);
+            e.HasOne(x => x.PickedUpBy) .WithMany().HasForeignKey(x => x.PickedUpByUserId) .IsRequired(false);
+        });
+
+        b.Entity<LaundrySetItem>(e =>
+        {
+            e.HasOne(x => x.Set) .WithMany(s => s.Items).HasForeignKey(x => x.SetId) .OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.Item).WithMany()             .HasForeignKey(x => x.ItemId);
         });
 
         b.Entity<RolePermission>(e =>

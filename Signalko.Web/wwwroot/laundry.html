@@ -1,0 +1,689 @@
+<!doctype html>
+<html lang="sl">
+<head>
+<meta charset="utf-8"/>
+<title>Signalko · Pralnica</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<link rel="stylesheet" href="/css/sk.css"/>
+<style>
+.status-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 10px; font-weight: 700; letter-spacing: 1px;
+  text-transform: uppercase; padding: 3px 8px;
+  border-radius: 99px;
+}
+.sb-deposited    { background: rgba(99,102,241,.12); color: #818cf8; }
+.sb-in_wash      { background: rgba(59,130,246,.12); color: #60a5fa; }
+.sb-sorting      { background: rgba(234,179,8,.12);  color: #facc15; }
+.sb-ironing      { background: rgba(251,191,36,.12); color: #fbbf24; }
+.sb-damaged      { background: rgba(239,68,68,.12);  color: #f87171; }
+.sb-sewing       { background: rgba(168,85,247,.12); color: #c084fc; }
+.sb-repaired     { background: rgba(34,197,94,.12);  color: #4ade80; }
+.sb-write_off_proposed { background: rgba(239,68,68,.2); color: #ef4444; }
+.sb-written_off  { background: rgba(107,114,128,.12);color: #9ca3af; }
+.sb-in_set       { background: rgba(20,184,166,.12); color: #2dd4bf; }
+.sb-ready        { background: rgba(34,197,94,.12);  color: #4ade80; }
+.sb-picked_up    { background: rgba(107,114,128,.1); color: #9ca3af; }
+.sb-active       { background: rgba(34,197,94,.08);  color: #4ade80; }
+.sb-registered   { background: rgba(99,102,241,.1);  color: #818cf8; }
+
+.process-grid {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+@media(max-width:900px){ .process-grid{ grid-template-columns:1fr; } }
+
+.item-flow-card {
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  display: flex; align-items: center; gap: 12px;
+  background: var(--up);
+  border: 1px solid var(--border);
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: border-color .15s;
+}
+.item-flow-card:hover { border-color: var(--acc); }
+.item-flow-card .ifc-name { font-size: 13px; font-weight: 600; color: var(--txt); }
+.item-flow-card .ifc-owner { font-size: 11px; color: var(--sub); }
+
+.set-card {
+  border-radius: var(--radius);
+  padding: 16px;
+  background: var(--up);
+  border: 1px solid var(--border);
+  margin-bottom: 10px;
+}
+.set-card .sc-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 10px;
+}
+.set-card .sc-items { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.dash-stat {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 20px; background: var(--up);
+  border: 1px solid var(--border); border-radius: var(--radius);
+  gap: 6px;
+}
+.dash-stat .ds-num { font-size: 28px; font-weight: 800; font-family: 'Syne', sans-serif; }
+.dash-stat .ds-lbl { font-size: 11px; color: var(--mut); text-align: center; }
+.dash-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(120px,1fr)); gap: 12px; margin-bottom: 20px; }
+</style>
+</head>
+<body>
+<div class="sk-layout">
+  <aside class="sk-sidebar-col" id="sidebarHost"></aside>
+  <main class="sk-main">
+
+    <div class="sk-page-title">Pralnica</div>
+    <div class="sk-page-sub">Sprejem, obdelava, kompleti in odpisi perila</div>
+
+    <!-- Tabs -->
+    <div class="sk-tabs">
+      <button class="sk-tab active" data-tab="dashboard">Pregled</button>
+      <button class="sk-tab" data-tab="deposit">Sprejem</button>
+      <button class="sk-tab" data-tab="process">Obdelava</button>
+      <button class="sk-tab" data-tab="sets">Kompleti</button>
+      <button class="sk-tab" data-tab="items">Artikli</button>
+    </div>
+
+    <!-- ══ Dashboard ══════════════════════════════════════════ -->
+    <div class="sk-tab-pane active" id="tab-dashboard">
+      <div id="dashGrid" class="dash-grid"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:4px;">
+        <div class="sk-card">
+          <div class="sk-card-head"><span class="sk-section-title">Odpisi — predlogi</span></div>
+          <div id="dashWriteoffs"></div>
+        </div>
+        <div class="sk-card">
+          <div class="sk-card-head"><span class="sk-section-title">Kompleti pripravljeni</span></div>
+          <div id="dashSets"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ Deposit ════════════════════════════════════════════ -->
+    <div class="sk-tab-pane" id="tab-deposit">
+      <div style="display:grid;grid-template-columns:340px 1fr;gap:16px;align-items:start;">
+
+        <!-- Left: bin management -->
+        <div>
+          <div class="sk-card sk-card-pad" style="margin-bottom:14px;">
+            <div class="sk-section-title" style="margin-bottom:12px;">Odpri nov zabojnik</div>
+            <div class="sk-field">
+              <label>Oznaka zabojnika</label>
+              <input class="sk-input" id="newBinLabel" placeholder="npr. Zabojnik A"/>
+            </div>
+            <button class="sk-btn sk-btn-acc sk-btn-full" style="margin-top:8px;" onclick="createBin()">+ Odpri zabojnik</button>
+          </div>
+
+          <div class="sk-card">
+            <div class="sk-card-head">
+              <span class="sk-section-title">Odprti zabojniki</span>
+              <button class="sk-btn sk-btn-sm" onclick="loadBins()">↺</button>
+            </div>
+            <div id="openBinsList"></div>
+          </div>
+        </div>
+
+        <!-- Right: scanning into selected bin -->
+        <div class="sk-card">
+          <div class="sk-card-head">
+            <span class="sk-section-title" id="scanBinTitle">Izberi zabojnik →</span>
+          </div>
+          <div id="scanBinBody">
+            <div class="sk-state-empty"><span class="ico">📦</span><span>Izberi zabojnik na levi</span></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ══ Process ════════════════════════════════════════════ -->
+    <div class="sk-tab-pane" id="tab-process">
+      <div class="process-grid">
+
+        <!-- Left: scan + action panel -->
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <div class="sk-card sk-card-pad">
+            <div class="sk-section-title" style="margin-bottom:12px;">Skeniraj artikel</div>
+            <div class="sk-field">
+              <label>EPC koda</label>
+              <input class="sk-input" id="processEpc" placeholder="Skeniraj ali vnesi EPC…"
+                style="font-family:monospace;" autocomplete="off"
+                onkeydown="if(event.key==='Enter')processScan()"/>
+            </div>
+            <button class="sk-btn sk-btn-acc sk-btn-full" style="margin-top:8px;" onclick="processScan()">Poišči artikel</button>
+            <div id="processItemInfo" style="margin-top:12px;"></div>
+          </div>
+
+          <div class="sk-card sk-card-pad" id="processActions" style="display:none;">
+            <div class="sk-section-title" style="margin-bottom:12px;">Nastavi status</div>
+            <div style="display:flex;flex-direction:column;gap:8px;" id="processActionBtns"></div>
+            <div class="sk-field" style="margin-top:10px;">
+              <label>Opomba (opcijsko)</label>
+              <input class="sk-input" id="processNotes" placeholder="npr. Zašit levi rokav"/>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: items currently in process -->
+        <div class="sk-card">
+          <div class="sk-card-head">
+            <span class="sk-section-title">V obdelavi</span>
+            <button class="sk-btn sk-btn-sm" onclick="loadProcessItems()">↺</button>
+          </div>
+          <div id="processItemList"></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ══ Sets ═══════════════════════════════════════════════ -->
+    <div class="sk-tab-pane" id="tab-sets">
+      <div style="display:grid;grid-template-columns:360px 1fr;gap:16px;align-items:start;">
+
+        <!-- Left: create new set -->
+        <div class="sk-card sk-card-pad">
+          <div class="sk-section-title" style="margin-bottom:12px;">Nov komplet</div>
+          <div class="sk-field">
+            <label>Lastnik (CardID ali ime)</label>
+            <input class="sk-input" id="setOwnerCard" placeholder="Vnesi CardID…"
+              onkeydown="if(event.key==='Enter')lookupSetOwner()"/>
+            <button class="sk-btn sk-btn-sm" style="margin-top:6px;" onclick="lookupSetOwner()">Poišči</button>
+          </div>
+          <div id="setOwnerInfo" style="margin:8px 0;"></div>
+          <div class="sk-field">
+            <label>Skeniraj artikle v komplet (EPC)</label>
+            <div style="display:flex;gap:6px;">
+              <input class="sk-input" id="setItemEpc" placeholder="EPC…" style="font-family:monospace;"
+                onkeydown="if(event.key==='Enter')addItemToSet()"/>
+              <button class="sk-btn sk-btn-acc" onclick="addItemToSet()">+</button>
+            </div>
+          </div>
+          <div id="setItemsList" style="margin-top:8px;display:flex;flex-direction:column;gap:6px;"></div>
+          <button class="sk-btn sk-btn-acc sk-btn-full" style="margin-top:12px;" onclick="createSet()">Sestavi komplet →</button>
+          <div id="setErr" class="sk-alert sk-alert-red" style="display:none;margin-top:8px;"></div>
+        </div>
+
+        <!-- Right: ready sets -->
+        <div class="sk-card">
+          <div class="sk-card-head">
+            <span class="sk-section-title">Pripravljeni kompleti</span>
+            <button class="sk-btn sk-btn-sm" onclick="loadSets()">↺</button>
+          </div>
+          <div id="setsList"></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ══ Items ══════════════════════════════════════════════ -->
+    <div class="sk-tab-pane" id="tab-items">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <div></div>
+        <div style="display:flex;gap:8px;">
+          <button class="sk-btn sk-btn-sm" onclick="loadItems()">↺ Osveži</button>
+          <button class="sk-btn sk-btn-acc sk-btn-sm" onclick="skModal('itemModal')">+ Nov artikel</button>
+        </div>
+      </div>
+      <div class="sk-card" id="itemsCard">
+        <div class="sk-state-loading"><div class="sk-spin"></div>Nalaganje…</div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ══ Modal: New item ════════════════════════════════════════ -->
+<div class="sk-modal-bg" id="itemModal" style="display:none;" onclick="if(event.target===this)skModalClose('itemModal')">
+  <div class="sk-modal anim-pop">
+    <div class="sk-modal-head">
+      <span class="sk-section-title">Nov artikel pralnice</span>
+      <button class="sk-modal-close" onclick="skModalClose('itemModal')">×</button>
+    </div>
+    <div class="sk-modal-body" style="display:flex;flex-direction:column;gap:12px;">
+      <div class="sk-field">
+        <label>Ime artikla *</label>
+        <input class="sk-input" id="iName" placeholder="npr. Srajca, Hlače…"/>
+      </div>
+      <div class="sk-field">
+        <label>Kategorija</label>
+        <input class="sk-input" id="iCategory" placeholder="npr. zgornji del, spodnji del, uniform…"/>
+      </div>
+      <div class="sk-field">
+        <label>Lastnik (CardID)</label>
+        <input class="sk-input" id="iOwnerCard" placeholder="CardID uporabnika"
+          onkeydown="if(event.key==='Enter')lookupItemOwner()"/>
+        <button class="sk-btn sk-btn-sm" style="margin-top:4px;" onclick="lookupItemOwner()">Poišči lastnika</button>
+        <div id="iOwnerInfo" style="margin-top:6px;font-size:11px;color:var(--grn);"></div>
+      </div>
+      <div class="sk-field">
+        <label>EPC taga (opcijsko)</label>
+        <input class="sk-input" id="iEpc" placeholder="Skeniraj ali vnesi EPC…" style="font-family:monospace;"/>
+        <button class="sk-btn sk-btn-sm" style="margin-top:4px;" onclick="lookupItemTag()">Poveži tag</button>
+        <div id="iTagInfo" style="margin-top:6px;font-size:11px;color:var(--grn);"></div>
+      </div>
+      <div class="sk-field">
+        <label>Opomba</label>
+        <input class="sk-input" id="iNotes" placeholder=""/>
+      </div>
+      <div id="iErr" class="sk-alert sk-alert-red" style="display:none;"></div>
+    </div>
+    <div class="sk-modal-foot">
+      <button class="sk-btn" onclick="skModalClose('itemModal')">Prekliči</button>
+      <button class="sk-btn sk-btn-acc" id="iSaveBtn" onclick="saveItem()">Shrani</button>
+    </div>
+  </div>
+</div>
+
+<div id="sk-toasts"></div>
+<script src="/css/i18n.js"></script>
+<script src="/css/sk.js"></script>
+<script>
+skRequirePerm('laundry.view');
+
+/* ── Tabs ─────────────────────────────────────────────────── */
+document.querySelectorAll('.sk-tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.sk-tab').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.sk-tab-pane').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    const loaders = { dashboard: loadDashboard, deposit: loadBins, process: loadProcessItems, sets: loadSets, items: loadItems };
+    loaders[btn.dataset.tab]?.();
+  });
+});
+
+/* ══════════════════════════════════════════════════════════════
+   STATUS helpers
+══════════════════════════════════════════════════════════════ */
+const STATUS_LABELS = {
+  registered:'Registriran', deposited:'Oddan', in_wash:'V pranju',
+  sorting:'Sortiranje', ironing:'Likanje', damaged:'Poškodovan',
+  sewing:'Šivanje', repaired:'Popravljeno', write_off_proposed:'Predlog odpisa',
+  written_off:'Odpisano', in_set:'V kompletu', ready:'Pripravljeno', picked_up:'Prevzeto',
+  active:'Aktiven',
+};
+function statusBadge(s) {
+  return `<span class="status-badge sb-${s}">${STATUS_LABELS[s]||s}</span>`;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   DASHBOARD
+══════════════════════════════════════════════════════════════ */
+async function loadDashboard() {
+  const r = await skGet('/api/Laundry/dashboard');
+  if (!r.ok) return;
+  const { counts, openBins, readySets, writeOffs } = r.data;
+
+  const statOrder = ['deposited','in_wash','sorting','ironing','damaged','sewing','write_off_proposed','in_set','ready'];
+  const g = document.getElementById('dashGrid');
+  g.innerHTML = [
+    { key: 'open_bins',  num: openBins, lbl: 'Odprti zabojniki', color: 'var(--acc)' },
+    { key: 'ready_sets', num: readySets, lbl: 'Kompleti pripravljeni', color: 'var(--grn)' },
+    { key: 'write_offs', num: writeOffs, lbl: 'Odpisano', color: 'var(--red)' },
+    ...statOrder.filter(s => counts[s] > 0).map(s => ({ key: s, num: counts[s], lbl: STATUS_LABELS[s]||s, color: '' })),
+  ].map(({ num, lbl, color }) => `
+    <div class="dash-stat">
+      <div class="ds-num" style="${color?`color:${color}`:''};">${num}</div>
+      <div class="ds-lbl">${lbl}</div>
+    </div>`).join('');
+
+  // Write-off proposals
+  const wor = await skGet('/api/Laundry/items');
+  if (wor.ok) {
+    const proposals = (wor.data||[]).filter(i => {
+      // We'd need events — for now just show written_off items
+      return i.status === 'written_off';
+    });
+    document.getElementById('dashWriteoffs').innerHTML = proposals.length
+      ? proposals.map(i => `<div class="item-flow-card">
+          <div><div class="ifc-name">${h(i.name)}</div><div class="ifc-owner">${h(i.ownerName||'—')}</div></div>
+          ${statusBadge(i.status)}
+        </div>`).join('')
+      : '<div class="sk-state-empty" style="padding:20px;"><span>Ni odpisov</span></div>';
+  }
+
+  // Ready sets
+  const sr = await skGet('/api/Laundry/sets?status=ready');
+  if (sr.ok) {
+    document.getElementById('dashSets').innerHTML = (sr.data||[]).length
+      ? (sr.data||[]).map(s => `<div class="set-card">
+          <div class="sc-head">
+            <strong>${h(s.ownerName||'—')}</strong>
+            <button class="sk-btn sk-btn-sm sk-btn-grn" onclick="pickupSet(${s.id})">↩ Prevzem</button>
+          </div>
+          <div class="sc-items">${(s.items||[]).map(i=>`<span class="sk-badge sk-badge-acc">${h(i.name)}</span>`).join('')}</div>
+        </div>`).join('')
+      : '<div class="sk-state-empty" style="padding:20px;"><span>Ni pripravljenih kompletov</span></div>';
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   DEPOSIT / BINS
+══════════════════════════════════════════════════════════════ */
+let _activeBinId = null;
+
+async function loadBins() {
+  const r = await skGet('/api/Laundry/bins');
+  const el = document.getElementById('openBinsList');
+  if (!r.ok) { el.innerHTML = '<div class="sk-state-empty"><span>Napaka</span></div>'; return; }
+  const open = (r.data||[]).filter(b => b.status === 'open');
+  el.innerHTML = open.length ? open.map(b => `
+    <div class="item-flow-card ${_activeBinId===b.id?'sk-selected':''}" onclick="selectBin(${b.id},'${esc(b.label)}')">
+      <div style="flex:1;">
+        <div class="ifc-name">📦 ${h(b.label)}</div>
+        <div class="ifc-owner">${b.itemCount} kosov · Odprt ${skFmtDate(b.openedAt)}</div>
+      </div>
+      <button class="sk-btn sk-btn-sm sk-btn-org" onclick="event.stopPropagation();sendToWash(${b.id})">→ Pranje</button>
+    </div>`).join('')
+    : '<div class="sk-state-empty" style="padding:16px;"><span>Ni odprtih zabojnikov</span></div>';
+}
+
+async function createBin() {
+  const label = document.getElementById('newBinLabel').value.trim();
+  if (!label) return;
+  const r = await skPost('/api/Laundry/bins', { label });
+  if (r.ok) { skToast('Zabojnik odprt'); document.getElementById('newBinLabel').value=''; loadBins(); }
+  else skToast(r.data?.message||'Napaka', 'error');
+}
+
+function selectBin(id, label) {
+  _activeBinId = id;
+  document.getElementById('scanBinTitle').textContent = `📦 ${label}`;
+  document.getElementById('scanBinBody').innerHTML = `
+    <div class="sk-card-pad" style="display:flex;flex-direction:column;gap:12px;">
+      <div class="sk-field">
+        <label>EPC taga (skeniraj ali vnesi)</label>
+        <div style="display:flex;gap:8px;">
+          <input class="sk-input" id="depositEpc" placeholder="EPC…" style="flex:1;font-family:monospace;"
+            autocomplete="off" onkeydown="if(event.key==='Enter')depositItem()"/>
+          <button class="sk-btn sk-btn-acc" onclick="depositItem()">Dodaj</button>
+        </div>
+      </div>
+      <div id="depositLog" style="display:flex;flex-direction:column;gap:6px;max-height:340px;overflow-y:auto;"></div>
+    </div>`;
+  loadBins();
+}
+
+async function depositItem() {
+  const epc = document.getElementById('depositEpc')?.value.trim();
+  if (!epc || !_activeBinId) return;
+  document.getElementById('depositEpc').value = '';
+  const r = await skPost(`/api/Laundry/bins/${_activeBinId}/scan`, { epc });
+  const log = document.getElementById('depositLog');
+  const ok = r.ok;
+  const msg = ok ? r.data?.itemName : (r.data?.message || 'Napaka');
+  const row = document.createElement('div');
+  row.className = 'item-flow-card';
+  row.style.borderLeftColor = ok ? 'var(--grn)' : 'var(--red)';
+  row.innerHTML = `<span style="font-size:18px;">${ok?'✅':'❌'}</span>
+    <div><div class="ifc-name">${h(msg)}</div><div class="ifc-owner">${epc}</div></div>`;
+  log.prepend(row);
+  if (ok) skToast(`Dodano: ${msg}`); else skToast(msg, 'error');
+}
+
+async function sendToWash(binId) {
+  const r = await skPost(`/api/Laundry/bins/${binId}/send-to-wash`);
+  if (r.ok) { skToast(r.data?.message||'Poslano v pranje', 'success'); loadBins(); if (_activeBinId===binId) { _activeBinId=null; document.getElementById('scanBinTitle').textContent='Izberi zabojnik →'; document.getElementById('scanBinBody').innerHTML='<div class="sk-state-empty"><span class="ico">📦</span><span>Izberi zabojnik na levi</span></div>'; } }
+  else skToast(r.data?.message||'Napaka', 'error');
+}
+
+/* ══════════════════════════════════════════════════════════════
+   PROCESS
+══════════════════════════════════════════════════════════════ */
+let _processItem = null;
+
+const PROCESS_ACTIONS = [
+  { from: ['in_wash','sorting'],   to: 'sorting',          label: 'Sortiranje', cls: '' },
+  { from: ['sorting','in_wash'],   to: 'ironing',          label: 'Likanje / pregled', cls: '' },
+  { from: ['ironing','sorting'],   to: 'damaged',          label: '⚠ Označi kot poškodovano', cls: 'sk-btn-red' },
+  { from: ['ironing'],             to: 'in_set',           label: '✓ V order / komplet', cls: 'sk-btn-grn' },
+  { from: ['damaged'],             to: 'sewing',           label: '🧵 Pošlji v šivanje', cls: '' },
+  { from: ['sewing'],              to: 'repaired',         label: '✓ Zašito — v komplet', cls: 'sk-btn-grn' },
+  { from: ['sewing'],              to: 'write_off_proposed', label: '✕ Predlog za odpis', cls: 'sk-btn-red' },
+  { from: ['write_off_proposed'],  to: 'written_off',      label: '✕ Potrdi odpis', cls: 'sk-btn-red' },
+];
+
+async function processScan() {
+  const epc = document.getElementById('processEpc').value.trim();
+  if (!epc) return;
+  const r = await skGet(`/api/Laundry/items/by-epc/${encodeURIComponent(epc)}`);
+  const infoEl = document.getElementById('processItemInfo');
+  const actEl  = document.getElementById('processActions');
+
+  if (!r.ok || !r.data) {
+    infoEl.innerHTML = `<div class="sk-alert sk-alert-red">${r.data?.message||'Artikel ni najden'}</div>`;
+    actEl.style.display = 'none'; _processItem = null; return;
+  }
+
+  _processItem = r.data;
+  // Get latest event status
+  const evR = await skGet(`/api/Laundry/items/${_processItem.id}/events`);
+  const latestStatus = evR.ok && evR.data?.length
+    ? evR.data[evR.data.length-1].toStatus
+    : 'registered';
+
+  infoEl.innerHTML = `
+    <div class="item-flow-card" style="cursor:default;">
+      <div style="flex:1;">
+        <div class="ifc-name">${h(_processItem.name)}</div>
+        <div class="ifc-owner">Lastnik: ${h(_processItem.ownerName||'—')} · ${h(_processItem.epc||_processItem.epcAscii||'')}</div>
+      </div>
+      ${statusBadge(latestStatus)}
+    </div>`;
+
+  const actions = PROCESS_ACTIONS.filter(a => a.from.includes(latestStatus));
+  if (actions.length) {
+    document.getElementById('processActionBtns').innerHTML = actions.map(a =>
+      `<button class="sk-btn ${a.cls} sk-btn-full" onclick="applyProcessStatus('${a.to}')">${a.label}</button>`
+    ).join('');
+    actEl.style.display = '';
+  } else {
+    actEl.style.display = 'none';
+  }
+}
+
+async function applyProcessStatus(toStatus) {
+  if (!_processItem) return;
+  const notes = document.getElementById('processNotes').value.trim();
+  const r = await skPost('/api/Laundry/process', {
+    itemId: _processItem.id, toStatus, notes: notes||null, epc: null,
+  });
+  if (r.ok) {
+    skToast(`${_processItem.name} → ${STATUS_LABELS[toStatus]||toStatus}`);
+    document.getElementById('processEpc').value = '';
+    document.getElementById('processNotes').value = '';
+    document.getElementById('processItemInfo').innerHTML = '';
+    document.getElementById('processActions').style.display = 'none';
+    _processItem = null;
+    loadProcessItems();
+  } else {
+    skToast(r.data?.message||'Napaka', 'error');
+  }
+}
+
+async function loadProcessItems() {
+  const r = await skGet('/api/Laundry/items');
+  const el = document.getElementById('processItemList');
+  if (!r.ok) { el.innerHTML = '<div class="sk-state-empty"><span>Napaka</span></div>'; return; }
+  const inProcess = ['in_wash','sorting','ironing','damaged','sewing','write_off_proposed'];
+  // For simplicity, show all active items not yet picked up
+  const items = (r.data||[]).filter(i => i.status === 'active');
+  if (!items.length) { el.innerHTML = '<div class="sk-state-empty" style="padding:20px;"><span>Ni artiklov v obdelavi</span></div>'; return; }
+  el.innerHTML = `<table class="sk-table"><thead><tr><th>Artikel</th><th>Lastnik</th><th>Kategorija</th><th></th></tr></thead><tbody>
+    ${items.map(i=>`<tr>
+      <td><strong>${h(i.name)}</strong><div style="font-size:10px;color:var(--mut);font-family:monospace;">${h(i.epc||i.epcAscii||'')}</div></td>
+      <td style="color:var(--sub);">${h(i.ownerName||'—')}</td>
+      <td style="color:var(--sub);">${h(i.category||'—')}</td>
+      <td><button class="sk-btn sk-btn-sm" onclick="quickScan('${esc(i.epc||i.epcAscii||'')}')">Obdelaj</button></td>
+    </tr>`).join('')}
+  </tbody></table>`;
+}
+
+function quickScan(epc) {
+  document.getElementById('processEpc').value = epc;
+  processScan();
+  document.querySelector('.sk-tab[data-tab="process"]').click();
+}
+
+/* ══════════════════════════════════════════════════════════════
+   SETS
+══════════════════════════════════════════════════════════════ */
+let _setOwnerId = null;
+let _setItems   = [];  // [{ id, name, epc }]
+
+async function lookupSetOwner() {
+  const card = document.getElementById('setOwnerCard').value.trim();
+  if (!card) return;
+  const r = await skGet(`/api/User/by-card/${encodeURIComponent(card)}`);
+  if (!r.ok || !r.data) { document.getElementById('setOwnerInfo').innerHTML='<span style="color:var(--red);font-size:12px;">Uporabnik ni najden</span>'; return; }
+  _setOwnerId = r.data.Id || r.data.id;
+  document.getElementById('setOwnerInfo').innerHTML =
+    `<div class="sk-user-chip" style="margin:0;"><div class="sk-avatar">${skInitials(r.data.Name||r.data.name,r.data.Surname||r.data.surname)}</div><span>${skUserName(r.data)}</span></div>`;
+}
+
+async function addItemToSet() {
+  const epc = document.getElementById('setItemEpc').value.trim();
+  if (!epc) return;
+  const r = await skGet(`/api/Laundry/items/by-epc/${encodeURIComponent(epc)}`);
+  if (!r.ok || !r.data) { skToast(r.data?.message||'Artikel ni najden', 'error'); return; }
+  if (_setItems.some(i => i.id === r.data.id)) { skToast('Artikel je že v kompletu', 'info'); return; }
+  _setItems.push({ id: r.data.id, name: r.data.name, epc });
+  document.getElementById('setItemEpc').value = '';
+  renderSetItems();
+}
+
+function renderSetItems() {
+  document.getElementById('setItemsList').innerHTML = _setItems.map((it,idx)=>`
+    <div class="item-flow-card" style="cursor:default;padding:10px 12px;">
+      <div style="flex:1;"><div class="ifc-name">${h(it.name)}</div><div class="ifc-owner" style="font-family:monospace;">${h(it.epc)}</div></div>
+      <button class="sk-btn sk-btn-sm" onclick="_setItems.splice(${idx},1);renderSetItems()">×</button>
+    </div>`).join('');
+}
+
+async function createSet() {
+  const errEl = document.getElementById('setErr');
+  errEl.style.display = 'none';
+  if (!_setOwnerId) { errEl.textContent='Izberi lastnika'; errEl.style.display=''; return; }
+  if (!_setItems.length) { errEl.textContent='Dodaj vsaj en artikel'; errEl.style.display=''; return; }
+  const r = await skPost('/api/Laundry/sets', { ownerId: _setOwnerId, itemIds: _setItems.map(i=>i.id) });
+  if (r.ok) {
+    skToast('Komplet sestavljen!'); _setOwnerId=null; _setItems=[];
+    document.getElementById('setOwnerCard').value=''; document.getElementById('setOwnerInfo').innerHTML='';
+    renderSetItems(); loadSets();
+  } else skToast(r.data?.message||'Napaka', 'error');
+}
+
+async function loadSets() {
+  const r = await skGet('/api/Laundry/sets?status=ready');
+  const el = document.getElementById('setsList');
+  if (!r.ok) { el.innerHTML='<div class="sk-state-empty"><span>Napaka</span></div>'; return; }
+  const sets = r.data||[];
+  el.innerHTML = sets.length ? `<div style="padding:12px;display:flex;flex-direction:column;gap:10px;">${sets.map(s=>`
+    <div class="set-card">
+      <div class="sc-head">
+        <div>
+          <strong>${h(s.ownerName||'—')}</strong>
+          <div style="font-size:11px;color:var(--mut);">Sestavil: ${h(s.assembledByName||'—')} · ${skFmtDate(s.assembledAt)}</div>
+        </div>
+        <button class="sk-btn sk-btn-grn sk-btn-sm" onclick="pickupSet(${s.id})">↩ Prevzem</button>
+      </div>
+      <div class="sc-items">${(s.items||[]).map(i=>`<span class="sk-badge sk-badge-acc">${h(i.name)}</span>`).join('')}</div>
+    </div>`).join('')}</div>`
+    : '<div class="sk-state-empty" style="padding:24px;"><span class="ico">📦</span><span>Ni pripravljenih kompletov</span></div>';
+}
+
+async function pickupSet(id) {
+  const r = await skPost(`/api/Laundry/sets/${id}/pickup`);
+  if (r.ok) { skToast('Komplet prevzet!'); loadSets(); loadDashboard(); }
+  else skToast(r.data?.message||'Napaka', 'error');
+}
+
+/* ══════════════════════════════════════════════════════════════
+   ITEMS management
+══════════════════════════════════════════════════════════════ */
+async function loadItems() {
+  const r = await skGet('/api/Laundry/items');
+  const el = document.getElementById('itemsCard');
+  if (!r.ok) { el.innerHTML='<div class="sk-state-empty"><span>Napaka pri nalaganju</span></div>'; return; }
+  const items = r.data||[];
+  el.innerHTML = items.length
+    ? `<table class="sk-table"><thead><tr><th>Artikel</th><th>Lastnik</th><th>Kategorija</th><th>EPC</th><th>Status</th></tr></thead><tbody>
+        ${items.map(i=>`<tr>
+          <td><strong>${h(i.name)}</strong></td>
+          <td style="color:var(--sub);">${h(i.ownerName||'—')}</td>
+          <td style="color:var(--sub);">${h(i.category||'—')}</td>
+          <td style="font-size:11px;font-family:monospace;color:var(--mut);">${h(i.epc||i.epcAscii||'—')}</td>
+          <td>${statusBadge(i.status)}</td>
+        </tr>`).join('')}
+      </tbody></table>`
+    : '<div class="sk-state-empty" style="padding:24px;"><span class="ico">👕</span><span>Ni registriranih artiklov</span></div>';
+}
+
+/* ── New item modal helpers ─────────────────────────────── */
+let _iOwnerId = null, _iTagId = null;
+
+async function lookupItemOwner() {
+  const card = document.getElementById('iOwnerCard').value.trim();
+  if (!card) return;
+  const r = await skGet(`/api/User/by-card/${encodeURIComponent(card)}`);
+  if (!r.ok || !r.data) { document.getElementById('iOwnerInfo').innerHTML='<span style="color:var(--red);">Ni najden</span>'; return; }
+  _iOwnerId = r.data.Id||r.data.id;
+  document.getElementById('iOwnerInfo').textContent = '✓ ' + skUserName(r.data);
+}
+
+async function lookupItemTag() {
+  const epc = document.getElementById('iEpc').value.trim();
+  if (!epc) return;
+  const r = await skGet(`/api/Asset/by-epc/${encodeURIComponent(epc)}`);
+  // Just use TAG directly
+  const tr = await skGet(`/api/Tag/by-epc/${encodeURIComponent(epc)}`);
+  if (tr.ok && tr.data) {
+    _iTagId = tr.data.id;
+    document.getElementById('iTagInfo').textContent = '✓ Tag najden: ' + (tr.data.Epc||tr.data.epc||epc);
+  } else {
+    document.getElementById('iTagInfo').innerHTML = '<span style="color:var(--mut);font-size:11px;">Tag ni v bazi — bo shranjen brez povezave</span>';
+  }
+}
+
+async function saveItem() {
+  const name = document.getElementById('iName').value.trim();
+  const errEl = document.getElementById('iErr');
+  errEl.style.display = 'none';
+  if (!name) { errEl.textContent='Ime je obvezno'; errEl.style.display=''; return; }
+
+  const btn = document.getElementById('iSaveBtn');
+  skBtnLoading(btn, true, 'Shrani');
+  const r = await skPost('/api/Laundry/items', {
+    name, category: document.getElementById('iCategory').value.trim()||null,
+    ownerId: _iOwnerId||null, tagId: _iTagId||null,
+    notes: document.getElementById('iNotes').value.trim()||null,
+  });
+  skBtnLoading(btn, false, 'Shrani');
+
+  if (r.ok) {
+    skToast('Artikel shranjen'); skModalClose('itemModal');
+    _iOwnerId=null; _iTagId=null;
+    ['iName','iCategory','iOwnerCard','iEpc','iNotes'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('iOwnerInfo').textContent='';
+    document.getElementById('iTagInfo').textContent='';
+    loadItems();
+  } else {
+    errEl.textContent = r.data?.message||'Napaka'; errEl.style.display='';
+  }
+}
+
+/* ── Helpers ─────────────────────────────────────────────── */
+function h(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function esc(s) { return String(s).replace(/'/g,"\\'"); }
+
+/* ── Init ────────────────────────────────────────────────── */
+loadDashboard();
+</script>
+</body>
+</html>

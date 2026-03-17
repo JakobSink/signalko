@@ -257,6 +257,102 @@ static async Task MigrateAndSeedCoreAsync(WebApplication app)
         try { await db.Database.ExecuteSqlRawAsync("ALTER TABLE `licenses` ADD COLUMN `ActivatedAt` DATETIME NULL;"); Console.WriteLine("[DB] Added ActivatedAt to licenses."); } catch { /* already exists */ }
         Console.WriteLine("[DB] LicenseId columns ensured.");
 
+        // ── Module tables ──────────────────────────────────────────────────────
+        await db.Database.ExecuteSqlRawAsync(@"
+            CREATE TABLE IF NOT EXISTS `modules` (
+                `id`          INT AUTO_INCREMENT PRIMARY KEY,
+                `Code`        VARCHAR(50)  NOT NULL,
+                `Name`        VARCHAR(100) NOT NULL,
+                `Description` VARCHAR(500) NULL,
+                `Icon`        VARCHAR(100) NULL,
+                `IsCore`      TINYINT(1)   NOT NULL DEFAULT 0,
+                UNIQUE INDEX `uix_module_code` (`Code`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        ");
+        await db.Database.ExecuteSqlRawAsync(@"
+            CREATE TABLE IF NOT EXISTS `license_modules` (
+                `id`              INT AUTO_INCREMENT PRIMARY KEY,
+                `LicenseId`       INT         NOT NULL,
+                `ModuleCode`      VARCHAR(50)  NOT NULL,
+                `EnabledAt`       DATETIME     NOT NULL,
+                `EnabledByUserId` INT          NULL,
+                UNIQUE INDEX `uix_lic_mod` (`LicenseId`, `ModuleCode`),
+                CONSTRAINT `fk_licmod_license` FOREIGN KEY (`LicenseId`) REFERENCES `licenses`(`id`) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        ");
+        Console.WriteLine("[DB] Module tables ensured.");
+
+        // ── Laundry tables ─────────────────────────────────────────────────────
+        await db.Database.ExecuteSqlRawAsync(@"
+            CREATE TABLE IF NOT EXISTS `laundry_items` (
+                `id`         INT AUTO_INCREMENT PRIMARY KEY,
+                `LicenseId`  INT           NOT NULL,
+                `OwnerId`    INT           NULL,
+                `Name`       VARCHAR(200)  NOT NULL,
+                `Category`   VARCHAR(50)   NULL,
+                `TagId`      INT           NULL,
+                `Status`     VARCHAR(50)   NOT NULL DEFAULT 'active',
+                `Notes`      VARCHAR(1000) NULL,
+                `CreatedAt`  DATETIME      NOT NULL
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        ");
+        await db.Database.ExecuteSqlRawAsync(@"
+            CREATE TABLE IF NOT EXISTS `laundry_bins` (
+                `id`              INT AUTO_INCREMENT PRIMARY KEY,
+                `LicenseId`       INT          NOT NULL,
+                `Label`           VARCHAR(100) NOT NULL,
+                `Status`          VARCHAR(30)  NOT NULL DEFAULT 'open',
+                `OpenedAt`        DATETIME     NOT NULL,
+                `ClosedAt`        DATETIME     NULL,
+                `OpenedByUserId`  INT          NULL
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        ");
+        await db.Database.ExecuteSqlRawAsync(@"
+            CREATE TABLE IF NOT EXISTS `laundry_bin_items` (
+                `id`              INT AUTO_INCREMENT PRIMARY KEY,
+                `BinId`           INT      NOT NULL,
+                `ItemId`          INT      NOT NULL,
+                `ScannedAt`       DATETIME NOT NULL,
+                `ScannedByUserId` INT      NULL,
+                CONSTRAINT `fk_lbi_bin`  FOREIGN KEY (`BinId`)  REFERENCES `laundry_bins`(`id`)  ON DELETE CASCADE,
+                CONSTRAINT `fk_lbi_item` FOREIGN KEY (`ItemId`) REFERENCES `laundry_items`(`id`) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        ");
+        await db.Database.ExecuteSqlRawAsync(@"
+            CREATE TABLE IF NOT EXISTS `laundry_item_events` (
+                `id`         INT AUTO_INCREMENT PRIMARY KEY,
+                `ItemId`     INT           NOT NULL,
+                `WorkerId`   INT           NULL,
+                `FromStatus` VARCHAR(50)   NULL,
+                `ToStatus`   VARCHAR(50)   NOT NULL,
+                `Notes`      VARCHAR(1000) NULL,
+                `CreatedAt`  DATETIME      NOT NULL,
+                CONSTRAINT `fk_lie_item` FOREIGN KEY (`ItemId`) REFERENCES `laundry_items`(`id`) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        ");
+        await db.Database.ExecuteSqlRawAsync(@"
+            CREATE TABLE IF NOT EXISTS `laundry_sets` (
+                `id`                INT AUTO_INCREMENT PRIMARY KEY,
+                `LicenseId`         INT      NOT NULL,
+                `OwnerId`           INT      NOT NULL,
+                `AssembledByUserId` INT      NULL,
+                `AssembledAt`       DATETIME NOT NULL,
+                `PickedUpAt`        DATETIME NULL,
+                `PickedUpByUserId`  INT      NULL,
+                `Status`            VARCHAR(30) NOT NULL DEFAULT 'ready'
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        ");
+        await db.Database.ExecuteSqlRawAsync(@"
+            CREATE TABLE IF NOT EXISTS `laundry_set_items` (
+                `id`     INT AUTO_INCREMENT PRIMARY KEY,
+                `SetId`  INT NOT NULL,
+                `ItemId` INT NOT NULL,
+                CONSTRAINT `fk_lsi_set`  FOREIGN KEY (`SetId`)  REFERENCES `laundry_sets`(`id`)  ON DELETE CASCADE,
+                CONSTRAINT `fk_lsi_item` FOREIGN KEY (`ItemId`) REFERENCES `laundry_items`(`id`) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        ");
+        Console.WriteLine("[DB] Laundry tables ensured.");
+
         // Unique constraint on LicenseKey
         try
         {
@@ -409,6 +505,51 @@ static async Task MigrateAndSeedCoreAsync(WebApplication app)
             await db.SaveChangesAsync();
             Console.WriteLine("[Seed] License created.");
         }
+
+        // Seed modules
+        var moduleSeeds = new (string Code, string Name, string Desc, string Icon, bool IsCore)[]
+        {
+            ("loans",    "Izposoja",   "Izposoja in vrnitev sredstev z RFID sledenjem",           "📦", true),
+            ("presence", "Prisotnost", "Evidenca prisotnosti zaposlenih z RFID karticami",         "🕐", true),
+            ("laundry",  "Pralnica",   "Sledenje perilom skozi pranje, šivanje in kompletiranje",  "👕", false),
+        };
+        foreach (var m in moduleSeeds)
+        {
+            if (!await db.Modules.AnyAsync(x => x.Code == m.Code))
+                db.Modules.Add(new Module { Code = m.Code, Name = m.Name, Description = m.Desc, Icon = m.Icon, IsCore = m.IsCore });
+        }
+        await db.SaveChangesAsync();
+        Console.WriteLine("[Seed] Modules seeded.");
+
+        // Auto-enable core modules for every license that doesn't have them yet
+        var allLicenseIds = await db.Licenses.Select(l => l.id).ToListAsync();
+        var coreModuleCodes = await db.Modules.Where(m => m.IsCore).Select(m => m.Code).ToListAsync();
+        foreach (var licId in allLicenseIds)
+        {
+            foreach (var code in coreModuleCodes)
+            {
+                if (!await db.LicenseModules.AnyAsync(lm => lm.LicenseId == licId && lm.ModuleCode == code))
+                    db.LicenseModules.Add(new LicenseModule { LicenseId = licId, ModuleCode = code, EnabledAt = DateTime.UtcNow });
+            }
+        }
+        await db.SaveChangesAsync();
+        Console.WriteLine("[Seed] Core modules enabled for all licenses.");
+
+        // Seed laundry permissions
+        var laundryPerms = new (string Code, string Label, string Category)[]
+        {
+            ("laundry.view",    "Ogled pralnice",          "Pralnica"),
+            ("laundry.deposit", "Sprejem perila",          "Pralnica"),
+            ("laundry.process", "Obdelava perila",         "Pralnica"),
+            ("laundry.manage",  "Upravljanje pralnice",    "Pralnica"),
+            ("page.laundry",    "Stran: Pralnica",         "Strani (dostop)"),
+        };
+        foreach (var p in laundryPerms)
+        {
+            if (!await db.Permissions.AnyAsync(x => x.Code == p.Code))
+                db.Permissions.Add(new Permission { Code = p.Code, Label = p.Label, Category = p.Category });
+        }
+        await db.SaveChangesAsync();
 
         // Migrate existing data to first license (assigns LicenseId to rows that don't have one yet)
         var firstLicenseId = await db.Licenses.AsNoTracking().OrderBy(l => l.id).Select(l => l.id).FirstOrDefaultAsync();

@@ -283,6 +283,140 @@ public class Tag
     public int? LicenseId { get; set; }
 }
 
+// ============ MODULES ============
+[Table("modules")]
+public class Module
+{
+    [Key] public int id { get; set; }
+    [Required, MaxLength(50)]  public string  Code        { get; set; } = "";
+    [Required, MaxLength(100)] public string  Name        { get; set; } = "";
+    [MaxLength(500)]           public string? Description { get; set; }
+    [MaxLength(100)]           public string? Icon        { get; set; }
+    public bool IsCore { get; set; } = false;  // core modules can't be disabled
+}
+
+[Table("license_modules")]
+public class LicenseModule
+{
+    [Key] public int id { get; set; }
+    public int LicenseId { get; set; }
+    [Required, MaxLength(50)] public string ModuleCode { get; set; } = "";
+    public DateTime EnabledAt { get; set; }
+    public int? EnabledByUserId { get; set; }
+
+    [ForeignKey(nameof(LicenseId))]      public License? License   { get; set; }
+    [ForeignKey(nameof(EnabledByUserId))] public User?    EnabledBy { get; set; }
+}
+
+// ============ LAUNDRY ============
+/// <summary>Statuses stored in laundry_item_events.ToStatus (workflow steps)</summary>
+public static class LaundryStatus
+{
+    public const string Deposited       = "deposited";
+    public const string InWash          = "in_wash";
+    public const string Sorting         = "sorting";
+    public const string Ironing         = "ironing";
+    public const string Damaged         = "damaged";
+    public const string Sewing          = "sewing";
+    public const string Repaired        = "repaired";
+    public const string WriteOffProposed = "write_off_proposed";
+    public const string WrittenOff      = "written_off";
+    public const string InSet           = "in_set";
+    public const string Ready           = "ready";
+    public const string PickedUp        = "picked_up";
+}
+
+[Table("laundry_items")]
+public class LaundryItem
+{
+    [Key] public int id { get; set; }
+    public int LicenseId { get; set; }
+    public int? OwnerId { get; set; }
+    [Required, MaxLength(200)] public string  Name     { get; set; } = "";
+    [MaxLength(50)]            public string? Category { get; set; }
+    public int?    TagId  { get; set; }
+    [MaxLength(50)] public string Status { get; set; } = "active"; // active | written_off
+    [MaxLength(1000)] public string? Notes { get; set; }
+    public DateTime CreatedAt { get; set; }
+
+    [ForeignKey(nameof(OwnerId))] public User? Owner { get; set; }
+    [ForeignKey(nameof(TagId))]   public Tag?  Tag   { get; set; }
+    [JsonIgnore] public ICollection<LaundryItemEvent> Events { get; set; } = new List<LaundryItemEvent>();
+}
+
+[Table("laundry_bins")]
+public class LaundryBin
+{
+    [Key] public int id { get; set; }
+    public int LicenseId { get; set; }
+    [Required, MaxLength(100)] public string Label  { get; set; } = "";
+    [MaxLength(30)]            public string Status { get; set; } = "open"; // open | in_wash | done
+    public DateTime  OpenedAt { get; set; }
+    public DateTime? ClosedAt { get; set; }
+    public int? OpenedByUserId { get; set; }
+
+    [ForeignKey(nameof(OpenedByUserId))] public User? OpenedBy { get; set; }
+    [JsonIgnore] public ICollection<LaundryBinItem> Items { get; set; } = new List<LaundryBinItem>();
+}
+
+[Table("laundry_bin_items")]
+public class LaundryBinItem
+{
+    [Key] public int id { get; set; }
+    public int BinId  { get; set; }
+    public int ItemId { get; set; }
+    public DateTime ScannedAt { get; set; }
+    public int? ScannedByUserId { get; set; }
+
+    [ForeignKey(nameof(BinId))]           public LaundryBin?  Bin       { get; set; }
+    [ForeignKey(nameof(ItemId))]          public LaundryItem? Item      { get; set; }
+    [ForeignKey(nameof(ScannedByUserId))] public User?        ScannedBy { get; set; }
+}
+
+[Table("laundry_item_events")]
+public class LaundryItemEvent
+{
+    [Key] public int id { get; set; }
+    public int  ItemId   { get; set; }
+    public int? WorkerId { get; set; }
+    [MaxLength(50)]  public string? FromStatus { get; set; }
+    [Required, MaxLength(50)] public string ToStatus { get; set; } = "";
+    [MaxLength(1000)] public string? Notes { get; set; }
+    public DateTime CreatedAt { get; set; }
+
+    [ForeignKey(nameof(ItemId))]   public LaundryItem? Item   { get; set; }
+    [ForeignKey(nameof(WorkerId))] public User?        Worker { get; set; }
+}
+
+[Table("laundry_sets")]
+public class LaundrySet
+{
+    [Key] public int id { get; set; }
+    public int LicenseId { get; set; }
+    public int OwnerId   { get; set; }
+    public int? AssembledByUserId { get; set; }
+    public DateTime  AssembledAt { get; set; }
+    public DateTime? PickedUpAt  { get; set; }
+    public int? PickedUpByUserId { get; set; }
+    [MaxLength(30)] public string Status { get; set; } = "ready"; // ready | picked_up
+
+    [ForeignKey(nameof(OwnerId))]            public User? Owner      { get; set; }
+    [ForeignKey(nameof(AssembledByUserId))]  public User? AssembledBy { get; set; }
+    [ForeignKey(nameof(PickedUpByUserId))]   public User? PickedUpBy  { get; set; }
+    [JsonIgnore] public ICollection<LaundrySetItem> Items { get; set; } = new List<LaundrySetItem>();
+}
+
+[Table("laundry_set_items")]
+public class LaundrySetItem
+{
+    [Key] public int id { get; set; }
+    public int SetId  { get; set; }
+    public int ItemId { get; set; }
+
+    [ForeignKey(nameof(SetId))]  public LaundrySet?  Set  { get; set; }
+    [ForeignKey(nameof(ItemId))] public LaundryItem? Item { get; set; }
+}
+
 // ============ LICENSE ============
 [Table("licenses")]
 public class License
