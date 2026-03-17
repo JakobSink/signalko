@@ -398,12 +398,14 @@ async function kioskLogin() {
 
   // Store token ONLY in memory — never in localStorage.
   // This means other tabs/pages cannot read it and it disappears on page reload.
-  window.SK_KIOSK_TOKEN = data.token;
   window._kioskUser = {
     id: data.id, name: data.name, surname: data.surname,
     email: data.email, cardID: data.cardID,
     role: data.role, roleId: data.roleId, licenseId: data.licenseId,
   };
+  window.SK_KIOSK_TOKEN = data.token;
+  sessionStorage.setItem('sk_kiosk_token', data.token);
+  sessionStorage.setItem('sk_kiosk_user', JSON.stringify(window._kioskUser));
 
   kioskHide();
   skLoadSidebar();    // reload sidebar so it picks up kiosk user
@@ -415,9 +417,11 @@ function kioskLogout() {
   clearTimeout(_kioskTimer);
   _kioskTimer = null;
 
-  // Wipe in-memory kiosk session
+  // Wipe kiosk session (memory + sessionStorage)
   window.SK_KIOSK_TOKEN = null;
   window._kioskUser     = null;
+  sessionStorage.removeItem('sk_kiosk_token');
+  sessionStorage.removeItem('sk_kiosk_user');
 
   // Show thank-you screen, then reset to card scan
   document.getElementById('kioskScanView').style.display = 'none';
@@ -1265,6 +1269,16 @@ function getMeId() {
   const u = getMeUser();
   return u?.id || u?.Id || u?.userId || 0;
 }
+
+// Restore kiosk session from sessionStorage after page refresh
+(function restoreKioskSession() {
+  const t = sessionStorage.getItem('sk_kiosk_token');
+  if (t) {
+    window.SK_KIOSK_TOKEN = t;
+    try { window._kioskUser = JSON.parse(sessionStorage.getItem('sk_kiosk_user') || 'null'); } catch {}
+    _kioskMode = true;
+  }
+})();
 
 // Reset inactivity timer on any click/keypress when in kiosk mode
 document.addEventListener('click',   () => kioskResetTimer());
