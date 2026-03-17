@@ -430,3 +430,13 @@ public class License
     public DateTime  UpdatedAt   { get; set; }
     public DateTime? ActivatedAt { get; set; }  // set on first user signup
 }
+
+// ============ SUPERADMIN USER ============
+[Table("superadmin_users")]
+public class SuperAdminUser
+{
+    [Key] public int id { get; set; }
+    [Required, MaxLength(255)] public string Email { get; set; } = "";
+    [Required] public string PasswordHash { get; set; } = "";
+    public DateTime CreatedAt { get; set; }
+}

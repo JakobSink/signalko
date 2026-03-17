@@ -353,6 +353,30 @@ static async Task MigrateAndSeedCoreAsync(WebApplication app)
         ");
         Console.WriteLine("[DB] Laundry tables ensured.");
 
+        // SuperAdmin users table
+        await db.Database.ExecuteSqlRawAsync(@"
+            CREATE TABLE IF NOT EXISTS `superadmin_users` (
+                `id`           INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                `Email`        VARCHAR(255) NOT NULL UNIQUE,
+                `PasswordHash` TEXT NOT NULL,
+                `CreatedAt`    DATETIME NOT NULL
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        ");
+        Console.WriteLine("[DB] superadmin_users table ensured.");
+
+        // Seed default SuperAdmin user if none exist
+        if (!await db.SuperAdminUsers.AnyAsync())
+        {
+            db.SuperAdminUsers.Add(new SuperAdminUser
+            {
+                Email        = "jakob.sink24@gmail.com",
+                PasswordHash = Signalko.Web.Services.PasswordHasher.Hash("kosrkasi"),
+                CreatedAt    = DateTime.UtcNow,
+            });
+            await db.SaveChangesAsync();
+            Console.WriteLine("[Seed] SuperAdmin user jakob.sink24@gmail.com created.");
+        }
+
         // Unique constraint on LicenseKey
         try
         {

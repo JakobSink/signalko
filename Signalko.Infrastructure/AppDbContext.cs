@@ -26,6 +26,7 @@ public class AppDbContext : DbContext
     public DbSet<Permission>     Permissions     => Set<Permission>();
     public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
     public DbSet<License>        Licenses        => Set<License>();
+    public DbSet<SuperAdminUser> SuperAdminUsers  => Set<SuperAdminUser>();
     public DbSet<Module>         Modules         => Set<Module>();
     public DbSet<LicenseModule>  LicenseModules  => Set<LicenseModule>();
 

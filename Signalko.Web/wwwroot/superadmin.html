@@ -180,12 +180,17 @@ html, body { background:var(--bg); color:var(--txt); font-family:'JetBrains Mono
     <div class="sa-logo"><span>Signalko</span> · SuperAdmin</div>
     <div class="sa-login-sub">Dostop samo za Signalko osebje</div>
     <div class="sa-field">
-      <label>SuperAdmin geslo</label>
-      <input class="sa-input" id="secretInput" type="password" placeholder="Vnesi geslo…"
-        autocomplete="off" onkeydown="if(event.key==='Enter')doLogin()"/>
+      <label>Email</label>
+      <input class="sa-input" id="emailInput" type="email" placeholder="email@signalko.si"
+        autocomplete="username" onkeydown="if(event.key==='Enter')document.getElementById('passInput').focus()"/>
+    </div>
+    <div class="sa-field">
+      <label>Geslo</label>
+      <input class="sa-input" id="passInput" type="password" placeholder="Vnesi geslo…"
+        autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"/>
     </div>
     <div id="loginErr" class="sa-alert sa-alert-red" style="display:none;margin-bottom:12px;"></div>
-    <button class="sa-btn sa-btn-acc sa-btn-full" onclick="doLogin()">Prijava →</button>
+    <button class="sa-btn sa-btn-acc sa-btn-full" id="loginBtn" onclick="doLogin()">Prijava →</button>
   </div>
 </div>
 
@@ -288,36 +293,49 @@ html, body { background:var(--bg); color:var(--txt); font-family:'JetBrains Mono
 /* ══════════════════════════════════════════════════════════════
    Auth
 ══════════════════════════════════════════════════════════════ */
-let _secret = sessionStorage.getItem('sk_sa_secret') || '';
+let _token = sessionStorage.getItem('sk_sa_token') || '';
 let _allModules = [];
 
 async function doLogin() {
-  const s = document.getElementById('secretInput').value.trim();
-  if (!s) return;
-  // Test the secret by hitting a lightweight endpoint
-  const r = await saFetch('GET', '/api/SuperAdmin/modules');
-  if (r.ok) {
-    _secret = s;
-    sessionStorage.setItem('sk_sa_secret', s);
+  const email = document.getElementById('emailInput').value.trim();
+  const pass  = document.getElementById('passInput').value;
+  const errEl = document.getElementById('loginErr');
+  const btn   = document.getElementById('loginBtn');
+  errEl.style.display = 'none';
+  if (!email || !pass) { errEl.textContent = 'Vnesi email in geslo.'; errEl.style.display = ''; return; }
+
+  btn.disabled = true; btn.textContent = '…';
+  const r = await fetch('/api/SuperAdmin/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password: pass }),
+  });
+  btn.disabled = false; btn.textContent = 'Prijava →';
+
+  let data;
+  try { data = await r.json(); } catch { data = null; }
+  if (r.ok && data?.token) {
+    _token = data.token;
+    sessionStorage.setItem('sk_sa_token', _token);
     showApp();
   } else {
-    document.getElementById('loginErr').textContent = 'Napačno geslo';
-    document.getElementById('loginErr').style.display = '';
+    errEl.textContent = data?.message || 'Napačen email ali geslo.';
+    errEl.style.display = '';
   }
 }
 
-// Pre-fill secret from storage and auto-enter app if valid
+// Auto-enter app if token still valid
 (async () => {
-  if (_secret) {
+  if (_token) {
     const r = await saFetch('GET', '/api/SuperAdmin/modules');
     if (r.ok) { showApp(); return; }
-    else sessionStorage.removeItem('sk_sa_secret');
+    else { sessionStorage.removeItem('sk_sa_token'); _token = ''; }
   }
 })();
 
 function logout() {
-  sessionStorage.removeItem('sk_sa_secret');
-  _secret = '';
+  sessionStorage.removeItem('sk_sa_token');
+  _token = '';
   document.getElementById('appShell').style.display = 'none';
   document.getElementById('loginScreen').style.display = 'flex';
 }
@@ -326,13 +344,12 @@ function logout() {
    Fetch helper
 ══════════════════════════════════════════════════════════════ */
 async function saFetch(method, url, body) {
-  const s = _secret || document.getElementById('secretInput')?.value.trim() || '';
   try {
     const res = await fetch(url, {
       method,
       headers: {
         'Content-Type': 'application/json',
-        'X-SK-Secret': s,
+        'X-SK-Token': _token,
       },
       body: body ? JSON.stringify(body) : undefined,
     });

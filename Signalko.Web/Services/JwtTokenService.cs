@@ -52,4 +52,31 @@ public class JwtTokenService
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
+
+    public string CreateSuperAdminToken(int userId, string email)
+    {
+        var key      = _cfg["Jwt:Key"]      ?? throw new Exception("Jwt:Key manjka v appsettings.json");
+        var issuer   = _cfg["Jwt:Issuer"]   ?? "Signalko";
+        var audience = _cfg["Jwt:Audience"] ?? "Signalko";
+
+        var claims = new List<Claim>
+        {
+            new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
+            new Claim(JwtRegisteredClaimNames.Email, email),
+            new Claim("sa", "true"),
+        };
+
+        var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));
+        var creds      = new SigningCredentials(signingKey, SecurityAlgorithms.HmacSha256);
+
+        var token = new JwtSecurityToken(
+            issuer:             issuer,
+            audience:           audience,
+            claims:             claims,
+            expires:            DateTime.UtcNow.AddHours(12),
+            signingCredentials: creds
+        );
+
+        return new JwtSecurityTokenHandler().WriteToken(token);
+    }
 }
