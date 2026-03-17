@@ -257,6 +257,22 @@ static async Task MigrateAndSeedCoreAsync(WebApplication app)
         try { await db.Database.ExecuteSqlRawAsync("ALTER TABLE `licenses` ADD COLUMN `ActivatedAt` DATETIME NULL;"); Console.WriteLine("[DB] Added ActivatedAt to licenses."); } catch { /* already exists */ }
         Console.WriteLine("[DB] LicenseId columns ensured.");
 
+        // Backfill ActivatedAt for licenses that already have users but no activation date
+        var unactivated = await db.Licenses.Where(l => l.ActivatedAt == null).ToListAsync();
+        foreach (var lic in unactivated)
+        {
+            var firstUser = await db.users
+                .Where(u => u.LicenseId == lic.id)
+                .OrderBy(u => u.id)
+                .FirstOrDefaultAsync();
+            if (firstUser != null)
+            {
+                lic.ActivatedAt = DateTime.UtcNow;
+                Console.WriteLine($"[Backfill] ActivatedAt set for license {lic.id} ({lic.CompanyName}).");
+            }
+        }
+        await db.SaveChangesAsync();
+
         // ── Module tables ──────────────────────────────────────────────────────
         await db.Database.ExecuteSqlRawAsync(@"
             CREATE TABLE IF NOT EXISTS `modules` (

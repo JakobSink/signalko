@@ -209,7 +209,12 @@ html, body { background:var(--bg); color:var(--txt); font-family:'JetBrains Mono
     <div class="sa-card">
       <div class="sa-card-head">
         <span class="sa-card-title">Licence</span>
-        <button class="sa-btn sa-btn-acc sa-btn-sm" onclick="openCreateModal()">+ Nova licenca</button>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input class="sa-input" id="licSearch" placeholder="Išči po imenu ali ključu…"
+            style="width:220px;padding:6px 10px;"
+            oninput="renderLicTable()"/>
+          <button class="sa-btn sa-btn-acc sa-btn-sm" onclick="openCreateModal()">+ Nova licenca</button>
+        </div>
       </div>
       <div id="licTable" style="overflow-x:auto;">
         <div style="padding:24px;text-align:center;color:var(--mut);">Nalaganje…</div>
@@ -412,9 +417,16 @@ function renderStats() {
 }
 
 function renderLicTable() {
-  if (!_licenses.length) {
+  const q = (document.getElementById('licSearch')?.value || '').toLowerCase().trim();
+  const visible = q
+    ? _licenses.filter(l =>
+        (l.companyName || '').toLowerCase().includes(q) ||
+        (l.licenseKey  || '').toLowerCase().includes(q))
+    : _licenses;
+
+  if (!visible.length) {
     document.getElementById('licTable').innerHTML =
-      '<div style="padding:32px;text-align:center;color:var(--mut);">Ni licenc</div>';
+      `<div style="padding:32px;text-align:center;color:var(--mut);">${q ? 'Ni zadetkov za "' + h(q) + '"' : 'Ni licenc'}</div>`;
     return;
   }
   document.getElementById('licTable').innerHTML = `
@@ -425,7 +437,7 @@ function renderLicTable() {
         <th>Status</th><th></th>
       </tr></thead>
       <tbody>
-        ${_licenses.map(l => `
+        ${visible.map(l => `
           <tr>
             <td style="color:var(--mut);">${l.id}</td>
             <td><strong>${h(l.companyName || '—')}</strong></td>
