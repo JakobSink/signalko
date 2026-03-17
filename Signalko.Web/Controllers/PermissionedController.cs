@@ -40,6 +40,11 @@ public class PermissionedController : ControllerBase
         var uid = GetUserId();
         if (uid == null) return false;
 
+        // Block immediately if license is deactivated
+        var licId = GetLicenseId();
+        if (licId.HasValue && await _db.Licenses.AnyAsync(l => l.id == licId && l.DeactivatedAt != null))
+            return false;
+
         var roleId = await _db.users.AsNoTracking()
             .Where(u => u.id == uid)
             .Select(u => u.RoleId)

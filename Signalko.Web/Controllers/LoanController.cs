@@ -15,12 +15,19 @@ public class LoanController : PermissionedController
 
     public LoanController(AppDbContext db) : base(db) {}
 
+    private async Task<IActionResult?> RequireLoansAsync(string perm)
+    {
+        if (!await HasModuleAsync("loans")) return ModuleDisabled("loans");
+        if (!await HasPermAsync(perm)) return Forbidden(perm);
+        return null;
+    }
+
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] bool? active)
     {
-        // Authenticated users need loans.view; guests may browse freely
+        // Authenticated users need loans.view; also check module is enabled
         var uid = GetUserId();
-        if (uid != null && !await HasPermAsync("loans.view")) return Forbidden("loans.view");
+        if (uid != null && await RequireLoansAsync("loans.view") is { } errL) return errL;
         var licId = GetLicenseId();
         var q = _db.assets_loans
             .Include(l => l.Asset)
@@ -119,7 +126,7 @@ public class LoanController : PermissionedController
     {
         // Authenticated users need loans.create; kiosk (guest) use is allowed — user identified by card scan
         var uid = GetUserId();
-        if (uid != null && !await HasPermAsync("loans.create")) return Forbidden("loans.create");
+        if (uid != null && await RequireLoansAsync("loans.create") is { } errC) return errC;
         var licId = GetLicenseId();
         var asset = await _db.ASSET.AsNoTracking()
             .FirstOrDefaultAsync(a => a.id == dto.AssetId && (licId == null || a.LicenseId == licId));
@@ -183,7 +190,7 @@ public class LoanController : PermissionedController
     public async Task<IActionResult> Return([FromBody] LoanReturnDto dto)
     {
         var uid = GetUserId();
-        if (uid != null && !await HasPermAsync("loans.return")) return Forbidden("loans.return");
+        if (uid != null && await RequireLoansAsync("loans.return") is { } errR) return errR;
         var loan = await _db.assets_loans.FirstOrDefaultAsync(l => l.id == dto.LoanId);
         if (loan == null)
             return NotFound($"Izposoja z ID {dto.LoanId} ne obstaja.");

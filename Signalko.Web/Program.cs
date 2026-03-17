@@ -255,6 +255,7 @@ static async Task MigrateAndSeedCoreAsync(WebApplication app)
         // Add LicenseId to Roles (null = system role, shared; non-null = tenant custom role)
         try { await db.Database.ExecuteSqlRawAsync("ALTER TABLE `Roles` ADD COLUMN `LicenseId` INT NULL;"); Console.WriteLine("[DB] Added LicenseId to Roles."); } catch { /* already exists */ }
         try { await db.Database.ExecuteSqlRawAsync("ALTER TABLE `licenses` ADD COLUMN `ActivatedAt` DATETIME NULL;"); Console.WriteLine("[DB] Added ActivatedAt to licenses."); } catch { /* already exists */ }
+        try { await db.Database.ExecuteSqlRawAsync("ALTER TABLE `licenses` ADD COLUMN `DeactivatedAt` DATETIME NULL;"); Console.WriteLine("[DB] Added DeactivatedAt to licenses."); } catch { /* already exists */ }
         Console.WriteLine("[DB] LicenseId columns ensured.");
 
         // Backfill ActivatedAt for licenses that already have users but no activation date

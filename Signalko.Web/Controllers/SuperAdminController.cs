@@ -102,10 +102,12 @@ public class SuperAdminController : ControllerBase
             {
                 lic.id, lic.LicenseKey, lic.CompanyName,
                 lic.MaxUsers, lic.MaxReadingPoints,
-                lic.CreatedAt, lic.UpdatedAt, lic.ActivatedAt,
+                lic.CreatedAt, lic.UpdatedAt, lic.ActivatedAt, lic.DeactivatedAt,
                 activeUsers, totalUsers,
                 enabledModules = enabledMods,
-                isActivated = lic.ActivatedAt.HasValue,
+                isActivated   = lic.ActivatedAt.HasValue,
+                isDeactivated = lic.DeactivatedAt.HasValue,
+                canDelete     = lic.DeactivatedAt.HasValue && (DateTime.UtcNow - lic.DeactivatedAt.Value).TotalDays >= 7,
             });
         }
 
@@ -155,6 +157,106 @@ public class SuperAdminController : ControllerBase
 
         await _db.SaveChangesAsync();
         return Ok(new { lic.id, lic.LicenseKey, lic.CompanyName, lic.MaxUsers, lic.MaxReadingPoints });
+    }
+
+    // POST /api/SuperAdmin/licenses/{id}/deactivate
+    [HttpPost("licenses/{id}/deactivate")]
+    public async Task<IActionResult> DeactivateLicense(int id)
+    {
+        if (CheckToken() is { } err) return err;
+        var lic = await _db.Licenses.FirstOrDefaultAsync(l => l.id == id);
+        if (lic == null) return NotFound();
+        if (lic.DeactivatedAt != null) return Conflict(new { message = "Licenca je že deaktivirana." });
+        lic.DeactivatedAt = DateTime.UtcNow;
+        lic.UpdatedAt     = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+        return Ok(new { message = $"Licenca {id} deaktivirana.", deactivatedAt = lic.DeactivatedAt });
+    }
+
+    // POST /api/SuperAdmin/licenses/{id}/reactivate
+    [HttpPost("licenses/{id}/reactivate")]
+    public async Task<IActionResult> ReactivateLicense(int id)
+    {
+        if (CheckToken() is { } err) return err;
+        var lic = await _db.Licenses.FirstOrDefaultAsync(l => l.id == id);
+        if (lic == null) return NotFound();
+        lic.DeactivatedAt = null;
+        lic.UpdatedAt     = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+        return Ok(new { message = $"Licenca {id} reaktivirana." });
+    }
+
+    // DELETE /api/SuperAdmin/licenses/{id}  — permanent delete, only if deactivated >= 7 days
+    [HttpDelete("licenses/{id}")]
+    public async Task<IActionResult> DeleteLicense(int id)
+    {
+        if (CheckToken() is { } err) return err;
+        var lic = await _db.Licenses.FirstOrDefaultAsync(l => l.id == id);
+        if (lic == null) return NotFound();
+        if (lic.DeactivatedAt == null)
+            return BadRequest(new { message = "Licenca mora biti najprej deaktivirana." });
+        if ((DateTime.UtcNow - lic.DeactivatedAt.Value).TotalDays < 7)
+            return BadRequest(new { message = "Licenca mora biti deaktivirana vsaj 7 dni pred izbrisom." });
+
+        // Cascade delete all license data — order matters for FK constraints
+        await _db.Database.ExecuteSqlRawAsync("SET FOREIGN_KEY_CHECKS=0;");
+        try
+        {
+            // Laundry junction tables (no direct LicenseId)
+            await _db.Database.ExecuteSqlRawAsync(
+                "DELETE lsi FROM laundry_set_items lsi JOIN laundry_sets ls ON lsi.SetId=ls.id WHERE ls.LicenseId={0}", id);
+            await _db.Database.ExecuteSqlRawAsync(
+                "DELETE lbi FROM laundry_bin_items lbi JOIN laundry_bins lb ON lbi.BinId=lb.id WHERE lb.LicenseId={0}", id);
+            await _db.Database.ExecuteSqlRawAsync(
+                "DELETE lie FROM laundry_item_events lie JOIN laundry_items li ON lie.ItemId=li.id WHERE li.LicenseId={0}", id);
+
+            // Laundry main tables
+            await _db.Database.ExecuteSqlRawAsync("DELETE FROM laundry_sets       WHERE LicenseId={0}", id);
+            await _db.Database.ExecuteSqlRawAsync("DELETE FROM laundry_bins       WHERE LicenseId={0}", id);
+            await _db.Database.ExecuteSqlRawAsync("DELETE FROM laundry_items      WHERE LicenseId={0}", id);
+
+            // Assets & loans
+            await _db.Database.ExecuteSqlRawAsync(
+                "DELETE al FROM assets_loans al JOIN ASSET a ON al.AssetId=a.id WHERE a.LicenseId={0}", id);
+            await _db.Database.ExecuteSqlRawAsync(
+                "DELETE er FROM exchange_requests er JOIN ASSET a ON er.AssetId=a.id WHERE a.LicenseId={0}", id);
+            await _db.Database.ExecuteSqlRawAsync("DELETE FROM ASSET WHERE LicenseId={0}", id);
+
+            // Tags
+            await _db.Database.ExecuteSqlRawAsync("DELETE FROM TAG WHERE LicenseId={0}", id);
+
+            // Presence
+            await _db.Database.ExecuteSqlRawAsync(
+                "DELETE up FROM user_presences up JOIN users u ON up.UserId=u.id WHERE u.LicenseId={0}", id);
+
+            // License modules
+            await _db.Database.ExecuteSqlRawAsync("DELETE FROM license_modules WHERE LicenseId={0}", id);
+
+            // Roles & permissions scoped to this license
+            await _db.Database.ExecuteSqlRawAsync(
+                "DELETE rp FROM role_permissions rp JOIN Roles r ON rp.RoleId=r.id WHERE r.LicenseId={0}", id);
+            await _db.Database.ExecuteSqlRawAsync("DELETE FROM Roles WHERE LicenseId={0}", id);
+
+            // Users
+            await _db.Database.ExecuteSqlRawAsync("DELETE FROM users WHERE LicenseId={0}", id);
+
+            // Readers & antennas
+            await _db.Database.ExecuteSqlRawAsync(
+                "DELETE a FROM antennas a JOIN readers r ON a.ReaderId=r.id WHERE r.LicenseId={0}", id);
+            await _db.Database.ExecuteSqlRawAsync("DELETE FROM readers WHERE LicenseId={0}", id);
+
+            // Zones
+            await _db.Database.ExecuteSqlRawAsync("DELETE FROM zones WHERE LicenseId={0}", id);
+
+            // Finally the license itself
+            await _db.Database.ExecuteSqlRawAsync("DELETE FROM licenses WHERE id={0}", id);
+        }
+        finally
+        {
+            await _db.Database.ExecuteSqlRawAsync("SET FOREIGN_KEY_CHECKS=1;");
+        }
+
+        return Ok(new { message = $"Licenca {id} in vsi njeni podatki so bili trajno izbrisani." });
     }
 
     // ── Modules ──────────────────────────────────────────────────────────────

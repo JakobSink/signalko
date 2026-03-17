@@ -38,6 +38,8 @@ public class AuthController : ControllerBase
         var license = await _db.Licenses.FirstOrDefaultAsync(l => l.LicenseKey == licenseKey);
         if (license == null)
             return BadRequest(new { message = "Neveljaven licenčni ključ." });
+        if (license.DeactivatedAt != null)
+            return StatusCode(403, new { message = "Ta licenca je deaktivirana. Kontaktirajte Signalko podporo." });
 
         // If this license already has any users → it's activated, block further registrations
         if (await _db.users.AnyAsync(u => u.LicenseId == license.id))
@@ -106,6 +108,13 @@ public class AuthController : ControllerBase
 
         if (user == null || !PasswordHasher.Verify(req.Password, user.Password))
             return Unauthorized(new { message = "Napačen email ali geslo." });
+
+        if (user.LicenseId.HasValue)
+        {
+            var lic = await _db.Licenses.AsNoTracking().FirstOrDefaultAsync(l => l.id == user.LicenseId);
+            if (lic?.DeactivatedAt != null)
+                return StatusCode(403, new { message = "Licenca je deaktivirana. Kontaktirajte Signalko podporo." });
+        }
 
         var token = _jwt.CreateToken(user, user.Role?.Name);
 

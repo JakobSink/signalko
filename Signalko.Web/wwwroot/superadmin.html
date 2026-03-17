@@ -105,6 +105,7 @@ html, body { background:var(--bg); color:var(--txt); font-family:'JetBrains Mono
 .sa-badge-mut { background:var(--border); color:var(--mut); }
 .sa-badge-acc { background:var(--accD); color:var(--acc); }
 .sa-badge-org { background:var(--orgD); color:var(--org); }
+.sa-badge-red { background:var(--redD); color:var(--red); }
 
 /* ── Modal ── */
 .sa-overlay {
@@ -434,7 +435,7 @@ function renderLicTable() {
       <thead><tr>
         <th>#</th><th>Stranka</th><th>Licenčni ključ</th>
         <th>Uporabniki</th><th>Točke čitanja</th><th>Moduli</th>
-        <th>Status</th><th></th>
+        <th>Status</th><th style="min-width:180px;"></th>
       </tr></thead>
       <tbody>
         ${visible.map(l => `
@@ -453,12 +454,24 @@ function renderLicTable() {
               </div>
             </td>
             <td>
-              ${l.isActivated
-                ? `<span class="sa-badge sa-badge-grn">✓ Aktivna</span>`
-                : `<span class="sa-badge sa-badge-mut">Neaktivna</span>`}
+              ${l.isDeactivated
+                ? `<span class="sa-badge sa-badge-red">✕ Deaktivirana</span>`
+                : l.isActivated
+                  ? `<span class="sa-badge sa-badge-grn">✓ Aktivna</span>`
+                  : `<span class="sa-badge sa-badge-mut">Neaktivna</span>`}
             </td>
             <td>
-              <button class="sa-btn sa-btn-sm" onclick="openEditModal(${l.id})">Uredi</button>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                <button class="sa-btn sa-btn-sm" onclick="openEditModal(${l.id})">Uredi</button>
+                ${l.isDeactivated
+                  ? `<button class="sa-btn sa-btn-sm sa-btn-grn" onclick="reactivateLicense(${l.id})">↺ Reaktiviraj</button>`
+                  : `<button class="sa-btn sa-btn-sm" style="color:var(--org);border-color:rgba(251,146,60,.3);" onclick="deactivateLicense(${l.id}, '${h(l.companyName||'#'+l.id)}')">Deaktiviraj</button>`}
+                ${l.canDelete
+                  ? `<button class="sa-btn sa-btn-sm sa-btn-red" onclick="deleteLicense(${l.id}, '${h(l.companyName||'#'+l.id)}')">🗑 Izbriši vse</button>`
+                  : l.isDeactivated
+                    ? `<span style="font-size:10px;color:var(--mut);">Izbris čez ${Math.ceil(7-((Date.now()-new Date(l.deactivatedAt))/86400000))}d</span>`
+                    : ''}
+              </div>
             </td>
           </tr>`).join('')}
       </tbody>
@@ -579,6 +592,48 @@ async function saveLicense() {
   } else {
     errEl.textContent = r.data?.message || 'Napaka';
     errEl.style.display = '';
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Deactivate / Reactivate / Delete
+══════════════════════════════════════════════════════════════ */
+async function deactivateLicense(id, name) {
+  if (!confirm(`Deaktiviraj licenco "${name}"?\n\nVsi uporabniki te licence takoj izgubijo dostop do sistema.`)) return;
+  const r = await saFetch('POST', `/api/SuperAdmin/licenses/${id}/deactivate`);
+  if (r.ok) {
+    saToast(`Licenca "${name}" deaktivirana`, 'ok');
+    await loadLicenses();
+  } else {
+    saToast(r.data?.message || 'Napaka', 'err');
+  }
+}
+
+async function reactivateLicense(id) {
+  const lic = _licenses.find(l => l.id === id);
+  const name = lic?.companyName || '#' + id;
+  if (!confirm(`Reaktiviraj licenco "${name}"?\n\nUporabniki bodo spet imeli dostop.`)) return;
+  const r = await saFetch('POST', `/api/SuperAdmin/licenses/${id}/reactivate`);
+  if (r.ok) {
+    saToast(`Licenca "${name}" reaktivirana`, 'ok');
+    await loadLicenses();
+  } else {
+    saToast(r.data?.message || 'Napaka', 'err');
+  }
+}
+
+async function deleteLicense(id, name) {
+  const confirm1 = confirm(`⚠️ TRAJNI IZBRIS licence "${name}"!\n\nIzbrisani bodo VSI podatki:\n• Vsi uporabniki\n• Vsa sredstva in izposoje\n• Vsi RFID tagi\n• Vsa prisotnost\n• Vsa pralnica\n• Vse konfiguracije\n\nTega ni mogoče razveljaviti!\n\nSi prepričan?`);
+  if (!confirm1) return;
+  const confirm2 = confirm(`ZADNJE OPOZORILO: Res izbriši vse podatke za "${name}"?`);
+  if (!confirm2) return;
+
+  const r = await saFetch('DELETE', `/api/SuperAdmin/licenses/${id}`);
+  if (r.ok) {
+    saToast(`Licenca "${name}" in vsi podatki trajno izbrisani`, 'ok');
+    await loadLicenses();
+  } else {
+    saToast(r.data?.message || 'Napaka pri izbrisu', 'err');
   }
 }
 
