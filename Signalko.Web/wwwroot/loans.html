@@ -549,7 +549,19 @@ function renderSteps() {
   }).join('');
 }
 
+function isKioskSession() {
+  return !!(_kioskMode || sessionStorage.getItem('sk_kiosk_token'));
+}
+
 function renderWizard() {
+  // Kiosk: auto-skip 'user' step — user is already identified via card scan
+  if (ST.step === 'user' && isKioskSession()) {
+    const me = getMeUser();
+    if (me) {
+      Object.assign(ST, { currentUser: me, step: 'asset' });
+    }
+  }
+
   const wrap = document.getElementById('wizardWrap');
 
   // Steps card (create once)
