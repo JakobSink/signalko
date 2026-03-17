@@ -5,7 +5,7 @@
 
 /* ── Auth helpers ────────────────────────────────────────── */
 function skIsLoggedIn() {
-  return !!(window.SK_KIOSK_TOKEN || sessionStorage.getItem('sk_kiosk_token') || localStorage.getItem('token') || localStorage.getItem('sk_token'));
+  return !!(localStorage.getItem('token') || localStorage.getItem('sk_token'));
 }
 
 function skCurrentUser() {
@@ -84,14 +84,9 @@ function skRequirePerm(code) {
 }
 
 /* ── HTTP ───────────────────────────────────────────────────── */
-// SK_KIOSK_TOKEN: kiosk session token.
-// Stored in sessionStorage (survives page refresh, cleared when tab closes, not shared across tabs).
-window.SK_KIOSK_TOKEN = window.SK_KIOSK_TOKEN || sessionStorage.getItem('sk_kiosk_token') || null;
-
 async function skApi(method, path, body) {
   try {
-    // Prefer kiosk token (sessionStorage/memory) over regular localStorage tokens
-    const token = window.SK_KIOSK_TOKEN || sessionStorage.getItem('sk_kiosk_token') || localStorage.getItem('token') || localStorage.getItem('sk_token');
+    const token = localStorage.getItem('token') || localStorage.getItem('sk_token');
     const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
     if (token) headers['Authorization'] = `Bearer ${token}`;
     const res  = await fetch(path, {
@@ -104,9 +99,6 @@ async function skApi(method, path, body) {
     try { data = text ? JSON.parse(text) : null; } catch {}
     // Auto-logout if server says our session is no longer valid
     if (res.status === 401 && token) {
-      window.SK_KIOSK_TOKEN = null;
-      sessionStorage.removeItem('sk_kiosk_token');
-      sessionStorage.removeItem('sk_kiosk_user');
       localStorage.removeItem('token');
       localStorage.removeItem('sk_token');
       localStorage.removeItem('sk_user');

@@ -271,14 +271,12 @@
     else skMenuOpen();
   };
 
-  // ── Auth state — kiosk sessionStorage takes priority over localStorage ──
-  var token = window.SK_KIOSK_TOKEN || sessionStorage.getItem('sk_kiosk_token') || localStorage.getItem('token') || localStorage.getItem('sk_token');
-  var isKiosk = !!(window.SK_KIOSK_TOKEN || sessionStorage.getItem('sk_kiosk_token'));
-  var cached = window._kioskUser || null;
-  if (!cached && isKiosk) try { cached = JSON.parse(sessionStorage.getItem('sk_kiosk_user') || 'null'); } catch {}
-  if (!cached) try { cached = JSON.parse(localStorage.getItem('sk_user') || 'null'); } catch {}
+  // ── Auth state ──
+  var token = localStorage.getItem('token') || localStorage.getItem('sk_token');
+  var cached = null;
+  try { cached = JSON.parse(localStorage.getItem('sk_user') || 'null'); } catch {}
   var cachedPerms = null;
-  if (!isKiosk) try { cachedPerms = JSON.parse(localStorage.getItem('sk_user_perms') || 'null'); } catch {}
+  try { cachedPerms = JSON.parse(localStorage.getItem('sk_user_perms') || 'null'); } catch {}
 
   // ── Render both desktop sidebar + mobile menu ──
   function render(user, userPerms) {
@@ -432,7 +430,7 @@
       // perms is an Array when server responded (even empty [] on auth failure),
       // or null when a network/parse error occurred (keep cached in that case).
       if (Array.isArray(perms)) {
-        if (!isKiosk) localStorage.setItem('sk_user_perms', JSON.stringify(perms));
+        localStorage.setItem('sk_user_perms', JSON.stringify(perms));
         cachedPerms = perms;
       }
 
@@ -449,13 +447,11 @@
           role:     fresh.role     || fresh.Role     || null,
           language: fresh.language || fresh.Language || cached.language || 'en',
         };
-        if (!isKiosk) {
-          localStorage.setItem('sk_user', JSON.stringify(updatedUser));
-          // If language changed server-side, reload so i18n re-fetches the correct file
-          if (cached && updatedUser.language !== cached.language) {
-            location.reload();
-            return;
-          }
+        localStorage.setItem('sk_user', JSON.stringify(updatedUser));
+        // If language changed server-side, reload so i18n re-fetches the correct file
+        if (cached && updatedUser.language !== cached.language) {
+          location.reload();
+          return;
         }
       }
       render(updatedUser, Array.isArray(perms) ? perms : cachedPerms);

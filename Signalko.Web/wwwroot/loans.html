@@ -368,21 +368,54 @@ function setState(updates, skipRender) {
   if (!skipRender) renderWizard();
 }
 
+/* ── Kiosk-local state ─────────────────────────────────── */
+let _kioskToken = null;   // never stored in global state
+let _kioskUser  = null;   // identified user for current kiosk operation
+
+// Local API wrapper: uses _kioskToken if set (kiosk mode),
+// otherwise falls back to regular auth. Never redirects to login in kiosk mode.
+async function lApi(method, path, body) {
+  try {
+    const token = _kioskToken || localStorage.getItem('token') || localStorage.getItem('sk_token');
+    const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    const res = await fetch(path, {
+      method, headers,
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    const text = await res.text();
+    let data = null;
+    try { data = text ? JSON.parse(text) : null; } catch {}
+    if (res.status === 401 && !_kioskToken) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('sk_token');
+      localStorage.removeItem('sk_user');
+      localStorage.removeItem('sk_user_perms');
+      location.href = '/login.html';
+    }
+    return { ok: res.ok, status: res.status, data };
+  } catch (e) {
+    return { ok: false, status: 0, data: { message: e.message } };
+  }
+}
+const lGet   = p     => lApi('GET',    p);
+const lPost  = (p,b) => lApi('POST',   p, b);
+const lPut   = (p,b) => lApi('PUT',    p, b);
+const lPatch = (p,b) => lApi('PATCH',  p, b);
+
 /* ════════════════════════════════════════════════════════════
    Kiosk mode
 ════════════════════════════════════════════════════════════ */
-let _kioskMode  = false;
 let _kioskTimer = null;        // inactivity auto-logout timer
 const KIOSK_TIMEOUT_MS = 1 * 60 * 1000;  // 1 minute
 
 function kioskResetTimer() {
-  if (!_kioskMode) return;
+  if (!isKioskSession()) return;
   clearTimeout(_kioskTimer);
   _kioskTimer = setTimeout(() => kioskLogout(), KIOSK_TIMEOUT_MS);
 }
 
 function kioskShow() {
-  _kioskMode = true;
   document.getElementById('kioskContent').style.display = 'flex';
   document.getElementById('pageContent').style.display  = 'none';
   document.getElementById('kioskScanView').style.display   = '';
@@ -427,19 +460,16 @@ async function kioskLogin() {
     return;
   }
 
-  // Store token ONLY in memory — never in localStorage.
-  // This means other tabs/pages cannot read it and it disappears on page reload.
-  window._kioskUser = {
+  // Store token ONLY in local vars — never in localStorage/sessionStorage/window globals.
+  // skIsLoggedIn() stays false, sidebar remains as guest, other pages stay protected.
+  _kioskToken = data.token;
+  _kioskUser  = {
     id: data.id, name: data.name, surname: data.surname,
     email: data.email, cardID: data.cardID,
     role: data.role, roleId: data.roleId, licenseId: data.licenseId,
   };
-  window.SK_KIOSK_TOKEN = data.token;
-  sessionStorage.setItem('sk_kiosk_token', data.token);
-  sessionStorage.setItem('sk_kiosk_user', JSON.stringify(window._kioskUser));
 
   kioskHide();
-  skLoadSidebar();    // reload sidebar so it picks up kiosk user
   kioskResetTimer();  // start inactivity countdown
   await init();
 }
@@ -449,11 +479,9 @@ function kioskLogout(result) {
   clearTimeout(_kioskTimer);
   _kioskTimer = null;
 
-  // Wipe kiosk session (memory + sessionStorage)
-  window.SK_KIOSK_TOKEN = null;
-  window._kioskUser     = null;
-  sessionStorage.removeItem('sk_kiosk_token');
-  sessionStorage.removeItem('sk_kiosk_user');
+  // Wipe kiosk session (local vars only)
+  _kioskToken = null;
+  _kioskUser  = null;
 
   // Build result card content
   const RESULTS = {
@@ -497,13 +525,13 @@ function kioskLogout(result) {
    Init
 ════════════════════════════════════════════════════════════ */
 async function init() {
-  // If not logged in, show kiosk card-scan overlay
-  if (!skIsLoggedIn()) {
+  // If not logged in and no kiosk token, show kiosk card-scan overlay
+  if (!skIsLoggedIn() && !_kioskToken) {
     kioskShow();
     return;
   }
 
-  const [antR, zoneR] = await Promise.all([skGet('/api/Antenna'), skGet('/api/Zone')]);
+  const [antR, zoneR] = await Promise.all([lGet('/api/Antenna'), lGet('/api/Zone')]);
   if (antR.ok)  ST.stations = (antR.data || []).filter(a => (a.RoleID||a.roleID) === 1 || (a.RoleName||a.roleName||'').toLowerCase() === 'loan');
   if (zoneR.ok) (zoneR.data||[]).forEach(z => { ST.zones[z.id||z.Id] = z.Name||z.name||`Cona ${z.id}`; });
 
@@ -522,7 +550,7 @@ async function loadLoans() {
   const titleEl = document.getElementById('loansPanelTitle');
 
   // Always fetch all loans (endpoint requires no auth) — filter client-side for non-admins.
-  const r = await skGet('/api/Loan');
+  const r = await lGet('/api/Loan');
   if (!r.ok) { renderLoansPanel(); return; }
 
   if (titleEl) titleEl.textContent = skT('loans.lbl.all_loans');
@@ -539,7 +567,7 @@ async function checkIncomingNotifs() {
   const myId = me.id || me.Id || 0;
   if (!myId) return;
 
-  const r = await skGet(`/api/Exchange/pending?toUserId=${myId}`);
+  const r = await lGet(`/api/Exchange/pending?toUserId=${myId}`);
   if (!r.ok) return;
 
   const pending = r.data || [];
@@ -568,7 +596,7 @@ async function checkIncomingNotifs() {
 }
 
 async function respondNotif(id, accept) {
-  const r = await skPut(`/api/Exchange/${id}/respond`, { accept });
+  const r = await lPut(`/api/Exchange/${id}/respond`, { accept });
   if (!r.ok) {
     skToast(`${skT('loans.err.generic')} ${r.data?.message||''}`, 'error');
     return;
@@ -604,7 +632,7 @@ function renderSteps() {
 }
 
 function isKioskSession() {
-  return !!(_kioskMode || sessionStorage.getItem('sk_kiosk_token'));
+  return !!_kioskToken;
 }
 
 function renderWizard() {
@@ -904,7 +932,7 @@ async function confirmUserModal() {
   const btn = document.getElementById('userModalBtn');
   skBtnLoading(btn, true, skT('loans.btn.confirm'));
 
-  const r = await skGet(`/api/User/by-card/${encodeURIComponent(code)}`);
+  const r = await lGet(`/api/User/by-card/${encodeURIComponent(code)}`);
   skBtnLoading(btn, false, skT('loans.btn.confirm'));
 
   if (!r.ok || !r.data) {
@@ -945,7 +973,7 @@ async function confirmAssetModal() {
   const btn = document.getElementById('assetModalBtn');
   skBtnLoading(btn, true, skT('loans.btn.check'));
 
-  const r = await skGet(`/api/Asset/by-epc/${encodeURIComponent(epc)}`);
+  const r = await lGet(`/api/Asset/by-epc/${encodeURIComponent(epc)}`);
   skBtnLoading(btn, false, skT('loans.btn.check'));
 
   if (!r.ok || !r.data) {
@@ -964,7 +992,7 @@ async function processAsset(asset) {
   const assetId = asset.id || asset.Id;
 
   // Vedno pridobi aktivno izposojo tega sredstva iz baze (ne zaupamo lokalnemu filtru)
-  const loanR = await skGet('/api/Loan');
+  const loanR = await lGet('/api/Loan');
   const activeLoans = loanR.ok
     ? (Array.isArray(loanR.data) ? loanR.data : []).filter(isActive)
     : [];
@@ -1022,7 +1050,7 @@ async function sendExchangeRequest() {
   const btn = document.getElementById('conflictBtn');
   skBtnLoading(btn, true, skT('loans.btn.send_request'));
 
-  const r = await skGet(`/api/User/by-card/${encodeURIComponent(code)}`);
+  const r = await lGet(`/api/User/by-card/${encodeURIComponent(code)}`);
   skBtnLoading(btn, false, skT('loans.btn.send_request'));
 
   if (!r.ok || !r.data) {
@@ -1048,7 +1076,7 @@ async function sendExchangeRequest() {
   const fromUserId = ST.currentUser?.Id  || ST.currentUser?.id || 0;
 
   skBtnLoading(btn, true, skT('loans.btn.send_request'));
-  const exR = await skPost('/api/Exchange', {
+  const exR = await lPost('/api/Exchange', {
     fromUserId,
     toUserId: ownerId,
     assetId,
@@ -1071,7 +1099,7 @@ async function sendExchangeRequest() {
   // Poll DB for response
   const poll = setInterval(async () => {
     if (!exchangeId) { clearInterval(poll); return; }
-    const pr = await skGet(`/api/Exchange/my?userId=${fromUserId}`);
+    const pr = await lGet(`/api/Exchange/my?userId=${fromUserId}`);
     if (!pr.ok) return;
     const myReq = (pr.data||[]).find(n => (n.id||n.Id) === exchangeId && (n.status||n.Status) !== 'pending');
     if (myReq) {
@@ -1093,7 +1121,7 @@ async function sendExchangeRequestInline() {
   skBtnLoading(btn, true, skT('loans.btn.send_request'));
 
   // Poišči imetnika po CardID
-  const userR = await skGet(`/api/User/by-card/${encodeURIComponent(code)}`);
+  const userR = await lGet(`/api/User/by-card/${encodeURIComponent(code)}`);
   if (!userR.ok || !userR.data) {
     skBtnLoading(btn, false, skT('loans.btn.send_request'));
     errEl.textContent = skT('loans.err.card_not_found2');
@@ -1123,7 +1151,7 @@ async function sendExchangeRequestInline() {
     return;
   }
 
-  const exR = await skPost('/api/Exchange', { fromUserId, toUserId: ownerId, assetId, message: '' });
+  const exR = await lPost('/api/Exchange', { fromUserId, toUserId: ownerId, assetId, message: '' });
   skBtnLoading(btn, false, skT('loans.btn.send_request'));
 
   if (!exR.ok) {
@@ -1140,7 +1168,7 @@ async function sendExchangeRequestInline() {
   // Periodično preverjaj odgovor iz baze
   const poll = setInterval(async () => {
     if (!exchangeId) { clearInterval(poll); return; }
-    const pr = await skGet(`/api/Exchange/my?userId=${fromUserId}`);
+    const pr = await lGet(`/api/Exchange/my?userId=${fromUserId}`);
     if (!pr.ok) return;
     const req = (pr.data || []).find(n => (n.id || n.Id) === exchangeId && (n.status || n.Status) !== 'pending');
     if (req) {
@@ -1159,7 +1187,7 @@ async function executeConfirm() {
 
   if (ST.scenario === 'already_have') {
     const loanId = ST.conflictLoan?.Id || ST.conflictLoan?.id;
-    const r = await skPost('/api/Loan/return', { LoanId: loanId });
+    const r = await lPost('/api/Loan/return', { LoanId: loanId });
     if (!r.ok) {
       skToast(`${skT('loans.err.generic')} ${r.data?.message||''}`, 'error');
       skBtnLoading(btn, false, skT('loans.btn.confirm_return'));
@@ -1170,7 +1198,7 @@ async function executeConfirm() {
     const uid    = ST.currentUser?.Id || ST.currentUser?.id;
     const aid    = ST.scannedAsset?.id || ST.scannedAsset?.Id;
     const zoneId = ST.selStation?.ZoneId || ST.selStation?.zoneId || null;
-    const r = await skPost('/api/Loan', { UserId: uid, AssetId: aid, ZoneId: zoneId });
+    const r = await lPost('/api/Loan', { UserId: uid, AssetId: aid, ZoneId: zoneId });
     if (!r.ok) {
       skBtnLoading(btn, false, '✓ ' + skT('loans.step.confirm_borrow_title'));
       const msg = r.data?.message || r.data?.Message || '';
@@ -1215,7 +1243,7 @@ async function executeReturn() {
   if (!_returnLoanId) return;
   const btn = document.getElementById('returnBtn');
   skBtnLoading(btn, true, skT('loans.btn.confirm_return'));
-  const r = await skPost('/api/Loan/return', { LoanId: _returnLoanId });
+  const r = await lPost('/api/Loan/return', { LoanId: _returnLoanId });
   skBtnLoading(btn, false, skT('loans.btn.confirm_return'));
   if (r.ok) {
     skToast(skT('loans.toast.returned'));
@@ -1287,14 +1315,14 @@ function buildLoanTable(loans, compact) {
 async function loadTabActive() {
   const c = document.getElementById('tabActiveCard');
   c.innerHTML = `<div class="sk-state-loading"><div class="sk-spin"></div>${skT('lbl.loading')}</div>`;
-  const r = await skGet('/api/Loan');
+  const r = await lGet('/api/Loan');
   const data = r.ok ? (Array.isArray(r.data) ? r.data : []).filter(isActive) : [];
   c.innerHTML = data.length ? buildLoanTable(data) : emptyState('⇌', skT('loans.no_active'));
 }
 async function loadTabHistory() {
   const c = document.getElementById('tabHistoryCard');
   c.innerHTML = `<div class="sk-state-loading"><div class="sk-spin"></div>${skT('lbl.loading')}</div>`;
-  const r = await skGet('/api/Loan');
+  const r = await lGet('/api/Loan');
   const data = r.ok ? (Array.isArray(r.data) ? r.data : []) : [];
   c.innerHTML = data.length ? buildLoanTable(data) : emptyState('⇌', skT('loans.empty'));
 }
@@ -1323,23 +1351,13 @@ function emptyState(ico, msg) {
   return `<div class="sk-state-empty"><span class="ico">${ico}</span><span>${msg}</span></div>`;
 }
 function getMeUser() {
-  if (window._kioskUser) return window._kioskUser;
+  if (_kioskUser) return _kioskUser;
   try { return JSON.parse(localStorage.getItem('sk_user') || 'null'); } catch { return null; }
 }
 function getMeId() {
   const u = getMeUser();
   return u?.id || u?.Id || u?.userId || 0;
 }
-
-// Restore kiosk session from sessionStorage after page refresh
-(function restoreKioskSession() {
-  const t = sessionStorage.getItem('sk_kiosk_token');
-  if (t) {
-    window.SK_KIOSK_TOKEN = t;
-    try { window._kioskUser = JSON.parse(sessionStorage.getItem('sk_kiosk_user') || 'null'); } catch {}
-    _kioskMode = true;
-  }
-})();
 
 // Reset inactivity timer on any click/keypress when in kiosk mode
 document.addEventListener('click',   () => kioskResetTimer());
