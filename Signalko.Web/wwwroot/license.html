@@ -23,6 +23,23 @@
 .lic-bar-label{font-size:10px;color:var(--mut);margin-top:5px;}
 .lic-meta{font-size:11px;color:var(--mut);}
 .lic-meta span{color:var(--sub);}
+
+.mod-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:12px; }
+.mod-card {
+  border-radius:var(--radius); padding:16px 18px;
+  background:var(--up); border:1px solid var(--border);
+  display:flex; flex-direction:column; gap:6px;
+  transition:border-color .15s;
+}
+.mod-card.enabled  { border-color:rgba(79,142,247,.35); }
+.mod-card.disabled { opacity:.6; }
+.mod-card .mc-head { display:flex; align-items:center; gap:10px; }
+.mod-card .mc-icon { font-size:22px; }
+.mod-card .mc-name { font-size:13px; font-weight:700; color:var(--txt); flex:1; }
+.mod-card .mc-desc { font-size:11px; color:var(--mut); line-height:1.55; }
+.mod-card .mc-foot { display:flex; align-items:center; justify-content:space-between; margin-top:6px; }
+.mod-core-badge { font-size:9px; font-weight:700; letter-spacing:1px; text-transform:uppercase;
+  color:var(--acc); background:rgba(79,142,247,.1); border-radius:99px; padding:2px 8px; }
 </style>
 </head>
 <body>
@@ -94,6 +111,13 @@ function render(d) {
         </div>
       </div>
     </div>
+
+    <div class="sk-card sk-card-pad" style="margin-top:4px;">
+      <div class="sk-section-title" style="margin-bottom:14px;">Moduli</div>
+      <div class="mod-grid" id="modulesGrid">
+        <div class="sk-state-loading"><div class="sk-spin"></div></div>
+      </div>
+    </div>
   `;
 }
 
@@ -108,7 +132,50 @@ function fmt(dt) {
 }
 function h(s) { return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
-SK_I18N_READY.then(load);
+async function loadModules() {
+  const r = await skGet('/api/Module/my');
+  const el = document.getElementById('modulesGrid');
+  if (!el) return;
+  if (!r.ok) { el.innerHTML = '<span style="color:var(--mut);font-size:12px;">Napaka pri nalaganju modulov</span>'; return; }
+
+  const isAdmin = skIsAdmin();
+  el.innerHTML = (r.data || []).map(m => {
+    const enabled = m.enabled;
+    const toggleBtn = !m.isCore && isAdmin
+      ? `<button class="sk-btn sk-btn-sm ${enabled ? '' : 'sk-btn-acc'}"
+           onclick="toggleModule('${m.code}', ${enabled})">
+           ${enabled ? 'Deaktiviraj' : 'Aktiviraj'}
+         </button>`
+      : '';
+    return `
+      <div class="mod-card ${enabled ? 'enabled' : 'disabled'}">
+        <div class="mc-head">
+          <span class="mc-icon">${m.icon || '📦'}</span>
+          <span class="mc-name">${h(m.name)}</span>
+          ${m.isCore ? '<span class="mod-core-badge">Jedro</span>' : ''}
+        </div>
+        <div class="mc-desc">${h(m.description || '')}</div>
+        <div class="mc-foot">
+          <span class="sk-badge ${enabled ? 'sk-badge-grn' : 'sk-badge-mut'}">${enabled ? '✓ Aktiven' : 'Neaktiven'}</span>
+          ${toggleBtn}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+async function toggleModule(code, currentlyEnabled) {
+  const r = currentlyEnabled
+    ? await skDel(`/api/Module/${code}`)
+    : await skPost(`/api/Module/${code}/enable`);
+  if (r.ok) {
+    skToast(currentlyEnabled ? `Modul '${code}' deaktiviran` : `Modul '${code}' aktiviran`);
+    loadModules();
+  } else {
+    skToast(r.data?.message || 'Napaka', 'error');
+  }
+}
+
+SK_I18N_READY.then(async () => { await load(); loadModules(); });
 </script>
 </body>
 </html>
