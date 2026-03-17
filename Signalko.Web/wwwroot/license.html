@@ -141,7 +141,7 @@ async function loadModules() {
   const isAdmin = skIsAdmin();
   el.innerHTML = (r.data || []).map(m => {
     const enabled = m.enabled;
-    const toggleBtn = !m.isCore && isAdmin
+    const toggleBtn = isAdmin
       ? `<button class="sk-btn sk-btn-sm ${enabled ? '' : 'sk-btn-acc'}"
            onclick="toggleModule('${m.code}', ${enabled})">
            ${enabled ? 'Deaktiviraj' : 'Aktiviraj'}

@@ -79,7 +79,6 @@ public class ModuleController : PermissionedController
 
         var module = await _db.Modules.AsNoTracking().FirstOrDefaultAsync(m => m.Code == code);
         if (module == null) return NotFound();
-        if (module.IsCore) return BadRequest(new { message = "Jedrnih modulov ni mogoče deaktivirati." });
 
         var lm = await _db.LicenseModules.FirstOrDefaultAsync(x => x.LicenseId == licId.Value && x.ModuleCode == code);
         if (lm == null) return NotFound(new { message = "Modul ni aktiviran." });
